@@ -63,6 +63,7 @@ button.stat[aria-pressed="true"]{border:2px solid var(--accent);background:#fff8
 .chips.col{display:grid;grid-template-columns:minmax(0,1fr)}
 .chips.col .chip{text-align:left;border-radius:12px;padding:8px 14px}
 .nachip{min-width:56px;font-size:20px;font-weight:700;flex-shrink:0}
+.kv{display:grid;grid-template-columns:104px minmax(0,1fr);gap:6px;font-size:14px;color:var(--text-strong);padding:2px 0}.kv>b{color:var(--text);font-weight:600}
 .agenda{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:10px;background:#fff8e0;font-size:13px;color:var(--text-strong)}
 .tag{display:inline-block;font-size:12px;color:var(--text-strong);background:#f0f0f0;border-radius:6px;padding:1px 8px;white-space:nowrap}
 .rsec{display:flex;flex-direction:column;gap:8px}
@@ -77,6 +78,8 @@ button.stat[aria-pressed="true"]{border:2px solid var(--accent);background:#fff8
 .progress.over>div{background:var(--ok)}
 .hero2{background:var(--accent);margin:-16px -16px 0;padding:6px 20px 68px;color:#3a3a3a}
 .hero2 h2{font-size:24px;color:#2b2b2b;margin:2px 0 0}
+.goal{display:flex;flex-direction:column;gap:6px;margin-top:10px;background:rgba(255,255,255,.6);border-radius:12px;padding:10px 12px;text-decoration:none;color:#2b2b2b}
+.gbar{flex:1;height:12px;border-radius:6px;background:rgba(0,0,0,.12);overflow:hidden;display:block}.gbar i{display:block;height:100%;background:#2b2b2b;border-radius:6px}
 .herocard{margin-top:-56px;box-shadow:0 6px 18px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:12px;padding:16px}
 a.stat{display:block;text-decoration:none;color:inherit}
 .menu{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 6px}
@@ -265,7 +268,7 @@ table.fx{table-layout:fixed;font-size:13px}table.fx th,table.fx td{padding:8px 4
    Replace Store.* persistence to add server sync later.
    ========================================================= */
 
-var APP_VERSION = '1.9.0';
+var APP_VERSION = '1.9.2';
 var SCHEMA_VERSION = 2;
 var DB_NAME = 'ps-tracker';
 var KDF_ITER = 250000;
@@ -295,16 +298,16 @@ var DEFAULT_OPTIONS = {
   pform: ['สร้างใหม่ โดย Developer', 'สร้างใหม่ โดยเจ้าของ', 'อาคารเดิม (รีโนเวท)'],
   channel: ['ทีมขายหาเอง > ออกหาหน้างาน :: เข้าหน้างาน | ออกโครงการ | โทรหาลูกค้าใหม่', 'ลูกค้าเข้ามาเอง > สาขา ILM :: โชว์รูม | พนักงานหน้าร้านส่งต่อ', 'ลูกค้าเข้ามาเอง > ออนไลน์ / โทรศัพท์ :: เว็บไซต์ | LINE OA | Facebook | Call center', 'ลูกค้าเข้ามาเอง > งานแสดงสินค้า / อีเวนต์ :: งานบ้านและสวน | Architect Expo | Open house', 'มีคนแนะนำ > คู่ค้าแนะนำ :: ผู้รับเหมา | Interior/สถาปนิก | ตรวจบ้าน | ร้านผ้าม่าน | นายหน้าอสังหาฯ', 'มีคนแนะนำ > บุคคลแนะนำ :: คนรู้จัก | ลูกค้าเดิม', 'อื่น ๆ :: อื่น ๆ (ระบุ)'],
   role: ['เจ้าของ / ผู้ใช้พื้นที่ :: เจ้าของบ้าน | เจ้าของห้อง | ผู้เช่า', 'Developer :: ฝ่ายจัดซื้อ | ผู้จัดการโครงการ | เซลส์โครงการ', 'องค์กร / กิจการ :: บริษัท | โรงแรม | สถานพยาบาล | ราชการ', 'ผู้ออกแบบ / ผู้รับเหมา :: Interior | สถาปนิก | ผู้รับเหมา', 'นิติบุคคลอาคาร / หมู่บ้าน :: นิติบุคคลอาคารชุด | นิติบุคคลหมู่บ้าน', 'อื่น ๆ :: อื่น ๆ (ระบุ)'],
-  product: ['Built-in', 'Loose furniture', 'HDI ตกแต่งบ้าน', 'บริการออกแบบ'],
+  product: ['Built-in', 'Loose Furniture', 'Home Decoration', 'Home Service'],
   agenda: ['แนะนำตัว / นำเสนอสินค้า', 'ดูแบบ / รับแบบ', 'วัดพื้นที่หน้างาน', 'เยี่ยมชมโชว์รูม / ดูตัวอย่างวัสดุ', 'นำเสนอแบบ / เสนอราคา', 'ต่อรอง / ปิดการขาย', 'ติดตามการตัดสินใจ', 'อื่น ๆ (ระบุ)'],
   lost: ['ราคา', 'คู่แข่ง', 'โครงการเลื่อน/ยกเลิก', 'สินค้าไม่ตรงสเปก', 'ระยะเวลาส่งมอบ'],
   staff: [], targets: {}
 };
 var OPTION_GROUPS = [
   ['ptype', 'ประเภทอาคาร'], ['pform', 'รูปแบบโครงการ'], ['channel', 'ช่องทางการติดต่อ'], ['role', 'ประเภทการติดต่อ'],
-  ['product', 'สายสินค้า'], ['agenda', 'วาระนัด'], ['lost', 'เหตุผลที่ไม่ได้งาน']
+  ['product', 'ประเภทสินค้า'], ['agenda', 'วาระนัด'], ['lost', 'เหตุผลที่ไม่ได้งาน']
 ];
-var OPTION_RULE = { ptype: 'เลือกตามการใช้งานหลักของพื้นที่ ไม่ใช่รูปทรงอาคาร', pform: 'แยกอาคารใหม่กับอาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง', channel: 'เลือกตามจุดแรกที่ได้ Lead มา', role: 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ', product: 'แยกมูลค่าตามสายสินค้าได้ในใบเสนอราคาและ SO', agenda: 'เลือกได้หลายข้อต่อนัด', lost: '' };
+var OPTION_RULE = { ptype: 'เลือกตามการใช้งานหลักของพื้นที่ ไม่ใช่รูปทรงอาคาร', pform: 'แยกอาคารใหม่กับอาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง', channel: 'เลือกตามจุดแรกที่ได้ Lead มา', role: 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ', product: 'แยกมูลค่าตามประเภทสินค้าได้ในใบเสนอราคาและ SO', agenda: 'เลือกได้หลายข้อต่อนัด', lost: '' };
 var SITE = ['ยังไม่เริ่มก่อสร้าง (ออกแบบ / ขออนุญาต)', 'กำลังก่อสร้างโครงสร้าง', 'งานระบบ / งานตกแต่งภายใน', 'สร้างเสร็จ รอตกแต่ง / รอเข้าอยู่', 'เข้าอยู่แล้ว / เปิดใช้งานแล้ว'];
 function siteLabel(n) { n = Number(n); return n >= 1 && n <= 5 ? n + ' ' + SITE[n - 1] : '-'; }
 var OTHER = 'อื่น ๆ (ระบุ)', MEASURE = 'วัดพื้นที่หน้างาน';
@@ -313,9 +316,11 @@ var LEG = {
   ptype: { 'บ้านสร้างเอง': ['บ้านเดี่ยว', 'บ้านเดี่ยว', 'สร้างใหม่ โดยเจ้าของ'], 'บ้านเดี่ยว': ['บ้านเดี่ยว', 'บ้านเดี่ยว', ''], 'บ้านสร้างเอง / บ้านเดี่ยว': ['บ้านเดี่ยว', 'บ้านเดี่ยว', ''], 'หมู่บ้านจัดสรร บ้านเดี่ยว': ['บ้านเดี่ยว', 'บ้านเดี่ยว', 'สร้างใหม่ โดย Developer'], 'คอนโด': ['คอนโด / อาคารชุด', 'คอนโด', ''], 'หอพัก': ['ที่พักให้เช่า', 'หอพัก', ''], 'อพาร์ทเมนต์': ['ที่พักให้เช่า', 'อะพาร์ตเมนต์', ''], 'หอพัก / อพาร์ทเมนต์': ['ที่พักให้เช่า', '', ''] },
   channel: { 'เข้าหน้างาน': ['ออกหาหน้างาน', 'เข้าหน้างาน'], 'ออกโครงการ': ['ออกหาหน้างาน', 'ออกโครงการ'], 'เข้าหน้างาน / ออกโครงการ': ['ออกหาหน้างาน', ''], 'เข้าพบหน้างาน': ['ออกหาหน้างาน', 'เข้าหน้างาน'], 'ผรม.': ['คู่ค้าแนะนำ', 'ผู้รับเหมา'], 'ผรม': ['คู่ค้าแนะนำ', 'ผู้รับเหมา'], 'Interior': ['คู่ค้าแนะนำ', 'Interior/สถาปนิก'], 'ตรวจบ้าน': ['คู่ค้าแนะนำ', 'ตรวจบ้าน'], 'ร้านผ้าม่าน': ['คู่ค้าแนะนำ', 'ร้านผ้าม่าน'], 'ผรม. / Interior / ตรวจบ้าน / ร้านผ้าม่าน': ['คู่ค้าแนะนำ', ''], 'คนรู้จักแนะนำ': ['บุคคลแนะนำ', 'คนรู้จัก'], 'บอกต่อ': ['บุคคลแนะนำ', 'คนรู้จัก'], 'คนรู้จักแนะนำ / บอกต่อ': ['บุคคลแนะนำ', 'คนรู้จัก'] },
   contactRole: { 'เจ้าของบ้าน': ['เจ้าของ / ผู้ใช้พื้นที่', 'เจ้าของบ้าน'], 'เจ้าของโครงการ': ['เจ้าของ / ผู้ใช้พื้นที่', ''], 'เจ้าของบ้าน / เจ้าของโครงการ': ['เจ้าของ / ผู้ใช้พื้นที่', ''], 'เซลโครงการ': ['Developer', 'เซลส์โครงการ'], 'นิติโครงการ': ['นิติบุคคลอาคาร / หมู่บ้าน', ''], 'เซลโครงการ / นิติโครงการ': ['', ''], 'Interior': ['ผู้ออกแบบ / ผู้รับเหมา', 'Interior'], 'สถาปนิก': ['ผู้ออกแบบ / ผู้รับเหมา', 'สถาปนิก'], 'ผรม.': ['ผู้ออกแบบ / ผู้รับเหมา', 'ผู้รับเหมา'], 'ผรม': ['ผู้ออกแบบ / ผู้รับเหมา', 'ผู้รับเหมา'], 'Interior / สถาปนิก / ผรม.': ['ผู้ออกแบบ / ผู้รับเหมา', ''], 'บริษัท': ['องค์กร / กิจการ', 'บริษัท'], 'ราชการ': ['องค์กร / กิจการ', 'ราชการ'], 'บริษัท / ราชการ': ['องค์กร / กิจการ', ''] },
-  products: { 'built-in': 'Built-in', 'ห้องนอน': 'Loose furniture', 'ห้องนั่งเล่น': 'Loose furniture', 'ห้องครัว': 'Loose furniture', 'สำนักงาน': 'Loose furniture', 'ผ้าม่าน/ของตกแต่ง': 'HDI ตกแต่งบ้าน' }
+  products: { 'built-in': 'Built-in', 'ห้องนอน': 'Loose Furniture', 'ห้องนั่งเล่น': 'Loose Furniture', 'ห้องครัว': 'Loose Furniture', 'สำนักงาน': 'Loose Furniture', 'ผ้าม่าน/ของตกแต่ง': 'Home Decoration' }
 };
-var FLABEL = { ptype: 'ประเภทอาคาร', pform: 'รูปแบบโครงการ', site: 'สถานะหน้างาน', channel: 'ช่องทางการติดต่อ', contactName: 'ชื่อผู้ติดต่อ', contactRole: 'ประเภทการติดต่อ', estimate: 'ยอดที่คาดว่าจะได้', closingDate: 'วันที่คาดว่าจะปิด', products: 'สายสินค้าที่เสนอ' };
+var PRODUCT_HINT = { 'Built-in': 'ตู้ครัว ตู้เสื้อผ้า งานสั่งทำติดตั้งกับอาคาร', 'Loose Furniture': 'โซฟา เตียง โต๊ะ เก้าอี้ ตู้ที่ยกย้ายได้', 'Home Decoration': 'ผ้าม่าน วอลล์เปเปอร์ พรม โคมไฟ ของแต่งบ้าน', 'Home Service': 'ขนย้าย ตรวจรับบ้านและคอนโด ทำความสะอาด ล้างแอร์ กำจัดไรฝุ่นและคราบ เปลี่ยนหนังหุ้มโซฟา' };
+var PRODUCT_RENAME = { 'Loose furniture': 'Loose Furniture', 'HDI ตกแต่งบ้าน': 'Home Decoration' }, DESIGN_OLD = 'บริการออกแบบ';
+var FLABEL = { ptype: 'ประเภทอาคาร', pform: 'รูปแบบโครงการ', site: 'สถานะหน้างาน', channel: 'ช่องทางการติดต่อ', contactName: 'ชื่อผู้ติดต่อ', contactRole: 'ประเภทการติดต่อ', estimate: 'ยอดที่คาดว่าจะได้', closingDate: 'วันที่คาดว่าจะปิด', products: 'ประเภทสินค้าที่เสนอ' };
 var FIRST_CTYPE = 'พบโครงการใหม่';
 
 /* ---------------- utilities ---------------- */
@@ -486,8 +491,9 @@ function migrateState(s) {
   s = s || {};
   s.profile = s.profile || {};
   s.options = s.options || JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+  if ((s.optVer || 0) >= 3 && s.optVer < 4) s.options.product = DEFAULT_OPTIONS.product.slice();
   if ((s.optVer || 0) < 3) { ['ptype', 'pform', 'channel', 'role', 'product', 'agenda'].forEach(function (k) { s.options[k] = DEFAULT_OPTIONS[k].slice(); }); if (s.options.version === 'default' && !Array.isArray(s.options.lost)) s.options.lost = DEFAULT_OPTIONS.lost.slice(); }
-  s.optVer = 3;
+  s.optVer = 4;
   OPTION_GROUPS.forEach(function (g) { if (!Array.isArray(s.options[g[0]])) s.options[g[0]] = DEFAULT_OPTIONS[g[0]].slice(); });
   s.options.staff = s.options.staff || []; s.options.targets = s.options.targets || {};
   s.settings = s.settings || {};
@@ -514,6 +520,18 @@ function migrateRecords() {
     if (c) changed.push(m);
   });
   Store.projects.forEach(function (p) { if (!p.deleted && convertProject(p) && changed.indexOf(p) < 0) changed.push(p); });
+  /* v1.9.2: ชื่อประเภทสินค้าใหม่ และ "บริการออกแบบ" ไม่ใช่สินค้าของฝ่ายขาย */
+  Store.projects.forEach(function (p) {
+    if (!(p.products || []).some(function (x) { return PRODUCT_RENAME[x] || x === DESIGN_OLD; })) return;
+    p.legacy = p.legacy || {}; if (!p.legacy.products) p.legacy.products = p.products.join(', ');
+    var out = []; p.products.forEach(function (x) { var v = PRODUCT_RENAME[x] || x; if (v !== DESIGN_OLD && out.indexOf(v) < 0) out.push(v); }); p.products = out;
+    if (changed.indexOf(p) < 0) changed.push(p);
+  });
+  Store.quotes.concat(Store.sales).forEach(function (r) {
+    var l = r.lines; if (!l || !Object.keys(l).some(function (k) { return PRODUCT_RENAME[k] || k === DESIGN_OLD; })) return;
+    var n = {}; Object.keys(l).forEach(function (k) { if (k === DESIGN_OLD) { n[OTHER] = (n[OTHER] || 0) + l[k]; r.linesOther = r.linesOther ? r.linesOther + ', ' + DESIGN_OLD : DESIGN_OLD; } else { var nk = PRODUCT_RENAME[k] || k; n[nk] = (n[nk] || 0) + l[k]; } });
+    r.lines = n; if (changed.indexOf(r) < 0) changed.push(r);
+  });
   return Promise.all(changed.map(function (r) { return Store.save(r, true); }));
 }
 /* v1.7: แปลงค่าเดิมเป็นข้อมูลหลักแบบ MECE เก็บค่าเดิมไว้ใน p.legacy เพื่อตรวจสอบหรือแก้กลับ */
@@ -603,12 +621,16 @@ function boughtLines(p) { var o = {}; salesOf(p.id).filter(validSale).forEach(fu
 var WEIGHT = {}; WEIGHT[ST.NEW] = 0.1; WEIGHT[ST.PRES] = 0.25; WEIGHT[ST.QUOTE] = 0.5;
 function lineInputs(d, label) {
   var o = O(), sum = 0;
-  var rows = o.product.map(function (ln, i) { var v = d['L_' + i]; if (v !== '' && v != null) sum += Number(v) || 0; return '<div class="field"><label for="l-' + i + '" style="font-weight:500">' + esc(ln) + '</label><input id="l-' + i + '" class="inp" inputmode="numeric" data-bind="L_' + i + '" data-num="1" value="' + esc(v === '' || v == null ? '' : fmt(v)) + '" placeholder="0"></div>'; }).join('');
-  return '<fieldset class="card stack" style="gap:10px"><legend class="lbl" style="padding:0 4px">' + label + ' <span class="req">*</span></legend>' + rows + '<div class="between" style="border-top:1px solid #f0f0f0;padding-top:8px"><b>รวมทุกสายสินค้า</b><b class="strong">' + fmt(sum) + '</b></div>' + err('lines') + '</fieldset>';
+  var rows = o.product.map(function (ln, i) { var v = d['L_' + i]; if (v !== '' && v != null) sum += Number(v) || 0; return '<div class="field"><label for="l-' + i + '">' + esc(ln) + '</label>' + (PRODUCT_HINT[ln] ? '<span class="hint" style="margin-top:-4px">' + esc(PRODUCT_HINT[ln]) + '</span>' : '') + '<input id="l-' + i + '" class="inp" inputmode="numeric" data-bind="L_' + i + '" data-num="1" value="' + esc(v === '' || v == null ? '' : fmt(v)) + '" placeholder="0"></div>'; }).join('');
+  var ov = d.L_o; if (ov !== '' && ov != null) sum += Number(ov) || 0;
+  rows += '<div class="field"><span class="lbl">อื่น ๆ (ระบุ)</span><div class="row" style="gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><label for="l-ot" class="sr">ระบุสินค้าหรือบริการ</label><input id="l-ot" class="inp' + errCls('L_ot') + '" data-bind="L_ot" value="' + esc(d.L_ot || '') + '" maxlength="80" placeholder="ระบุสินค้า / บริการ" autocomplete="off"></div><div style="width:130px"><label for="l-o" class="sr">มูลค่าอื่น ๆ</label><input id="l-o" class="inp" inputmode="numeric" data-bind="L_o" data-num="1" value="' + esc(ov === '' || ov == null ? '' : fmt(ov)) + '" placeholder="0"></div></div>' + err('L_ot') + '</div>';
+  return '<fieldset class="card stack" style="gap:10px"><legend class="lbl" style="padding:0 4px">' + label + ' <span class="req">*</span></legend>' + rows + '<div class="between" style="border-top:1px solid #f0f0f0;padding-top:8px"><b>รวมทุกประเภทสินค้า</b><b class="strong">' + fmt(sum) + '</b></div>' + err('lines') + '<span class="hint">ค่าส่งและติดตั้งที่ขายพร้อมสินค้า นับรวมในประเภทของสินค้านั้น · Home Service ใช้เมื่อขายบริการแยกต่างหาก</span></fieldset>';
 }
-function linesOf(d) { var o = {}; O().product.forEach(function (ln, i) { var v = Number(d['L_' + i]) || 0; if (v > 0) o[ln] = v; }); return o; }
+function linesOf(d) { var o = {}; O().product.forEach(function (ln, i) { var v = Number(d['L_' + i]) || 0; if (v > 0) o[ln] = v; }); var ov = Number(d.L_o) || 0; if (ov > 0) o[OTHER] = ov; return o; }
+function linesOtherErr(d, e) { if ((Number(d.L_o) || 0) > 0 && !clean(d.L_ot)) e.L_ot = 'กรุณาระบุสินค้าหรือบริการ'; }
 function linesSum(l) { return Object.keys(l || {}).reduce(function (a, k) { return a + (l[k] || 0); }, 0); }
-function linesToDraft(l, d) { O().product.forEach(function (ln, i) { d['L_' + i] = l && l[ln] ? l[ln] : ''; }); return d; }
+function linesToDraft(l, d, other) { O().product.forEach(function (ln, i) { d['L_' + i] = l && l[ln] ? l[ln] : ''; }); d.L_o = l && l[OTHER] ? l[OTHER] : ''; d.L_ot = other || ''; return d; }
+function linesText(l, other) { return Object.keys(l || {}).map(function (k) { return (k === OTHER ? 'อื่น ๆ: ' + (other || '-') : k) + ' ' + fmt(l[k]); }).join(' · '); }
 function pkRows(d) { var out = []; for (var i = 0; i < (d.pkN || 0); i++) out.push({ type: clean(d['pk_' + i + '_type'], 80), price: Number(d['pk_' + i + '_price']) || 0, units: Number(d['pk_' + i + '_units']) || 0 }); return out; }
 function pkSum(d) { return pkRows(d).reduce(function (a, r) { return a + r.price * r.units; }, 0); }
 function salesOf(pid) { return liveSales().filter(function (s) { return s.projectId === pid; }).sort(function (a, b) { return (b.soDate || '').localeCompare(a.soDate || ''); }); }
@@ -651,6 +673,7 @@ var IC = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   note: '<path d="M5 4h10l4 4v12H5z"/><path d="M9 12h6M9 16h4"/>',
   so: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  qt: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h5"/>',
   cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',
   sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
@@ -726,7 +749,7 @@ function monthShort(ym) { var p = ym.split('-'); return TH_MON_S[+p[1] - 1] + '.
 
 function doneToday() { var t = todayISO(); return liveFollows().filter(function (f) { return f.createdAt && isoOf(new Date(f.createdAt)) === t; }).sort(function (a, b) { return b.createdAt.localeCompare(a.createdAt); }); }
 function stageLine(p) { var n = stageDays(p); if (n == null) return ''; return '<span class="small' + (n > 60 ? ' dangerText' : '') + '" style="' + (n > 60 ? 'font-weight:700' : '') + '">อยู่ขั้น ' + esc(p.status) + ' มา ' + n + ' วัน' + (n > 60 ? ' · เกิน 60 วัน' : '') + '</span>'; }
-function agendaBox(p) { if (!p.nextDate || !((p.nextAgenda || []).length || p.nextPrep)) return ''; return '<div class="agenda">' + ((p.nextAgenda || []).length ? '<span><b>วาระ</b> ' + esc(agendaText(p.nextAgenda, p.nextAgendaOther)) + '</span>' : '') + (p.nextPrep && p.nextPrep !== '-' ? '<span><b>เตรียม</b> ' + esc(p.nextPrep) + '</span>' : '') + '</div>'; }
+function agendaBox(p) { if (!p.nextDate || !((p.nextAgenda || []).length || p.nextPrep)) return ''; return '<div class="agenda">' + ((p.nextAgenda || []).length ? '<div class="kv" style="grid-template-columns:52px minmax(0,1fr);font-size:13px"><b>วาระ</b><span>' + esc(agendaText(p.nextAgenda, p.nextAgendaOther).replace(/ · /g, ', ')) + '</span></div>' : '') + (p.nextPrep && p.nextPrep !== '-' ? '<div class="kv" style="grid-template-columns:52px minmax(0,1fr);font-size:13px"><b>เตรียม</b><span>' + esc(p.nextPrep) + '</span></div>' : '') + '</div>'; }
 function planItem(x) {
   var p = x.p, col = x.kind === 'late' ? 'var(--danger-text)' : x.kind === 'today' ? 'var(--info)' : '#8a6d00';
   return '<div class="card' + (x.kind === 'late' ? ' alert' : '') + '" style="display:flex;flex-direction:column;gap:6px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px"><span class="small" style="font-weight:700;color:' + col + '">' + esc(x.text) + (p.nextDate && x.kind !== 'today' ? ' · นัด ' + be(p.nextDate) : '') + '</span><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span>' + stageLine(p) + '<span class="small">' + esc(p.contactName) + ' · ' + esc(dv(p, 'contactRole')) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (p.site ? ' <span class="tag">หน้างาน ' + esc(siteLabel(p.site)) + '</span>' : '') + '</span></a>' + agendaBox(p) +
@@ -758,18 +781,18 @@ function planData() {
   var t = todayISO(), act = liveProjects().filter(function (p) { return ACTIVE.indexOf(p.status) >= 0; });
   var todo = followList(), wEnd = weekRange(t)[1], mEnd = monthEnd(monthOf(t));
   var ahead = act.filter(function (p) { return p.nextDate && p.nextDate > t; }).sort(function (a, b) { return a.nextDate.localeCompare(b.nextDate) || (b.estimate || 0) - (a.estimate || 0); });
-  return { t: t, todo: todo, late: todo.filter(function (x) { return x.kind === 'late'; }), done: doneToday(), wEnd: wEnd, mEnd: mEnd,
+  return { t: t, todo: todo, now: todo.filter(function (x) { return x.kind !== 'late'; }), late: todo.filter(function (x) { return x.kind === 'late'; }), done: doneToday(), wEnd: wEnd, mEnd: mEnd,
     week: ahead.filter(function (p) { return p.nextDate <= wEnd; }), month: ahead.filter(function (p) { return p.nextDate <= mEnd; }),
     near: measureReady(act), route: act.filter(function (p) { return p.nextDate === t && p.lat != null; }), after: afterList(), deliv: liveProjects().filter(function (p) { return p.status === ST.WON && hasBuiltin(p) && delivAlert(p); }) };
 }
 function vPlan(tab) {
   var D = planData(); tab = ['todo', 'late', 'week', 'month', 'after', 'done'].indexOf(tab) >= 0 ? tab : 'todo';
-  var tabs = [['todo', 'วันนี้', D.todo.length], ['late', 'เลยนัด', D.late.length], ['week', 'สัปดาห์นี้', D.week.length], ['month', 'เดือนนี้', D.month.length], ['after', 'หลังส่งมอบ', D.after.length], ['done', 'บันทึกแล้ววันนี้', D.done.length]];
+  var tabs = [['todo', 'นัดวันนี้', D.now.length], ['late', 'เลยนัด', D.late.length], ['week', 'สัปดาห์นี้', D.week.length], ['month', 'เดือนนี้', D.month.length], ['after', 'หลังส่งมอบ', D.after.length], ['done', 'บันทึกแล้ววันนี้', D.done.length]];
   var nav = '<nav class="tabs" aria-label="ช่วงเวลา">' + tabs.map(function (x) { return '<a href="#/plan/' + x[0] + '"' + (tab === x[0] ? ' aria-current="page"' : '') + (x[0] === 'late' && x[2] ? ' class="red"' : '') + '>' + x[1] + ' <b>' + x[2] + '</b></a>'; }).join('') + '</nav>';
   var c;
   var route = tab === 'todo' && D.route.length ? '<a class="btn block" style="border-color:var(--info);color:var(--info)" href="' + esc(routeUrl(D.route)) + '" target="_blank" rel="noopener noreferrer">' + icon('pin', 20) + ' นำทางนัดวันนี้ ' + D.route.length + ' จุด (Google Maps)</a>' : '';
-  if (tab === 'todo') c = D.todo.length ? route + '<span class="small">เลยนัด นัดวันนี้ และโครงการที่เงียบเกิน 30 วัน เรียงตามยอดคาดการณ์</span>' + D.todo.map(planItem).join('')
-    : '<div class="empty">' + sparkleDone() + '<h2>ไม่มีงานค้างวันนี้</h2><p class="muted" style="margin:0">ติดตามครบทุกโครงการแล้ว ลองหาโครงการใหม่ หรือเตรียมนัดของสัปดาห์นี้</p><div class="grid2" style="width:100%;margin-top:8px"><a class="btn primary" href="#/new">+ โครงการใหม่</a><a class="btn" href="#/plan/week">ดูนัดสัปดาห์นี้</a></div></div>';
+  if (tab === 'todo') c = D.now.length ? route + '<span class="small">นัดวันนี้ และโครงการที่เงียบเกิน 30 วัน เรียงตามยอดคาดการณ์' + (D.late.length ? ' · <a href="#/plan/late" class="dangerText" style="font-weight:700">เลยนัด ' + D.late.length + ' โครงการ</a>' : '') + '</span>' + D.now.map(planItem).join('')
+    : (D.late.length ? '<a class="card alert link" href="#/plan/late"><b class="dangerText">เลยนัด ' + D.late.length + ' โครงการ</b><br><span class="small">แตะเพื่อดูรายการ</span></a>' : '') + '<div class="empty">' + sparkleDone() + '<h2>ไม่มีนัดวันนี้</h2><p class="muted" style="margin:0">ติดตามครบทุกโครงการแล้ว ลองหาโครงการใหม่ หรือเตรียมนัดของสัปดาห์นี้</p><div class="grid2" style="width:100%;margin-top:8px"><a class="btn primary" href="#/new">+ โครงการใหม่</a><a class="btn" href="#/plan/week">ดูนัดสัปดาห์นี้</a></div></div>';
   else if (tab === 'late') c = D.late.length ? D.late.map(planItem).join('') : '<div class="empty">' + sparkleDone() + '<h2>ไม่มีโครงการที่เลยนัด</h2></div>';
   else if (tab === 'week') c = '<span class="small">พรุ่งนี้ ถึงวันอาทิตย์ ' + be(D.wEnd) + '</span>' + (D.week.length ? D.week.map(planRow).join('') : '<div class="card muted">ไม่มีนัดในสัปดาห์นี้</div>');
   else if (tab === 'month') c = '<span class="small">พรุ่งนี้ ถึง ' + be(D.mEnd) + '</span>' + (D.month.length ? D.month.map(planRow).join('') : '<div class="card muted">ไม่มีนัดในเดือนนี้</div>');
@@ -785,45 +808,40 @@ function vToday() {
   var D = planData(), t = D.t, d = new Date(), ym = monthOf(t);
   var sales = liveSales().filter(function (x) { return monthOf(x.soDate) === ym && validSale(x); }), so = sales.reduce(function (a, x) { return a + (x.soValue || 0); }, 0);
   var tg = targetFor(ym), pct = tg && tg.amount ? Math.round(so / tg.amount * 1000) / 10 : null;
-  var act = liveProjects().filter(function (p) { return ACTIVE.indexOf(p.status) >= 0; }), pipe = act.reduce(function (a, p) { return a + (p.estimate || 0); }, 0);
-  var remain = tg ? Math.max(0, tg.amount - so) : null, cov = remain ? Math.round(pipe / remain * 10) / 10 : null;
   var st = Store.state, lastBak = st.lastBackup ? diffDays(st.lastBackup.slice(0, 10), t) : null, warn = '';
+  var pm = addMonths(curMonth(), -1), monthDue = !isClosed(pm) && monthHasData(pm) ? 1 : 0, bakDue = liveProjects().length && (lastBak === null || lastBak >= 7) ? '!' : 0;
   if (S.updateReady) warn += '<button class="card warn link" style="text-align:left;width:100%;border:1.5px solid var(--accent);cursor:pointer;font:inherit" data-act="reload"><b class="strong">มีเวอร์ชันใหม่ของแอป</b><br><span class="small">แตะเพื่อโหลดเวอร์ชันใหม่ ข้อมูลในเครื่องยังอยู่ครบ</span></button>';
-  var pm = addMonths(curMonth(), -1); if (!isClosed(pm) && monthHasData(pm)) warn += '<a class="card warn link" href="#/month/' + pm + '" style="border:1.5px solid var(--accent)"><b class="strong">ยังไม่ได้ปิดงวด ' + monthName(pm) + '</b><br><span class="small">แตะเพื่อตรวจข้อมูลและปิดงวด</span></a>';
+  var di = deviceInfo(); if (di.inapp) warn += inappCard(di);
+  var qp = quickPending();
+  if (qp.length) warn += '<a class="card link stack" href="#/edit/' + esc(qp[0].id) + '" style="gap:6px;border:1.5px solid var(--text-strong)"><span class="between"><b class="strong">Lead ด่วน รอกรอกต่อ ' + qp.length + ' โครงการ</b><b aria-hidden="true">›</b></span>' + qp.slice(0, 3).map(function (p) { return '<span class="small">' + esc(p.name) + ' · บันทึก' + (diffDays(p.recordDate, t) === 0 ? 'วันนี้' : diffDays(p.recordDate, t) === 1 ? 'เมื่อวาน' : ' ' + diffDays(p.recordDate, t) + ' วันก่อน') + '</span>'; }).join('') + '</a>';
   var rv = liveProjects().filter(function (p) { return reviewKeys(p).length; }).length;
   if (rv) warn += '<a class="card warn link" href="#/review" style="border:1.5px solid var(--accent)"><span class="between"><b class="strong">เลือกข้อมูลใหม่หลังอัปเดต ' + rv + ' โครงการ</b><b aria-hidden="true">›</b></span><span class="small">รูปแบบโครงการหรือสถานะหน้างานยังว่าง แตะเพื่อเลือกทีละโครงการ ใช้เวลาโครงการละไม่ถึง 10 วินาที</span></a>';
-  var di = deviceInfo(); if (di.inapp) warn += inappCard(di);
   if (liveProjects().length && (lastBak === null || lastBak >= 14)) warn += '<a class="card warn link" href="#/data" style="border:1.5px solid var(--danger)"><b class="strong">ยังไม่ได้สำรองข้อมูลเกิน 14 วัน</b><br><span class="small">ถ้ามือถือหายหรือเสีย ข้อมูลจะหายทั้งหมด แตะเพื่อสำรองตอนนี้</span></a>';
-  var tiles = [['todo', D.todo.length, 'ต้องตามวันนี้'], ['late', D.late.length, 'เลยนัด'], ['done', D.done.length, 'บันทึกวันนี้']].map(function (x) {
+  var tiles = [['todo', D.now.length, 'นัดวันนี้'], ['late', D.late.length, 'เลยนัด'], ['done', D.done.length, 'บันทึกแล้ววันนี้']].map(function (x) {
     var red = x[0] === 'late' && x[1];
     return '<a class="stat" href="#/plan/' + x[0] + '"' + (red ? ' style="border:1.5px solid var(--danger)"' : '') + '><b' + (red ? ' class="dangerText"' : '') + '>' + x[1] + '</b><span>' + x[2] + '</span></a>';
   }).join('');
-  var menu = [['#/quick', 'cam', 'Lead ด่วน', 0, 'q'], ['#/new', 'plus', 'โครงการใหม่', 0], ['#/pick', 'note', 'บันทึกติดตาม', 0], ['#/pick/so', 'so', 'QT / SO', 0], ['#/plan', 'plan', 'แผนงาน', D.todo.length],
-    ['#/projects', 'proj', 'โครงการ', 0], ['#/perf', 'chart', 'ผลงาน', 0], ['#/summary', 'send', 'สรุปส่ง Teams', 0]];
-  var qp = quickPending();
-  if (qp.length) warn = '<a class="card link stack" href="#/edit/' + esc(qp[0].id) + '" style="gap:6px;border:1.5px solid var(--text-strong)"><span class="between"><b class="strong">Lead ด่วน รอกรอกต่อ ' + qp.length + ' โครงการ</b><b aria-hidden="true">›</b></span>' + qp.slice(0, 3).map(function (p) { return '<span class="small">' + esc(p.name) + ' · บันทึก' + (diffDays(p.recordDate, t) === 0 ? 'วันนี้' : diffDays(p.recordDate, t) === 1 ? 'เมื่อวาน' : ' ' + diffDays(p.recordDate, t) + ' วันก่อน') + '</span>'; }).join('') + '</a>' + warn;
-  var tRows = [['ยอด SO เดือนนี้', fmt(so) + ' บาท'], ['เป้าเดือนนี้', tg ? fmt(tg.amount) + ' บาท' : '<a href="#/target">ตั้งเป้า</a>'],
-    ['ทำได้', pct == null ? '-' : '<b class="' + (pct >= 100 ? 'okText' : 'strong') + '">ร้อยละ ' + pct + (pct >= 100 ? ' · เกินเป้า ' + fmt(so - tg.amount) : '') + '</b>'],
-    ['งานในมือ', act.length + ' โครงการ · ' + fmt(pipe) + ' บาท'], ['Pipeline coverage', !tg ? '-' : remain === 0 ? '<b class="okText">ถึงเป้าแล้ว</b>' : '<b style="color:' + (cov >= 3 ? 'var(--ok-text)' : 'var(--danger-text)') + '">' + cov + ' เท่า</b>']];
+  var menu = [['#/quick', 'cam', 'Lead ด่วน', 0, 'q'], ['#/new', 'plus', 'โครงการใหม่', 0], ['#/pick', 'note', 'บันทึกติดตาม', 0], ['#/pick/qt', 'qt', 'ใบเสนอราคา', 0],
+    ['#/pick/so', 'so', 'ใบสั่งขาย', 0], ['#/summary', 'send', 'สรุปส่ง Teams', 0], ['#/data', 'db', 'สำรอง / ส่งออก', bakDue], ['#/months', 'cal', 'ปิดงวด', monthDue]];
+  var goal = '<a class="goal" href="#/perf" aria-label="เป้ายอดขาย ' + monthName(ym) + (tg ? ' ทำได้ร้อยละ ' + pct : '') + '"><span class="between small"><b>เป้า' + TH_MONTH[+ym.slice(5) - 1] + ' ' + (+ym.slice(0, 4) + 543) + '</b><span>ดูผลงาน ›</span></span>' +
+    (tg ? '<span class="row" style="gap:10px"><span class="gbar"><i style="width:' + Math.min(100, pct) + '%"></i></span><b style="font-size:17px;white-space:nowrap">ร้อยละ ' + pct + '</b></span><span class="small">SO ' + fmt(so) + ' บาท · เป้า ' + fmt(tg.amount) + ' บาท' + (pct >= 100 ? ' · เกินเป้า ' + fmt(so - tg.amount) : '') + '</span>'
+      : '<span class="small">SO เดือนนี้ ' + fmt(so) + ' บาท · ยังไม่ได้ตั้งเป้า แตะเพื่อตั้งเป้า</span>') + '</a>';
   var body = '<div class="stack">' +
-    '<div class="hero2"><div class="small" style="color:#3a3a3a">วัน' + TH_DAY[d.getDay()] + 'ที่ ' + be(t) + ' · ' + esc(P().empId) + ' · ' + esc(P().branch) + '</div><h2>สวัสดี คุณ' + esc((P().name || '').split(' ')[0]) + '</h2></div>' +
-    '<section class="card herocard" aria-labelledby="hc-h"><div class="between"><b id="hc-h" class="strong">แผนงานวันนี้</b><a class="small strong" href="#/plan">ดูแผนงาน ›</a></div><div class="grid3">' + tiles + '</div></section>' +
-    '<nav class="menu" aria-label="เมนูลัด">' + menu.map(function (m) { return '<a href="' + m[0] + '"><span class="mi' + (m[4] ? ' q' : '') + '">' + icon(m[1], 26, m[4] ? '#fff' : '#2b2b2b') + (m[3] ? '<b class="nb" aria-hidden="true">' + m[3] + '</b>' : '') + '</span>' + m[2] + '</a>'; }).join('') + '</nav>' +
-    '<div class="pills"><a href="#/guide/staff"><i>' + icon('book', 20, '#8a6d00') + '</i>คู่มือใช้งาน</a><a href="#/rules"><i>' + icon('list', 20, '#8a6d00') + '</i>กติกาการใช้งาน</a><a href="#/setup"><i>' + icon('sliders', 20, '#8a6d00') + '</i>ข้อมูลหลัก</a></div>' +
+    '<div class="hero2"><div class="small" style="color:#3a3a3a">วัน' + TH_DAY[d.getDay()] + 'ที่ ' + be(t) + ' · ' + esc(P().empId) + ' · ' + esc(P().branch) + '</div><h2>สวัสดี คุณ' + esc((P().name || '').split(' ')[0]) + '</h2>' + goal + '</div>' +
+    '<section class="card herocard" aria-labelledby="hc-h"><b id="hc-h" class="strong">แผนงานวันนี้</b><div class="grid3">' + tiles + '</div></section>' +
+    '<nav class="menu" aria-label="เมนูลัด">' + menu.map(function (m) { return '<a href="' + m[0] + '"><span class="mi' + (m[4] ? ' q' : '') + '">' + icon(m[1], 26, m[4] ? '#fff' : '#2b2b2b') + (m[3] ? '<b class="nb" aria-hidden="true">' + m[3] + '</b>' : '') + '</span>' + m[2] + (m[3] ? '<span class="sr"> (มีงานค้าง)</span>' : '') + '</a>'; }).join('') + '</nav>' +
     warn + checklistCard() +
-    '<a class="card link stack" href="#/perf" style="gap:10px"><span class="between"><b class="strong" style="font-size:17px">' + icon('target', 20) + ' เป้ายอดขาย ' + monthName(ym) + '</b><b aria-hidden="true">›</b></span>' +
-    (tg ? '<div class="progress' + (pct >= 100 ? ' over' : '') + '"><div style="width:' + Math.min(100, pct) + '%"></div></div>' : '') +
-    tRows.map(function (r) { return '<span class="between" style="min-height:32px"><span>' + r[0] + '</span><span class="strong">' + r[1] + '</span></span>'; }).join('') + '</a>' +
+    '<div class="pills"><a href="#/guide/staff"><i>' + icon('book', 20, '#8a6d00') + '</i>คู่มือใช้งาน</a><a href="#/rules"><i>' + icon('list', 20, '#8a6d00') + '</i>กติกาการใช้งาน</a><a href="#/setup"><i>' + icon('sliders', 20, '#8a6d00') + '</i>ข้อมูลหลัก</a></div>' +
     '<p class="small muted" style="text-align:center;margin:8px 0 0">เวอร์ชัน ' + APP_VERSION + '</p></div>';
   return shell({ title: 'Project Sales Tracker', yellow: true }, body);
 }
 
 function vPick(mode) {
-  var so = mode === 'so';
-  var list = liveProjects().filter(function (p) { return so ? p.status !== ST.LOST : (p.status !== ST.WON && p.status !== ST.LOST); }).sort(function (a, b) { return so ? ((b.status === ST.WON) - (a.status === ST.WON) || (b.estimate || 0) - (a.estimate || 0)) : (a.nextDate || '9').localeCompare(b.nextDate || '9'); });
-  var body = '<div class="stack"><p class="muted" style="margin:0">' + (so ? 'เลือกโครงการ แล้วกดบันทึกใบเสนอราคา (QT) หรือใบสั่งขาย (SO)' : 'เลือกโครงการที่ต้องการบันทึกการติดตาม') + '</p>' +
-    (list.length ? list.map(function (p) { return so ? '<div class="card stack" style="gap:8px"><div class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</div><span class="small">' + esc(p.contactName || '-') + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (quotesOf(p.id)[0] ? ' · QT ล่าสุด ' + fmt(quotesOf(p.id)[0].value) : '') + '</span><div class="grid2"><a class="btn small" href="#/quote/' + esc(p.id) + '">+ QT</a><a class="btn small primary" href="#/sale/' + esc(p.id) + '">+ SO</a></div></div>' : '<a class="card link" href="#/follow/' + esc(p.id) + '"><div class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</div><span class="small">' + esc(p.contactName) + ' · นัด ' + be(p.nextDate) + '</span></a>'; }).join('') : '<div class="card">ยังไม่มีโครงการ <a href="#/new">สร้างโครงการใหม่</a></div>') + '</div>';
-  return shell({ title: so ? 'เลือกโครงการเพื่อบันทึก QT / SO' : 'เลือกโครงการ', back: '#/today', close: true, nav: false }, body);
+  var so = mode === 'so', qt = mode === 'qt', doc = so || qt;
+  var list = liveProjects().filter(function (p) { return doc ? p.status !== ST.LOST : (p.status !== ST.WON && p.status !== ST.LOST); }).sort(function (a, b) { return doc ? ((so ? (b.status === ST.WON) - (a.status === ST.WON) : 0) || (b.estimate || 0) - (a.estimate || 0)) : (a.nextDate || '9').localeCompare(b.nextDate || '9'); });
+  var body = '<div class="stack"><p class="muted" style="margin:0">' + (qt ? 'เลือกโครงการที่ต้องการบันทึกใบเสนอราคา' : so ? 'เลือกโครงการที่ต้องการบันทึกใบสั่งขาย (SO) และเงินมัดจำ' : 'เลือกโครงการที่ต้องการบันทึกการติดตาม') + '</p>' +
+    (list.length ? list.map(function (p) { var lq = quotesOf(p.id)[0]; return '<a class="card link" href="' + (qt ? '#/quote/' : so ? '#/sale/' : '#/follow/') + esc(p.id) + '"><div class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</div><span class="small">' + esc(p.contactName || '-') + (doc ? ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (lq ? ' · ใบเสนอราคาล่าสุด ' + fmt(lq.value) : '') : ' · นัด ' + be(p.nextDate)) + '</span></a>'; }).join('') : '<div class="card">ยังไม่มีโครงการ <a href="#/new">สร้างโครงการใหม่</a></div>') + '</div>';
+  return shell({ title: qt ? 'เลือกโครงการเพื่อบันทึกใบเสนอราคา' : so ? 'เลือกโครงการเพื่อบันทึกใบสั่งขาย' : 'เลือกโครงการ', back: '#/today', close: true, nav: false }, body);
 }
 
 function optParts(item) {
@@ -901,7 +919,7 @@ function fieldsFor(keys, d, pre) {
     if (k === 'contactName') return '<div class="field"><label for="g-' + f + '">ชื่อผู้ติดต่อ <span class="req">*</span></label><input id="g-' + f + '" class="inp' + errCls(f) + '" data-bind="' + f + '" value="' + esc(d[f] || '') + '" maxlength="100" autocomplete="off">' + err(f) + '</div>';
     if (k === 'estimate') return '<div class="field"><label for="g-' + f + '">ยอดที่คาดว่าจะได้ (บาท ก่อน VAT) <span class="req">*</span></label><input id="g-' + f + '" class="inp big' + errCls(f) + '" inputmode="numeric" data-bind="' + f + '" data-num="1" value="' + esc(d[f] === '' || d[f] == null ? '' : fmt(d[f])) + '">' + err(f) + '</div>';
     if (k === 'closingDate') return dateNA(f, d, 'วันที่คาดว่าจะปิด');
-    if (k === 'products') return '<fieldset><legend class="lbl">สายสินค้าที่เสนอ <span class="req">*</span></legend>' + chips(f, o.product, d[f], true) + err(f) + '</fieldset>';
+    if (k === 'products') return '<fieldset><legend class="lbl">ประเภทสินค้าที่เสนอ <span class="req">*</span></legend>' + chips(f, o.product, d[f], true) + err(f) + '</fieldset>';
     return '';
   }).join('');
 }
@@ -917,7 +935,7 @@ function fieldsErr(keys, d, pre, e) {
     else if (k === 'contactName' && !clean(d[f])) e[f] = 'กรุณาใส่ชื่อผู้ติดต่อ';
     else if (k === 'estimate' && (d[f] === '' || d[f] == null)) e[f] = 'กรุณาใส่ยอดที่คาดว่าจะได้';
     else if (k === 'closingDate' && !d[f] && !d[f + 'NA']) e[f] = 'กรุณาเลือกวันที่คาดว่าจะปิด';
-    else if (k === 'products' && !(d[f] || []).length) e[f] = 'กรุณาเลือกสายสินค้าที่เสนอ';
+    else if (k === 'products' && !(d[f] || []).length) e[f] = 'กรุณาเลือกประเภทสินค้าที่เสนอ';
   });
 }
 function applyFields(keys, d, pre, p, date) {
@@ -1058,7 +1076,7 @@ function vProjectForm(id) {
       '<div class="field"><label for="f-line">LINE <span class="req">*</span></label><input id="f-line" class="inp' + errCls('line') + '" data-bind="line" value="' + esc(d.line) + '" maxlength="60" autocomplete="off">' + err('line') + '</div></div>' +
       '<div class="field"><label for="f-est">ยอดที่คาดว่าจะได้ · Estimate Sale (บาท ก่อน VAT) <span class="req">*</span></label><input id="f-est" class="inp big' + errCls('estimate') + '" inputmode="numeric" data-bind="estimate" data-num="1" value="' + esc(d.estimate === '' || d.estimate == null ? '' : fmt(d.estimate)) + '">' + err('estimate') + '</div>' +
       dateNA('closingDate', d, 'วันที่คาดว่าจะปิด · Closing Date') +
-      '<fieldset><legend class="lbl">สายสินค้าที่เสนอ <span class="req">*</span></legend>' + chips('products', O().product, d.products, true) + err('products') + '</fieldset>' +
+      '<fieldset><legend class="lbl">ประเภทสินค้าที่เสนอ <span class="req">*</span></legend>' + chips('products', O().product, d.products, true) + err('products') + '</fieldset>' +
       (isNew ? dateNA('nextDate', d, 'นัดติดตามครั้งถัดไป', { min: todayISO() }) + (d.nextDate ? timeField(d) + agendaFields(d) : '') : '') +
       '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.consent + '" data-act="consent"><span class="box">' + (d.consent ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ผู้ติดต่อยินยอมให้บริษัทฯ บันทึกข้อมูลและติดต่อกลับเพื่อนำเสนอสินค้าและบริการ <span class="req">*</span></span></button>' + err('consent');
   }
@@ -1068,14 +1086,21 @@ function vProjectForm(id) {
 }
 function mapUrl(lat, lng) { return 'https://www.google.com/maps?q=' + encodeURIComponent(lat.toFixed(6) + ',' + lng.toFixed(6)); }
 
+function kvRow(k, v) { return v ? '<div class="kv"><b>' + k + '</b><span style="white-space:pre-wrap">' + v + '</span></div>' : ''; }
+function tlRows(f) {
+  return kvRow('ผู้ติดต่อ', f.contactName ? esc(f.contactName) : '') + kvRow('สถานะหน้างาน', f.site && f.ctype !== 'โทร' ? esc(siteLabel(f.site)) : '') +
+    kvRow('ความพึงพอใจ', f.satisfaction ? esc(f.satisfaction) + (f.upsell ? ' · ' + esc(f.upsell) : '') : '') + kvRow('รายละเอียดที่คุย', f.note ? esc(f.note) : '') +
+    kvRow('นัดครั้งถัดไป', f.nextDate ? be(f.nextDate) + (f.nextTime ? ' · ' + esc(f.nextTime) + ' น.' : '') : '') + kvRow('วาระ', (f.agenda || []).length && f.ctype !== 'โทร' ? esc(agendaText(f.agenda, f.agendaOther).replace(/ · /g, ', ')) : '') +
+    kvRow('เตรียม', f.prep && f.prep !== '-' && f.ctype !== 'โทร' ? esc(f.prep) : '') + kvRow('พิกัด', f.lat != null ? 'บันทึกพิกัด' + (f.distance != null ? ' (ห่างโครงการ ' + fmt(f.distance) + ' ม.)' : '') : '');
+}
 function projExtras(p) {
   var qs = quotesOf(p.id), fam = familyOf(p), out = '';
-  out += '<div class="card"><div class="between"><b class="strong">ใบเสนอราคา (' + qs.length + ')</b><a href="#/quote/' + esc(p.id) + '" style="font-weight:700">+ QT</a></div>' + (qs.length ? qs.map(function (q) { var exp = q.validUntil && q.validUntil < todayISO(); return '<a class="between" style="text-decoration:none;padding:10px 0;border-top:1px solid #f0f0f0" href="#/quote/' + esc(p.id) + '/' + esc(q.id) + '"><span><b class="strong">' + esc(q.qtNo) + ' ครั้งที่ ' + (q.rev || 1) + '</b><br><span class="small">' + be(q.date) + ' · ยืนราคาถึง ' + be(q.validUntil) + (exp ? ' <b class="dangerText">หมดอายุ</b>' : '') + (q.priceMode === 'package' ? ' · แพ็กเกจ ' + (q.packages || []).reduce(function (a, r) { return a + (r.units || 0); }, 0) + ' ยูนิต' : '') + '</span></span><b class="strong">' + fmt(q.value) + '</b></a>'; }).join('') : '<div class="small muted">ยังไม่มีใบเสนอราคา</div>') + '</div>';
+  out += '<div class="card"><div class="between"><b class="strong">ใบเสนอราคา (' + qs.length + ')</b><a href="#/quote/' + esc(p.id) + '" style="font-weight:700">+ ใบเสนอราคา</a></div>' + (qs.length ? qs.map(function (q) { var exp = q.validUntil && q.validUntil < todayISO(); return '<a class="between" style="text-decoration:none;padding:10px 0;border-top:1px solid #f0f0f0" href="#/quote/' + esc(p.id) + '/' + esc(q.id) + '"><span><b class="strong">ใบเสนอราคา ' + esc(q.qtNo) + ' ครั้งที่ ' + (q.rev || 1) + '</b><br><span class="small">' + be(q.date) + ' · ยืนราคาถึง ' + be(q.validUntil) + (exp ? ' <b class="dangerText">หมดอายุ</b>' : '') + (q.priceMode === 'package' ? ' · แพ็กเกจ ' + (q.packages || []).reduce(function (a, r) { return a + (r.units || 0); }, 0) + ' ยูนิต' : '') + '</span></span><b class="strong">' + fmt(q.value) + '</b></a>'; }).join('') : '<div class="small muted">ยังไม่มีใบเสนอราคา</div>') + '</div>';
   if (fam.length > 1 || p.status === ST.WON) {
     var tot = 0;
     out += '<section class="card stack" style="gap:8px;border:1.5px solid var(--accent)" aria-labelledby="fam-h"><h2 id="fam-h" class="h2" style="margin:0">การซื้อทั้งหมดในโครงการนี้</h2>' + fam.map(function (x) {
       var v = x.status === ST.WON ? wonValue(x) : ACTIVE.indexOf(x.status) >= 0 || x.status === ST.HOLD ? (x.estimate || 0) : 0, so = salesOf(x.id).filter(validSale), lq = quotesOf(x.id)[0]; tot += v;
-      return '<a href="#/project/' + esc(x.id) + '" class="between" style="text-decoration:none;color:inherit;border-top:1px solid #f0f0f0;padding-top:8px' + (x.id === p.id ? ';background:#fffaf0;margin:0 -8px;padding:8px' : '') + '"><span><b class="strong">' + esc(phaseLabel(x)) + (x.units ? ' · ' + fmt(x.units) + ' ยูนิต' : '') + '</b>' + (x.id === p.id ? ' (หน้านี้)' : '') + '<br><span class="small">' + (so.length ? 'SO ' + so.length + ' ใบ' : lq ? 'QT ครั้งที่ ' + (lq.rev || 1) + ' · ' + fmt(lq.value) : esc(x.code)) + '</span></span><span style="text-align:right">' + badge(x.status) + '<br><b class="strong">' + fmt(v) + '</b></span></a>';
+      return '<a href="#/project/' + esc(x.id) + '" class="between" style="text-decoration:none;color:inherit;border-top:1px solid #f0f0f0;padding-top:8px' + (x.id === p.id ? ';background:#fffaf0;margin:0 -8px;padding:8px' : '') + '"><span><b class="strong">' + esc(phaseLabel(x)) + (x.units ? ' · ' + fmt(x.units) + ' ยูนิต' : '') + '</b>' + (x.id === p.id ? ' (หน้านี้)' : '') + '<br><span class="small">' + (so.length ? 'SO ' + so.length + ' ใบ' : lq ? 'ใบเสนอราคาครั้งที่ ' + (lq.rev || 1) + ' · ' + fmt(lq.value) : esc(x.code)) + '</span></span><span style="text-align:right">' + badge(x.status) + '<br><b class="strong">' + fmt(v) + '</b></span></a>';
     }).join('') + '<div class="between" style="border-top:1px solid #f0f0f0;padding-top:8px"><span class="small">ยอดรวมทั้งโครงการ (ปิดแล้ว + กำลังติดตาม)</span><b class="strong">' + fmt(tot) + '</b></div><a class="btn" style="border-style:dashed" href="#/phase/' + esc(p.id) + '">+ ซื้อเพิ่ม / เฟสถัดไป</a></section>';
   }
   if (p.status === ST.WON && hasBuiltin(p)) { var n = delivStep(p), al = delivAlert(p); out += '<a class="card link stack' + (al && al.red ? ' alert' : '') + '" style="gap:4px" href="#/delivery/' + esc(p.id) + '"><span class="between"><b class="strong">งานส่งมอบ Built-in</b><b aria-hidden="true">›</b></span><span class="small">' + (n > 6 ? 'ส่งมอบครบแล้ว ' + be(p.delivery.d6) : 'ขั้นถัดไป: ' + esc(DSTEP[n - 1]) + ' (' + (n - 1) + '/6)') + '</span>' + (al ? '<span class="small ' + (al.red ? 'dangerText' : 'strong') + '" style="font-weight:700">' + esc(al.text) + '</span>' : '') + '</a>'; }
@@ -1086,7 +1111,7 @@ function vProject(id) {
   var fs = followsOf(id), ss = salesOf(id), idx = PIPE.indexOf(p.status);
   var hero = (p.photos || []).length ? '<div class="hero n' + Math.min(3, p.photos.length) + '">' + p.photos.map(function (ph, i) { return '<div><img data-photo="' + esc(ph) + '" alt="รูปหน้างาน ' + (i + 1) + '"></div>'; }).join('') + '</div>' : '';
   var pipe = '<div class="pipe" aria-label="ขั้นการขาย: ' + esc(p.status) + '">' + PIPE.map(function (s, i) { return '<div class="' + (i < idx ? 'done' : i === idx ? 'cur' : '') + '"><span></span><small' + (i === idx ? ' class="strong"' : '') + '>' + esc(s.replace('แล้ว', '')) + '</small></div>'; }).join('') + '</div>';
-  var info = [['ยอดที่คาดว่าจะได้', fmt(p.estimate) + ' บาท'], ['วันที่คาดว่าจะปิด', p.closingDateNA ? '-' : be(p.closingDate)], ['สถานะหน้างาน', siteLabel(p.site) + (p.siteAt && p.site ? ' (ตั้งแต่ ' + be(p.siteAt) + ')' : '')], ['สายสินค้าที่เสนอ', (p.products || []).join(', ') || '-'], ['ช่องทางการติดต่อ', dvFull(p, 'channel') || '-'], ['รูปแบบโครงการ', p.pform || '-']];
+  var info = [['ยอดที่คาดว่าจะได้', fmt(p.estimate) + ' บาท'], ['วันที่คาดว่าจะปิด', p.closingDateNA ? '-' : be(p.closingDate)], ['สถานะหน้างาน', siteLabel(p.site) + (p.siteAt && p.site ? ' (ตั้งแต่ ' + be(p.siteAt) + ')' : '')], ['ประเภทสินค้าที่เสนอ', (p.products || []).join(', ') || '-'], ['ช่องทางการติดต่อ', dvFull(p, 'channel') || '-'], ['รูปแบบโครงการ', p.pform || '-']];
   var rk = reviewKeys(p), leg = p.legacy || {};
   var review = rk.length ? '<div class="card warn stack" style="gap:8px"><b class="strong">ข้อมูลบางช่องต้องเลือกใหม่หลังอัปเดต</b><span class="small">ยังไม่ได้เลือก: ' + esc(rk.map(function (k) { return FLABEL[k]; }).join(', ')) + (leg.ptype || leg.channel || leg.contactRole || leg.completion ? ' · ค่าเดิม: ' + esc([leg.ptype ? 'ประเภทโครงการ ' + leg.ptype : '', leg.channel ? 'ช่องทาง ' + leg.channel : '', leg.contactRole ? 'ประเภทการติดต่อ ' + leg.contactRole : '', leg.completion ? 'กำหนดสร้างเสร็จ ' + beMonth(leg.completion) : ''].filter(Boolean).join(' · ')) : '') + '</span><a class="btn small primary" href="#/review/' + esc(p.id) + '">เลือกข้อมูลที่ยังว่าง</a></div>' : '';
   var nextCard = p.nextDate && ACTIVE.concat([ST.HOLD]).indexOf(p.status) >= 0 ? '<div class="card stack" style="gap:6px;border:1.5px solid var(--accent)"><b class="strong">นัดถัดไป วัน' + TH_DAY[parseISO(p.nextDate).getDay()] + ' ' + be(p.nextDate) + (p.nextTime ? ' · ' + esc(p.nextTime) + ' น.' : '') + '</b>' + agendaBox(p) + '<button class="btn small" data-act="ics" data-id="' + esc(p.id) + '">' + icon('cal', 18) + ' เพิ่มลงปฏิทินมือถือ (เตือนก่อน 1 ชั่วโมง)</button></div>' : '';
@@ -1104,9 +1129,9 @@ function vProject(id) {
     contactCard + (p.quick ? '<a class="card warn link" href="#/edit/' + esc(p.id) + '"><b class="strong">Lead ด่วน: ข้อมูลยังไม่ครบ</b><br><span class="small">แตะเพื่อกรอกข้อมูลโครงการให้ครบ</span></a>' : '') +
     (p.info ? '<div class="card"><span class="small">Project information</span><div style="white-space:pre-wrap">' + esc(p.info) + '</div></div>' : '') +
     projExtras(p) +
-    '<div class="card"><div class="between"><b class="strong">ใบสั่งขาย (SO)</b><a href="#/sale/' + esc(p.id) + '" style="font-weight:700">+ บันทึก SO</a></div>' + (ss.length ? ss.map(function (s) { return '<a class="between" style="text-decoration:none;padding:10px 0;border-top:1px solid #f0f0f0" href="#/sale/' + esc(p.id) + '/' + esc(s.id) + '"><span><b class="strong">' + esc(s.soNo) + '</b><br><span class="small">' + be(s.soDate) + ' · DP ' + fmt(s.dp) + ' · ส่ง ' + be(s.deliveryDate) + ' · ' + esc(s.soStatus) + (s.lines && Object.keys(s.lines).length ? '<br>' + esc(Object.keys(s.lines).map(function (k) { return k + ' ' + fmt(s.lines[k]); }).join(' · ')) : '') + '</span></span><b class="strong">' + (s.needsValue && !s.soValue ? '<span class="errmsg">ยังไม่มีมูลค่า</span>' : fmt(s.soValue)) + '</b></a>'; }).join('') : '<div class="small muted">ยังไม่มีใบสั่งขาย</div>') + '</div></div>' +
+    '<div class="card"><div class="between"><b class="strong">ใบสั่งขาย (SO)</b><a href="#/sale/' + esc(p.id) + '" style="font-weight:700">+ บันทึก SO</a></div>' + (ss.length ? ss.map(function (s) { return '<a class="between" style="text-decoration:none;padding:10px 0;border-top:1px solid #f0f0f0" href="#/sale/' + esc(p.id) + '/' + esc(s.id) + '"><span><b class="strong">' + esc(s.soNo) + '</b><br><span class="small">' + be(s.soDate) + ' · DP ' + fmt(s.dp) + ' · ส่ง ' + be(s.deliveryDate) + ' · ' + esc(s.soStatus) + (s.lines && Object.keys(s.lines).length ? '<br>' + esc(linesText(s.lines, s.linesOther)) : '') + '</span></span><b class="strong">' + (s.needsValue && !s.soValue ? '<span class="errmsg">ยังไม่มีมูลค่า</span>' : fmt(s.soValue)) + '</b></a>'; }).join('') : '<div class="small muted">ยังไม่มีใบสั่งขาย</div>') + '</div></div>' +
     '<div class="stack"><div class="between"><h2 class="h2" style="margin:0">ประวัติการติดตาม (' + fs.length + ')</h2></div><div class="timeline">' + fs.map(function (f, i) {
-      return '<div class="tl"><div class="dot"><i' + (i === 0 ? ' style="background:var(--accent);border:2px solid #3a3a3a;width:14px;height:14px"' : '') + '></i>' + (i < fs.length - 1 ? '<b></b>' : '') + '</div><div class="body"><span class="small strong">' + be(f.date) + (f.ctype === FIRST_CTYPE ? ' · สร้างโครงการ' : '') + '</span><span class="small">' + (f.ctype === 'โทร' ? 'โทร · ' + esc(f.callResult || '') + (f.contactName ? ' · ' + esc(f.contactName) : '') : f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'สถานะ ' + esc(f.statusAfter)) + (f.lat != null ? ' · บันทึกพิกัด' + (f.distance != null ? ' (ห่างโครงการ ' + fmt(f.distance) + ' ม.)' : '') : '') + (f.nextDate ? ' · นัด ' + be(f.nextDate) : '') + (f.site ? ' · หน้างาน ' + f.site : '') + '</span>' + ((f.agenda || []).length ? '<span class="small">วาระนัด: ' + esc(agendaText(f.agenda, f.agendaOther)) + (f.prep && f.prep !== '-' ? ' · เตรียม: ' + esc(f.prep) : '') + '</span>' : '') + (f.note ? '<span style="white-space:pre-wrap;color:var(--text-strong)">' + esc(f.note) + '</span>' : '') + '</div></div>';
+      return '<div class="tl"><div class="dot"><i' + (i === 0 ? ' style="background:var(--accent);border:2px solid #3a3a3a;width:14px;height:14px"' : '') + '></i>' + (i < fs.length - 1 ? '<b></b>' : '') + '</div><div class="body"><span class="small strong">' + be(f.date) + (f.ctype === FIRST_CTYPE ? ' · สร้างโครงการ' : '') + ' · ' + (f.ctype === 'โทร' ? 'โทร · ' + esc(f.callResult || '') : f.ctype === 'หลังส่งมอบ' ? 'ติดตามหลังส่งมอบ ' + (f.milestone || '') + ' เดือน' : f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'สถานะ ' + esc(f.statusAfter)) + '</span>' + tlRows(f) + '</div></div>';
     }).join('') + '</div>' +
     '<div class="grid2"><a class="btn small" href="#/edit/' + esc(p.id) + '">แก้ไขโครงการ</a><button class="btn small danger" data-act="delproj" data-id="' + esc(p.id) + '">ลบโครงการ</button></div></div></div></div>';
   return shell({ title: 'รายละเอียดโครงการ', back: '#/projects', action: '<a class="btn primary" href="#/follow/' + esc(p.id) + '">+ บันทึกการติดตาม</a>' }, body);
@@ -1118,11 +1143,18 @@ function nextFields(d, t) {
     '<div class="row" style="gap:8px;margin-top:8px"><input class="inp' + errCls('nextDate') + '" type="date" aria-label="เลือกวันนัดติดตาม" data-bind="nextDate" value="' + esc(d.nextDate) + '" min="' + t + '"><button type="button" class="chip nachip" data-act="na" data-f="nextDate" aria-pressed="' + !!d.nextDateNA + '" aria-label="นัดติดตามครั้งถัดไป ไม่ระบุ">-</button></div>' + err('nextDate') + '</fieldset>' +
     (d.nextDate ? timeField(d) + agendaFields(d) : '');
 }
+/* วันที่คุยกับลูกค้าจริง ปกติคือวันนี้ เปิดช่องเลือกวันเฉพาะเมื่อบันทึกย้อนหลัง */
+function contactDateField(d, t) {
+  var back = d.date && d.date !== t, open = d.showDate || back || (S.ui.errors && S.ui.errors.date);
+  return '<div class="card stack" style="gap:8px;padding:12px 14px"><div class="between"><span><span class="small">วันที่คุยกับลูกค้า / เข้าหน้างาน</span><br><b class="strong">' + (back ? be(d.date) + ' (บันทึกย้อนหลัง)' : 'วันนี้ ' + be(t)) + '</b></span>' + (open ? '' : '<button type="button" class="btn small" data-act="ctoggle" data-f="showDate">บันทึกย้อนหลัง</button>') + '</div>' +
+    (open ? '<div class="field"><label for="f-date">เลือกวันที่คุยจริง <span class="req">*</span></label><input id="f-date" class="inp' + errCls('date') + '" type="date" data-bind="date" value="' + esc(d.date) + '" max="' + t + '">' + err('date') + '</div>' : '') + '</div>';
+}
 function vFollow(pid) {
   var p = projById(pid); if (!p || p.deleted) return vNotFound();
   var d = S.draft, t = todayISO(), miss = gateMissing(p, d.statusAfter), closed = d.statusAfter === ST.WON || d.statusAfter === ST.LOST;
   var siteHint = p.siteGuess ? 'ระบบประมาณจากกำหนดสร้างเสร็จเดิม กรุณายืนยันหรือเลือกใหม่' : (p.site && d.site && Number(d.site) !== p.site ? 'เปลี่ยนจาก "' + siteLabel(p.site) + '" ระบบบันทึกวันที่เปลี่ยนไว้ให้' : '');
   var body = '<div class="stack"><div class="card"><span class="small">โครงการ</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">' + esc(p.contactName || '-') + ' · สถานะปัจจุบัน: ' + esc(p.status) + (p.site ? ' · หน้างาน: ' + esc(siteLabel(p.site)) : '') + '</span></div>' +
+    contactDateField(d, t) +
     '<fieldset><legend class="lbl">สถานะ <span class="req">*</span></legend>' + chips('statusAfter', STATUSES, d.statusAfter) + (STATUS_HINT[d.statusAfter] ? '<span class="hint" style="display:block;margin-top:6px">' + esc(STATUS_HINT[d.statusAfter]) + '</span>' : '') + err('statusAfter') + '</fieldset>' +
     (miss.length ? '<section class="card warn stack" style="gap:12px;border:1.5px solid var(--accent)" aria-labelledby="gate-h"><h2 id="gate-h" class="h2" style="margin:0">ข้อมูลที่ต้องมีก่อนเข้า ' + esc(d.statusAfter) + '</h2>' + fieldsFor(miss, d, 'P') + '</section>' : '') +
     (d.statusAfter === ST.LOST ? '<fieldset><legend class="lbl">เหตุผลที่ไม่ได้งาน <span class="req">*</span></legend>' + chips('lostReason', O().lost, d.lostReason) + err('lostReason') + '</fieldset>' : '') +
@@ -1130,7 +1162,6 @@ function vFollow(pid) {
     '<fieldset><legend class="lbl">สถานะหน้างาน <span class="req">*</span></legend>' + siteChips('site', d) + (siteHint ? '<span class="hint" style="display:block;margin-top:6px">' + esc(siteHint) + '</span>' : '') + err('site') + '</fieldset>' +
     '<div class="field"><label for="f-note">รายละเอียดที่คุย <span class="req">*</span></label><textarea id="f-note" class="inp' + errCls('note') + '" data-bind="note" maxlength="1000" placeholder="คุยอะไร ผลเป็นอย่างไร ต้องทำอะไรต่อ">' + esc(d.note) + '</textarea>' + err('note') + '</div>' +
     (closed ? '' : nextFields(d, t)) +
-    '<div class="field"><label for="f-date">วันที่ติดต่อ <span class="req">*</span></label><input id="f-date" class="inp' + errCls('date') + '" type="date" data-bind="date" value="' + esc(d.date) + '" max="' + t + '">' + err('date') + '</div>' +
     '</div>';
   return shell({ title: 'บันทึกการติดตาม', back: '#/project/' + pid, close: true, nav: false, action: '<button class="btn primary" data-act="savefollow" data-id="' + esc(pid) + '">บันทึก</button>' }, body);
 }
@@ -1142,12 +1173,12 @@ function vSale(pid, sid) {
   var lockedSale = sid && Store.sales.some(function (x) { return x.id === sid && isLockedDate(x.soDate); });
   var tg = targetFor(ym), dpPct = parseNum(d.soValue) ? Math.round((parseNum(d.dp) || 0) / parseNum(d.soValue) * 1000) / 10 : null;
   var body = '<div class="stack"><div class="card okc"><span class="small okText" style="font-weight:700">' + esc(p.status) + '</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">ยอดที่คาดว่าจะได้ ' + fmt(p.estimate) + ' บาท</span></div>' +
-    '<div class="grid2"><div class="field"><label for="s-no">เลขที่ใบสั่งขาย (SO.) <span class="req">*</span></label><input id="s-no" class="inp' + errCls('soNo') + '" data-bind="soNo" value="' + esc(d.soNo) + '" maxlength="40" autocomplete="off">' + err('soNo') + '</div>' +
+    '<div class="grid2"><div class="field"><label for="s-no">เลขที่ใบสั่งขาย (SO No.) <span class="req">*</span></label><input id="s-no" class="inp' + errCls('soNo') + '" data-bind="soNo" value="' + esc(d.soNo) + '" maxlength="40" autocomplete="off">' + err('soNo') + '</div>' +
     '<div class="field"><label for="s-date">วันที่ SO <span class="req">*</span></label><input id="s-date" class="inp' + errCls('soDate') + '" type="date" data-bind="soDate" value="' + esc(d.soDate) + '">' + err('soDate') + '</div></div>' +
     '<div class="field"><label for="s-val">มูลค่า SO (บาท ก่อน VAT) <span class="req">*</span></label><input id="s-val" class="inp big' + errCls('soValue') + '" inputmode="numeric" data-bind="soValue" data-num="1" value="' + esc(d.soValue === '' || d.soValue == null ? '' : fmt(d.soValue)) + '">' + err('soValue') + '</div>' +
     '<div class="field"><label for="s-dp">DP · เงินมัดจำ (บาท ก่อน VAT)</label><input id="s-dp" class="inp big" inputmode="numeric" data-bind="dp" data-num="1" value="' + esc(d.dp === '' || d.dp == null ? '' : fmt(d.dp)) + '">' + (dpPct != null ? '<span class="hint">ร้อยละ ' + dpPct + ' ของมูลค่า SO</span>' : '') + err('dp') + '</div>' +
     '<div class="field"><label for="s-del">วันที่จัดส่ง</label><input id="s-del" class="inp" type="date" data-bind="deliveryDate" value="' + esc(d.deliveryDate) + '"></div>' +
-    lineInputs(d, 'มูลค่าแยกตามสายสินค้า (บาท ก่อน VAT)') +
+    lineInputs(d, 'มูลค่าแยกตามประเภทสินค้า (บาท ก่อน VAT)') +
     '<fieldset><legend class="lbl">สถานะ SO</legend>' + chips('soStatus', SO_STATUS, d.soStatus) + '</fieldset>' +
     '<div class="card between"><span class="small">ยอด SO เดือน ' + monthName(ym) + ' หลังบันทึก</span><b class="strong">' + fmt(monthSum) + (tg ? ' / ' + fmt(tg.amount) : '') + '</b></div>' +
     (sid ? '<button class="btn small danger" data-act="delsale" data-id="' + esc(sid) + '" data-p="' + esc(pid) + '">ลบรายการ SO นี้</button>' : '') + '</div>';
@@ -1242,8 +1273,8 @@ function perfExtras(ym) {
     '<div class="card" style="padding:12px 14px"><span class="small strong">อัตราปิดการขาย (3 เดือน)</span><span class="between small" style="margin-top:4px"><span>ลูกค้าใหม่</span><b class="strong">' + (wr.n.rate == null ? '-' : 'ร้อยละ ' + wr.n.rate) + '</b></span><span class="between small"><span>ซื้อซ้ำ</span><b class="strong">' + (wr.r.rate == null ? '-' : 'ร้อยละ ' + wr.r.rate) + '</b></span><span class="small muted">' + (wr.n.won + wr.r.won) + ' ได้ · ' + (wr.n.lost + wr.r.lost) + ' ไม่ได้</span></div></div>';
   // lines
   var ln = {}, unk = 0; sales.forEach(function (s) { var l = s.lines || {}; if (!Object.keys(l).length) unk += s.soValue || 0; Object.keys(l).forEach(function (k) { ln[k] = (ln[k] || 0) + l[k]; }); });
-  var lrows = O().product.map(function (k) { return [k, ln[k] || 0]; }).concat(Object.keys(ln).filter(function (k) { return O().product.indexOf(k) < 0; }).map(function (k) { return [k, ln[k]]; })).concat(unk ? [['ไม่ระบุสายสินค้า', unk, '#bdbdbd']] : []);
-  out += '<section class="card stack" style="gap:8px" aria-labelledby="ln-h"><h2 id="ln-h" class="h2" style="margin:0">ยอด SO แยกสายสินค้า</h2>' + bar(lrows, Math.max.apply(null, lrows.map(function (r) { return r[1]; }).concat([1])), 'var(--accent)', 84) + '</section>';
+  var lrows = O().product.map(function (k) { return [k, ln[k] || 0]; }).concat(Object.keys(ln).filter(function (k) { return O().product.indexOf(k) < 0; }).map(function (k) { return [k === OTHER ? 'อื่น ๆ' : k, ln[k]]; })).concat(unk ? [['ไม่ระบุประเภทสินค้า', unk, '#bdbdbd']] : []);
+  out += '<section class="card stack" style="gap:8px" aria-labelledby="ln-h"><h2 id="ln-h" class="h2" style="margin:0">ยอด SO แยกประเภทสินค้า</h2>' + bar(lrows, Math.max.apply(null, lrows.map(function (r) { return r[1]; }).concat([1])), 'var(--accent)', 84) + '</section>';
   // stage durations
   var sd = stageDurations(180), mx = Math.max.apply(null, ACTIVE.map(function (k) { return sd[k] || 0; }).concat([1])), stale = liveProjects().filter(function (p) { return ACTIVE.indexOf(p.status) >= 0 && stageDays(p) > 60; }).length;
   out += '<section class="card stack" style="gap:8px" aria-labelledby="sd-h"><h2 id="sd-h" class="h2" style="margin:0">เวลาเฉลี่ยที่อยู่ในแต่ละขั้น</h2>' + ACTIVE.map(function (k) { var v = sd[k]; return '<div class="barrow" style="grid-template-columns:110px minmax(0,1fr) 64px"><span>' + esc(k) + '</span><div class="bartrack"><div class="barfill" style="width:' + (v ? Math.max(4, Math.round(v / mx * 100)) : 0) + '%"></div></div><b class="strong" style="text-align:right;white-space:nowrap">' + (v == null ? '-' : v + ' วัน') + '</b></div>'; }).join('') +
@@ -1319,11 +1350,12 @@ function vSummary() {
 function vData() {
   var st = Store.state, n = Store.unsynced();
   var body = '<div class="stack">' +
-    '<div class="card stack" style="border:1.5px solid var(--accent);gap:10px"><div class="between"><b class="strong">ส่งออก Excel</b></div>' +
+    '<div class="card stack" style="border:1.5px solid var(--accent);gap:10px"><div class="between"><b class="strong">ส่งออก Excel (ฉบับเต็ม)</b></div><span class="small">สำหรับหัวหน้าหรือใช้งานภายใน มีชื่อ เบอร์ LINE ที่อยู่ พิกัด และ sheet Contacts</span>' +
     '<div class="between small"><span>ส่งออกล่าสุด</span><b class="strong">' + (st.lastExport ? be(st.lastExport) : 'ยังไม่เคยส่งออก') + '</b></div>' +
     '<div class="card" style="background:#f6f6f6;border:0"><b class="strong">' + esc(exportName()) + '</b><br><span class="small">Sheet โครงการ ' + liveProjects().length + ' แถว · การติดตาม ' + liveFollows().length + ' แถว · SO ' + liveSales().length + ' แถว</span></div>' +
-    '<button class="btn primary block" data-act="export">ส่งออก Excel</button>' +
+    '<button class="btn primary block" data-act="export">ส่งออก Excel ฉบับเต็ม</button>' +
     '<span class="small strong" style="font-weight:500">ไฟล์ Excel ไม่เข้ารหัส เก็บไว้ในพื้นที่ของบริษัทฯ เท่านั้น</span></div>' +
+    '<div class="card stack" style="gap:10px"><b class="strong">ส่งออกสำหรับวิเคราะห์ (ไม่มีข้อมูลส่วนบุคคล)</b><span class="small">สำหรับส่งให้ AI หรือทำรายงาน ตัดชื่อโครงการ ชื่อและเบอร์ผู้ติดต่อ LINE ที่อยู่ พิกัด ข้อความอิสระ และ sheet Contacts ออก เหลือรหัสโครงการ ประเภทต่าง ๆ ขั้นการขาย วันที่ และตัวเลข พร้อม sheet คำอธิบายคอลัมน์</span><span class="small strong">' + esc(exportName().replace(/\.xlsx$/, '_ANALYSIS.xlsx')) + '</span><button class="btn block" data-act="exportanon">ส่งออกสำหรับวิเคราะห์</button><span class="small">ใช้กับ AI ที่บริษัทอนุมัติเท่านั้น เช่น Copilot ของบริษัท</span></div>' +
     '<div class="card stack" style="gap:10px"><b class="strong">สำรองข้อมูลเข้ารหัส</b><div class="between small"><span>สำรองล่าสุด</span><b class="strong">' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง') + '</b></div>' +
     '<div class="field"><label for="bp">รหัสผ่านไฟล์สำรอง (อย่างน้อย 8 ตัวอักษร)</label><input id="bp" class="inp" type="password" autocomplete="new-password" data-bind-ui="bpass"></div>' +
     '<div class="grid2"><button class="btn" data-act="backup">สำรองตอนนี้</button><label class="btn" style="position:relative">กู้คืน<input type="file" accept=".json,application/json" data-restore="1" style="position:absolute;inset:0;opacity:0" aria-label="เลือกไฟล์สำรองเพื่อกู้คืน"></label></div>' +
@@ -1362,7 +1394,7 @@ function vSettings() {
   function grp(title, rows) { return '<h2 class="lhead">' + title + '</h2><div class="lgroup">' + rows.join('') + '</div>'; }
   var body = '<div class="stack" style="gap:0">' +
     (pend.length ? grp('งานที่ควรทำ (' + pend.length + ')', pend.map(function (x) { return lrow(x[2], 'alert', esc(x[0]), esc(x[1]), '', 'warnrow'); })) : '') +
-    grp('การขาย', [lrow('#/rules', 'list', '<b>กติกาการใช้งาน</b>', 'วิธีเลือกข้อมูล ขั้นการขาย การนับผลงาน อุปกรณ์ที่รองรับ', '', 'hl'), lrow('#/setup', 'sliders', 'ข้อมูลหลัก (Master Data)', 'ประเภทอาคาร รูปแบบโครงการ ช่องทาง ประเภทการติดต่อ สายสินค้า วาระนัด', ''), lrow('#/target', 'target', 'เป้ายอดขาย', 'ตั้งเป้ารายเดือนทั้งปี', tg ? fmt(tg.amount) : 'ยังไม่ตั้ง')]) +
+    grp('การขาย', [lrow('#/rules', 'list', '<b>กติกาการใช้งาน</b>', 'วิธีเลือกข้อมูล ขั้นการขาย การนับผลงาน อุปกรณ์ที่รองรับ', '', 'hl'), lrow('#/setup', 'sliders', 'ข้อมูลหลัก (Master Data)', 'ประเภทอาคาร รูปแบบโครงการ ช่องทาง ประเภทการติดต่อ ประเภทสินค้า วาระนัด', ''), lrow('#/target', 'target', 'เป้ายอดขาย', 'ตั้งเป้ารายเดือนทั้งปี', tg ? fmt(tg.amount) : 'ยังไม่ตั้ง')]) +
     grp('บัญชีของฉัน', [lrow('#/profile', 'user', 'ข้อมูลพนักงาน', esc(p.name), esc(p.empId)), lrow('switchacct', 'logout', 'เปลี่ยนผู้ใช้', 'สำหรับเครื่องที่ใช้ร่วมกัน · ผู้ใช้ในเครื่องนี้ ' + (S.users || []).length + ' คน', '')]) +
     grp('ข้อมูล', [lrow('#/data', 'db', 'ส่งออก Excel · สำรอง · กู้คืน', 'สำรองล่าสุด ' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง'), ''), lrow('#/data', 'upload', 'นำเข้าข้อมูลเดิมจาก Excel', 'มีไฟล์ต้นแบบให้ดาวน์โหลด', ''), lrow('#/months', 'cal', 'ประวัติรายเดือน · ปิดงวด', '', !isClosed(addMonths(curMonth(), -1)) && monthHasData(addMonths(curMonth(), -1)) ? '<b class="dangerText">ค้างปิดงวด</b>' : '')]) +
     grp('ความปลอดภัย', [lrow('#/security', 'shield', 'ล็อกอัตโนมัติและเปลี่ยน PIN', '', st.settings.autolock + ' นาที')]) +
@@ -1455,8 +1487,8 @@ function vRules() {
   function ex(t) { return '<div class="ex">' + t + '</div>'; }
   function tbl(h, rows) { return '<div class="scroll"><table class="x fx"><thead><tr>' + h.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
   var body = '<div class="stack"><p style="margin:0">กติกาที่ทุกคนในทีมใช้ร่วมกัน เพื่อให้ตัวเลขผลงานเทียบกันได้</p>' +
-    sec(1, 'การเลือกข้อมูลหลัก', rr('ประเภทอาคาร', 'เลือกตามการใช้งานหลักของพื้นที่ที่จะขายสินค้าให้') + ex('อาคารพาณิชย์ที่เปิดเป็นคลินิก → สถานพยาบาล › คลินิก') + rr('รูปแบบโครงการ', 'อาคารใหม่หรืออาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง') + rr('ช่องทางการติดต่อ', 'เลือกตามจุดแรกที่ได้ Lead มา') + ex('ลูกค้าเห็น Facebook แล้วโทรเข้า Call center → ออนไลน์ / โทรศัพท์ › Facebook') + rr('ประเภทการติดต่อ', 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ') + ex('Interior แนะนำมา แล้วคุยกับเจ้าของบ้าน → ช่องทางการติดต่อ: คู่ค้าแนะนำ › Interior/สถาปนิก · ประเภทการติดต่อ: เจ้าของบ้าน') + rr('อื่น ๆ (ระบุ)', 'ใช้เมื่อไม่มีตัวเลือกที่ตรงจริง ๆ และพิมพ์ให้ชัด รายการที่พิมพ์ซ้ำบ่อยจะเพิ่มเป็นตัวเลือกจริงทุกเดือน')) +
-    sec(2, 'ขั้นการขาย และข้อมูลที่ต้องมี', tbl(['ขั้น', 'ความหมาย', 'ต้องมีก่อนเข้าขั้น'], [['Lead/Visit', 'เจอโครงการ / เข้าหน้างาน', 'ชื่อโครงการ ช่องทางการติดต่อ เบอร์ผู้ติดต่อ ความยินยอม'], ['Contact', 'ได้คุยกับผู้ติดต่อแล้ว', 'ประเภทอาคาร ชื่อผู้ติดต่อ ประเภทการติดต่อ รูปแบบโครงการ สถานะหน้างาน'], ['Opportunity', 'ความต้องการชัด กำลังเสนอแบบหรือราคา', 'ยอดที่คาดว่าจะได้ วันที่คาดว่าจะปิด สายสินค้า'], ['Close Sale', 'ได้ใบสั่งขาย', 'SO'], ['ไม่ได้งาน', 'ลูกค้าไม่เลือกเรา', 'เหตุผลที่ไม่ได้งาน'], ['เลื่อน/ระงับ', 'พักไว้ กลับมาติดตามได้', '']]) + ex('บันทึก QT แล้ว โครงการที่ยังอยู่ขั้นก่อนหน้าจะเปลี่ยนเป็น Opportunity เอง · บันทึก SO แล้วเปลี่ยนเป็น Close Sale เอง')) +
+    sec(1, 'การเลือกข้อมูลหลัก', rr('ประเภทอาคาร', 'เลือกตามการใช้งานหลักของพื้นที่ที่จะขายสินค้าให้') + ex('อาคารพาณิชย์ที่เปิดเป็นคลินิก → สถานพยาบาล › คลินิก') + rr('รูปแบบโครงการ', 'อาคารใหม่หรืออาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง') + rr('ช่องทางการติดต่อ', 'เลือกตามจุดแรกที่ได้ Lead มา') + ex('ลูกค้าเห็น Facebook แล้วโทรเข้า Call center → ออนไลน์ / โทรศัพท์ › Facebook') + rr('ประเภทการติดต่อ', 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ') + ex('Interior แนะนำมา แล้วคุยกับเจ้าของบ้าน → ช่องทางการติดต่อ: คู่ค้าแนะนำ › Interior/สถาปนิก · ประเภทการติดต่อ: เจ้าของบ้าน') + rr('ประเภทสินค้า', 'Built-in · Loose Furniture · Home Decoration · Home Service · อื่น ๆ (ระบุ) ค่าส่งและติดตั้งที่ขายพร้อมสินค้า นับรวมในประเภทของสินค้านั้น Home Service ใช้เมื่อขายบริการแยกต่างหาก งานออกแบบเป็นงานของทีม designer support ไม่นับเป็นยอดขาย') + rr('อื่น ๆ (ระบุ)', 'ใช้เมื่อไม่มีตัวเลือกที่ตรงจริง ๆ และพิมพ์ให้ชัด รายการที่พิมพ์ซ้ำบ่อยจะเพิ่มเป็นตัวเลือกจริงทุกเดือน')) +
+    sec(2, 'ขั้นการขาย และข้อมูลที่ต้องมี', tbl(['ขั้น', 'ความหมาย', 'ต้องมีก่อนเข้าขั้น'], [['Lead/Visit', 'เจอโครงการ / เข้าหน้างาน', 'ชื่อโครงการ ช่องทางการติดต่อ เบอร์ผู้ติดต่อ ความยินยอม'], ['Contact', 'ได้คุยกับผู้ติดต่อแล้ว', 'ประเภทอาคาร ชื่อผู้ติดต่อ ประเภทการติดต่อ รูปแบบโครงการ สถานะหน้างาน'], ['Opportunity', 'ความต้องการชัด กำลังเสนอแบบหรือราคา', 'ยอดที่คาดว่าจะได้ วันที่คาดว่าจะปิด ประเภทสินค้า'], ['Close Sale', 'ได้ใบสั่งขาย', 'SO'], ['ไม่ได้งาน', 'ลูกค้าไม่เลือกเรา', 'เหตุผลที่ไม่ได้งาน'], ['เลื่อน/ระงับ', 'พักไว้ กลับมาติดตามได้', '']]) + ex('บันทึก QT แล้ว โครงการที่ยังอยู่ขั้นก่อนหน้าจะเปลี่ยนเป็น Opportunity เอง · บันทึก SO แล้วเปลี่ยนเป็น Close Sale เอง')) +
     sec(3, 'สถานะหน้างาน', SITE.map(function (v, i) { return rr(String(i + 1), esc(v) + (i === 2 ? ' · จังหวะเหมาะวัดพื้นที่ Built-in' : '')); }).join('') + ex('อัปเดตทุกครั้งที่เห็นหน้างานเปลี่ยน โครงการขั้น 3–4 ที่ยังไม่มีนัดวัดพื้นที่จะขึ้นเป็นโอกาสใหม่ในแผนงาน')) +
     sec(4, 'SO หลายใบ หรือ ซื้อเพิ่ม', rr('SO หลายใบ', 'ดีลเดิมที่ตกลงครั้งเดียว แต่แบ่งออก SO ตามรอบส่ง → เพิ่ม SO ในโครงการเดิม') + rr('ซื้อเพิ่ม / เฟส', 'คุยและเสนอราคากันใหม่ → กด "ซื้อเพิ่ม / เฟสถัดไป" ในหน้าโครงการเดิม ห้ามสร้างโครงการใหม่') + ex('ส่ง 100 ห้องครบแล้ว ต่อมาตกลงเพิ่มอีก 100 ห้อง → เฟส 2')) +
     sec(5, 'การนับผลงาน', tbl(['ตัวชี้วัด', 'วิธีนับ'], [['Lead ใหม่', 'โครงการที่สร้างใหม่ในเดือน ไม่นับเฟสซื้อเพิ่ม'], ['Contact / Opportunity', 'ดีล (โครงการหรือเฟส) ที่เข้าขั้นนั้นในเดือน'], ['Close Sale / ยอด SO', 'ตามวันที่ SO ยอดก่อน VAT ไม่นับ SO ที่ยกเลิก'], ['อัตราปิดการขาย', 'Close Sale ÷ (Close Sale + ไม่ได้งาน) แยกลูกค้าใหม่ กับ ซื้อซ้ำ'], ['ยอดจากลูกค้าเดิม', 'ยอด SO ของเฟสซื้อเพิ่ม และดีลช่องทางลูกค้าเดิม'], ['พยากรณ์ยอด', 'SO แล้ว + ยอดคาดการณ์ของดีลที่คาดว่าปิดเดือนนี้ × โอกาส: Lead/Visit 10 · Contact 25 · Opportunity 50 (ร้อยละ)'], ['Pipeline coverage', 'ยอดคาดการณ์ดีลที่เปิดอยู่ ÷ ยอดที่ยังขาดถึงเป้า ควรไม่ต่ำกว่า 3 เท่า'], ['ค้างในขั้น', 'นับวันตั้งแต่เข้าขั้นปัจจุบัน เกิน 60 วันแสดงสีแดง'], ['เลยนัด / เงียบ', 'เลยวันนัดที่ตั้งไว้ หรือไม่มีการติดตามเกิน 30 วัน']])) +
@@ -1560,9 +1592,9 @@ function quoteDraft(pid, qid) {
   var p = projById(pid); if (!p) return null;
   var ex = qid && Store.quotes.find(function (q) { return q.id === qid; }), last = quotesOf(pid)[0];
   var d = { qid: qid || '', mode: last ? 'rev' : 'new', qtNo: last ? last.qtNo : '', date: todayISO(), validUntil: addDays(todayISO(), 30), priceMode: 'total', pkN: 1, note: '', setEst: true };
-  if (ex) { d.mode = 'edit'; d.qtNo = ex.qtNo; d.rev = ex.rev; d.date = ex.date; d.validUntil = ex.validUntil; d.priceMode = ex.priceMode || 'total'; d.note = ex.note; d.setEst = false; d.pkN = Math.max(1, (ex.packages || []).length); (ex.packages || []).forEach(function (r, i) { d['pk_' + i + '_type'] = r.type; d['pk_' + i + '_price'] = r.price; d['pk_' + i + '_units'] = r.units; }); linesToDraft(ex.lines, d); }
-  else if (last) { linesToDraft(last.lines, d); d.priceMode = last.priceMode || 'total'; d.pkN = Math.max(1, (last.packages || []).length); (last.packages || []).forEach(function (r, i) { d['pk_' + i + '_type'] = r.type; d['pk_' + i + '_price'] = r.price; d['pk_' + i + '_units'] = r.units; }); }
-  else if (p.parentId) { var pq = quotesOf(p.parentId)[0]; if (pq && pq.priceMode === 'package') { d.priceMode = 'package'; d.pkN = (pq.packages || []).length || 1; (pq.packages || []).forEach(function (r, i) { d['pk_' + i + '_type'] = r.type; d['pk_' + i + '_price'] = r.price; d['pk_' + i + '_units'] = r.units; }); linesToDraft(pq.lines, d); } }
+  if (ex) { d.mode = 'edit'; d.qtNo = ex.qtNo; d.rev = ex.rev; d.date = ex.date; d.validUntil = ex.validUntil; d.priceMode = ex.priceMode || 'total'; d.note = ex.note; d.setEst = false; d.pkN = Math.max(1, (ex.packages || []).length); (ex.packages || []).forEach(function (r, i) { d['pk_' + i + '_type'] = r.type; d['pk_' + i + '_price'] = r.price; d['pk_' + i + '_units'] = r.units; }); linesToDraft(ex.lines, d, ex.linesOther); }
+  else if (last) { linesToDraft(last.lines, d, last.linesOther); d.priceMode = last.priceMode || 'total'; d.pkN = Math.max(1, (last.packages || []).length); (last.packages || []).forEach(function (r, i) { d['pk_' + i + '_type'] = r.type; d['pk_' + i + '_price'] = r.price; d['pk_' + i + '_units'] = r.units; }); }
+  else if (p.parentId) { var pq = quotesOf(p.parentId)[0]; if (pq && pq.priceMode === 'package') { d.priceMode = 'package'; d.pkN = (pq.packages || []).length || 1; (pq.packages || []).forEach(function (r, i) { d['pk_' + i + '_type'] = r.type; d['pk_' + i + '_price'] = r.price; d['pk_' + i + '_units'] = r.units; }); linesToDraft(pq.lines, d, pq.linesOther); } }
   return d;
 }
 function vQuote(pid, qid) {
@@ -1577,46 +1609,47 @@ function vQuote(pid, qid) {
   if (d.priceMode === 'package') {
     pk = '<section class="card stack" style="gap:8px" aria-labelledby="pk-h"><h2 id="pk-h" class="h2" style="margin:0">แพ็กเกจ</h2><table class="pkt"><thead><tr><th style="width:40%">แบบยูนิต / แบบห้อง</th><th>ราคา/ยูนิต</th><th style="width:18%">ยูนิต</th><th style="width:10%"></th></tr></thead><tbody>' +
       pkRows(d).map(function (r, i) { return '<tr><td><input class="inp" aria-label="แบบยูนิตแถว ' + (i + 1) + '" data-bind="pk_' + i + '_type" value="' + esc(d['pk_' + i + '_type'] || '') + '" placeholder="เช่น 1 ห้องนอน 30 ตร.ม."></td><td><input class="inp" inputmode="numeric" aria-label="ราคาต่อยูนิตแถว ' + (i + 1) + '" data-bind="pk_' + i + '_price" data-num="1" value="' + (r.price ? fmt(r.price) : '') + '"></td><td><input class="inp" inputmode="numeric" aria-label="จำนวนยูนิตแถว ' + (i + 1) + '" data-bind="pk_' + i + '_units" data-num="1" value="' + (r.units || '') + '"></td><td>' + (d.pkN > 1 ? '<button type="button" class="chip" style="min-height:36px;padding:0 10px" data-act="pkdel" data-i="' + i + '" aria-label="ลบแถว ' + (i + 1) + '">×</button>' : '') + '</td></tr>'; }).join('') +
-      '</tbody></table><div class="between"><span class="small">' + pkRows(d).reduce(function (a, r) { return a + r.units; }, 0) + ' ยูนิต</span><b class="strong">รวม ' + fmt(value) + ' บาท</b></div>' + err('pk') + '<button type="button" class="btn small" style="border-style:dashed" data-act="pkadd">+ เพิ่มแบบยูนิต</button><span class="small">โรงแรม (FF&amp;E) ใช้แบบห้องแทนแบบยูนิต เช่น Deluxe, Suite, Lobby</span></section>';
+      '</tbody></table><div class="between"><span class="small">' + pkRows(d).reduce(function (a, r) { return a + r.units; }, 0) + ' ยูนิต</span><b class="strong">รวม ' + fmt(value) + ' บาท</b></div>' + err('pk') + '<button type="button" class="btn small" style="border-style:dashed" data-act="pkadd">+ เพิ่มแบบยูนิต</button><span class="small">งานโรงแรม: ใส่แบบห้องแทนแบบยูนิต เช่น ห้อง Deluxe, ห้อง Suite, ล็อบบี้</span></section>';
   }
-  var body = '<div class="stack"><div class="card"><b class="strong" style="font-size:16px">' + esc(p.name) + '</b><br><span class="small">' + (last ? 'QT ล่าสุด: ' + esc(last.qtNo) + ' ครั้งที่ ' + (last.rev || 1) + ' · ' + fmt(last.value) + ' บาท' : 'ยังไม่มีใบเสนอราคา') + '</span></div>' +
-    (last && d.mode !== 'edit' ? '<fieldset><legend class="lbl">ประเภท <span class="req">*</span></legend><div class="chips"><button type="button" class="chip" data-act="chip" data-f="mode" data-v="rev" aria-pressed="' + (d.mode === 'rev') + '">แก้ไข QT เดิม (ครั้งที่ ' + rev + ')</button><button type="button" class="chip" data-act="chip" data-f="mode" data-v="new" aria-pressed="' + (d.mode === 'new') + '">QT ใหม่</button></div></fieldset>' : '') +
-    '<div class="grid2"><div class="field"><label for="qt-no">เลขที่ QT <span class="req">*</span></label><input id="qt-no" class="inp' + errCls('qtNo') + '" data-bind="qtNo" value="' + esc(d.mode === 'rev' && last ? last.qtNo : d.qtNo) + '"' + (d.mode === 'rev' || d.mode === 'edit' ? ' readonly' : '') + ' maxlength="40" autocomplete="off">' + err('qtNo') + '</div>' +
+  var body = '<div class="stack"><div class="card"><b class="strong" style="font-size:16px">' + esc(p.name) + '</b><br><span class="small">' + (last ? 'ใบเสนอราคาล่าสุด: ' + esc(last.qtNo) + ' ครั้งที่ ' + (last.rev || 1) + ' · ' + fmt(last.value) + ' บาท' : 'ยังไม่มีใบเสนอราคา') + '</span></div>' +
+    (last && d.mode !== 'edit' ? '<fieldset><legend class="lbl">ประเภท <span class="req">*</span></legend><div class="chips"><button type="button" class="chip" data-act="chip" data-f="mode" data-v="rev" aria-pressed="' + (d.mode === 'rev') + '">แก้ไขใบเสนอราคาเดิม (ครั้งที่ ' + rev + ')</button><button type="button" class="chip" data-act="chip" data-f="mode" data-v="new" aria-pressed="' + (d.mode === 'new') + '">ใบเสนอราคาใหม่</button></div></fieldset>' : '') +
+    '<div class="grid2"><div class="field"><label for="qt-no">เลขที่ใบเสนอราคา (Quotation No.) <span class="req">*</span></label><input id="qt-no" class="inp' + errCls('qtNo') + '" data-bind="qtNo" value="' + esc(d.mode === 'rev' && last ? last.qtNo : d.qtNo) + '"' + (d.mode === 'rev' || d.mode === 'edit' ? ' readonly' : '') + ' maxlength="40" autocomplete="off">' + err('qtNo') + '</div>' +
     '<div class="field"><label for="qt-dt">วันที่ <span class="req">*</span></label><input id="qt-dt" class="inp' + errCls('date') + '" type="date" data-bind="date" value="' + esc(d.date) + '" max="' + todayISO() + '">' + err('date') + '</div></div>' +
     '<fieldset><legend class="lbl">รูปแบบราคา <span class="req">*</span></legend><div class="chips"><button type="button" class="chip" data-act="chip" data-f="priceMode" data-v="total" aria-pressed="' + (d.priceMode === 'total') + '">ราคารวม</button><button type="button" class="chip" data-act="chip" data-f="priceMode" data-v="package" aria-pressed="' + (d.priceMode === 'package') + '">แพ็กเกจรายยูนิต</button></div></fieldset>' + pk +
-    lineInputs(d, d.priceMode === 'package' ? 'สายสินค้าในแพ็กเกจ (บาท ก่อน VAT)' : 'มูลค่าแยกตามสายสินค้า (บาท ก่อน VAT)') +
-    '<div class="card between" style="border:1.5px solid var(--accent)"><b>มูลค่า QT รวม</b><b class="strong" style="font-size:20px">' + fmt(value) + '</b></div>' +
+    lineInputs(d, d.priceMode === 'package' ? 'ประเภทสินค้าในแพ็กเกจ (บาท ก่อน VAT)' : 'มูลค่าแยกตามประเภทสินค้า (บาท ก่อน VAT)') +
+    '<div class="card between" style="border:1.5px solid var(--accent)"><b>มูลค่าใบเสนอราคารวม</b><b class="strong" style="font-size:20px">' + fmt(value) + '</b></div>' +
     (prev && diff ? '<span class="small" style="font-weight:600;color:' + (diff < 0 ? 'var(--ok-text)' : 'var(--danger-text)') + '">' + (diff < 0 ? 'ลดลง ' : 'เพิ่มขึ้น ') + fmt(Math.abs(diff)) + ' บาท จากครั้งที่ ' + (prev.rev || 1) + (ldiff.length ? ' (' + esc(ldiff.join(', ')) + ')' : '') + '</span>' : '') +
     '<div class="field"><label for="qt-ex">ยืนราคาถึง <span class="req">*</span></label><input id="qt-ex" class="inp' + errCls('validUntil') + '" type="date" data-bind="validUntil" value="' + esc(d.validUntil) + '">' + err('validUntil') + '</div>' +
     '<div class="field"><label for="qt-n">หมายเหตุ <span class="req">*</span></label><textarea id="qt-n" class="inp' + errCls('note') + '" data-bind="note" maxlength="500">' + esc(d.note) + '</textarea>' + err('note') + '</div>' +
-    (d.mode !== 'edit' ? '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.setEst + '" data-act="ctoggle" data-f="setEst"><span class="box">' + (d.setEst ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ปรับยอดที่คาดว่าจะได้ของโครงการเป็นมูลค่า QT นี้</span></button>' : '') +
-    ((p.status === ST.NEW || p.status === ST.PRES) ? '<span class="small">โครงการยังอยู่ขั้น ' + esc(p.status) + ' บันทึก QT แล้วสถานะจะเปลี่ยนเป็น Opportunity</span>' : '') +
+    (d.mode !== 'edit' ? '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.setEst + '" data-act="ctoggle" data-f="setEst"><span class="box">' + (d.setEst ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ปรับยอดที่คาดว่าจะได้ของโครงการเป็นมูลค่าใบเสนอราคานี้</span></button>' : '') +
+    ((p.status === ST.NEW || p.status === ST.PRES) ? '<span class="small">โครงการยังอยู่ขั้น ' + esc(p.status) + ' บันทึกใบเสนอราคาแล้วสถานะจะเปลี่ยนเป็น Opportunity</span>' : '') +
     (d.mode === 'edit' ? '<button class="btn small danger" data-act="delquote" data-id="' + esc(d.qid) + '" data-p="' + esc(pid) + '">ลบใบเสนอราคานี้</button>' : '') + '</div>';
-  return shell({ title: d.mode === 'edit' ? 'แก้ไขใบเสนอราคา' : 'บันทึกใบเสนอราคา', back: '#/project/' + pid, close: true, nav: false, action: '<button class="btn primary" data-act="savequote" data-p="' + esc(pid) + '">บันทึก QT</button>' }, body);
+  return shell({ title: d.mode === 'edit' ? 'แก้ไขใบเสนอราคา' : 'บันทึกใบเสนอราคา', back: '#/project/' + pid, close: true, nav: false, action: '<button class="btn primary" data-act="savequote" data-p="' + esc(pid) + '">บันทึกใบเสนอราคา</button>' }, body);
 }
 function saveQuote(pid) {
   var p = projById(pid), d = S.draft, e = {}, qs = quotesOf(pid), last = qs[0];
   var no = clean(d.mode === 'rev' && last ? last.qtNo : d.qtNo, 40), lines = linesOf(d), value = d.priceMode === 'package' ? pkSum(d) : linesSum(lines);
-  if (!no) e.qtNo = 'กรุณาใส่เลขที่ QT';
-  else if (d.mode === 'new' && liveQuotes().some(function (q) { return q.qtNo.toLowerCase() === no.toLowerCase(); })) e.qtNo = 'เลขที่ QT นี้มีแล้ว ถ้าเป็นการแก้ไขให้เลือก "แก้ไข QT เดิม"';
+  if (!no) e.qtNo = 'กรุณาใส่เลขที่ใบเสนอราคา';
+  else if (d.mode === 'new' && liveQuotes().some(function (q) { return q.qtNo.toLowerCase() === no.toLowerCase(); })) e.qtNo = 'เลขที่ใบเสนอราคานี้มีแล้ว ถ้าเป็นการแก้ไขให้เลือก "แก้ไขใบเสนอราคาเดิม"';
   if (!d.date) e.date = 'กรุณาเลือกวันที่'; else if (isLockedDate(d.date)) e.date = 'เดือน ' + monthName(monthOf(d.date)) + ' ปิดงวดแล้ว';
   if (!d.validUntil) e.validUntil = 'กรุณาเลือกวันที่'; if (!clean(d.note)) e.note = 'กรุณากรอกข้อมูล';
   if (d.priceMode === 'package') { var rows = pkRows(d); if (!rows.length || rows.some(function (r) { return !r.type || !r.price || !r.units; })) e.pk = 'กรอกแบบยูนิต ราคา และจำนวนให้ครบทุกแถว'; }
-  if (!Object.keys(lines).length) e.lines = 'กรุณาใส่มูลค่าอย่างน้อย 1 สายสินค้า';
-  else if (d.priceMode === 'package' && linesSum(lines) !== value) e.lines = 'ยอดรวมทุกสายสินค้า (' + fmt(linesSum(lines)) + ') ต้องเท่ากับมูลค่าแพ็กเกจ (' + fmt(value) + ')';
+  linesOtherErr(d, e);
+  if (!Object.keys(lines).length) e.lines = 'กรุณาใส่มูลค่าอย่างน้อย 1 ประเภทสินค้า';
+  else if (d.priceMode === 'package' && linesSum(lines) !== value) e.lines = 'ยอดรวมทุกประเภทสินค้า (' + fmt(linesSum(lines)) + ') ต้องเท่ากับมูลค่าแพ็กเกจ (' + fmt(value) + ')';
   S.ui.errors = e; if (Object.keys(e).length) { S.ui.focusErr = true; rerender(); return; }
   var q = d.mode === 'edit' ? Store.quotes.find(function (x) { return x.id === d.qid; }) : stamp({ id: uid(), kind: 'quote', projectId: pid, createdAt: nowISO() });
   if (d.mode !== 'edit') { q.qtNo = no; q.rev = d.mode === 'rev' && last ? Math.max.apply(null, qs.filter(function (x) { return x.qtNo === no; }).map(function (x) { return x.rev || 1; })) + 1 : 1; }
-  q.date = d.date; q.validUntil = d.validUntil; q.value = value; q.lines = lines; q.priceMode = d.priceMode; q.packages = d.priceMode === 'package' ? pkRows(d) : []; q.note = clean(d.note, 500);
+  q.date = d.date; q.validUntil = d.validUntil; q.value = value; q.lines = lines; q.linesOther = lines[OTHER] ? clean(d.L_ot, 80) : ''; q.priceMode = d.priceMode; q.packages = d.priceMode === 'package' ? pkRows(d) : []; q.note = clean(d.note, 500);
   var jobs = [Store.save(q)], t = todayISO();
   var pl = (p.products || []).slice(); Object.keys(lines).forEach(function (k) { if (pl.indexOf(k) < 0) pl.push(k); }); p.products = pl;
   if (d.setEst && d.mode !== 'edit') p.estimate = value;
   if (p.status === ST.NEW || p.status === ST.PRES) {
-    jobs.push(Store.save(stamp({ id: uid(), kind: 'follow', projectId: pid, createdAt: nowISO(), date: d.date, channel: p.channel || '', ctype: 'ระบบ', statusBefore: p.status, statusAfter: ST.QUOTE, lostReason: '', note: 'บันทึก QT ' + q.qtNo + ' ครั้งที่ ' + q.rev + ' · ' + fmt(value) + ' บาท', nextDate: p.nextDate || '', site: p.site || 0, agenda: (p.nextAgenda || []).slice(), agendaOther: p.nextAgendaOther || '', prep: p.nextPrep || '', lat: null, lng: null })));
+    jobs.push(Store.save(stamp({ id: uid(), kind: 'follow', projectId: pid, createdAt: nowISO(), date: d.date, channel: p.channel || '', ctype: 'ระบบ', statusBefore: p.status, statusAfter: ST.QUOTE, lostReason: '', note: 'บันทึกใบเสนอราคา ' + q.qtNo + ' ครั้งที่ ' + q.rev + ' · ' + fmt(value) + ' บาท', nextDate: p.nextDate || '', site: p.site || 0, agenda: (p.nextAgenda || []).slice(), agendaOther: p.nextAgendaOther || '', prep: p.nextPrep || '', lat: null, lng: null })));
     p.status = ST.QUOTE; p.stageAt = d.date;
   }
   jobs.push(Store.save(p));
-  Promise.all(jobs).then(function () { toast('บันทึก QT แล้ว'); S.draft = null; location.hash = '#/project/' + pid; }).catch(function () { toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); });
+  Promise.all(jobs).then(function () { toast('บันทึกใบเสนอราคาแล้ว'); S.draft = null; location.hash = '#/project/' + pid; }).catch(function () { toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); });
 }
 function vPhase(pid) {
   var p = projById(pid); if (!p || p.deleted) return vNotFound();
@@ -1664,7 +1697,7 @@ function vDelivery(pid) {
     (n <= 6 ? '<div class="row" style="gap:8px;align-items:flex-end"><div class="field" style="flex:1"><label for="dv-dt">วันที่ ' + esc(DSTEP[n - 1]) + '</label><input id="dv-dt" class="inp' + errCls('stepDate') + '" type="date" data-bind="stepDate" value="' + esc(d.stepDate || todayISO()) + '" max="' + todayISO() + '"></div></div>' + err('stepDate') + '<button class="btn primary" data-act="dvnext" data-p="' + esc(pid) + '">บันทึกขั้นถัดไป: ' + esc(DSTEP[n - 1]) + '</button>' : '<b class="okText">ส่งมอบครบทุกขั้นแล้ว</b>') +
     (n > 1 ? '<button class="btn small" style="border:0;text-decoration:underline" data-act="dvundo" data-p="' + esc(pid) + '">ยกเลิกขั้นล่าสุด</button>' : '') + '</section>' +
     '<div class="ex"><b>ขอบเขต</b> พนักงานขายบันทึกเฉพาะวันที่ของแต่ละขั้นเพื่อติดตามลูกค้า ข้อมูลทีมติดตั้ง และงานแก้ไข เป็นของระบบติดตั้งเดิม (เชื่อมข้อมูลเมื่อมีเซิร์ฟเวอร์ ระยะ C)</div>' +
-    '<div class="ex"><b>ใช้กับ Built-in เท่านั้น</b> Loose furniture และ HDI บันทึกเพียงวันส่งของในใบสั่งขาย</div></div>';
+    '<div class="ex"><b>ใช้กับ Built-in เท่านั้น</b> Loose Furniture และ Home Decoration บันทึกเพียงวันส่งของในใบสั่งขาย</div></div>';
   return shell({ title: 'งานส่งมอบ Built-in', back: '#/project/' + pid }, body);
 }
 function afterList() {
@@ -1755,12 +1788,12 @@ function checklistCard() {
 var GUIDE = [
   ['ติดตั้งแอปลงหน้าจอหลัก', 'iPhone: เปิดลิงก์ด้วย Safari กดปุ่มแชร์ แล้วเลือก "เพิ่มไปยังหน้าจอโฮม" · Android: เปิดด้วย Chrome กดเมนู ⋮ แล้วเลือก "ติดตั้งแอป" จากนั้นเปิดแอปจากไอคอนทุกครั้ง เพื่อป้องกันมือถือลบข้อมูลเอง', ''],
   ['ตั้งเป้ายอดขายทั้งปี', 'หน้าตั้งค่า → เป้ายอดขาย ใส่ค่าเดียวกันทุกเดือน แล้วแก้เฉพาะเดือนที่ต่าง กดบันทึกครั้งเดียว', '#/target'],
-  ['สร้างโครงการใหม่', 'กด + โครงการใหม่ เลือกวันที่ติดต่อ (บันทึกย้อนหลังได้) แล้วกรอก 3 ขั้น: ประเภทอาคาร รูปแบบโครงการ สถานะหน้างาน และช่องทางที่ได้ Lead → ที่ตั้งและรูปหน้างาน → ผู้ติดต่อ ยอดที่คาดว่าจะได้ สายสินค้า และนัดครั้งถัดไป ต้องได้รับความยินยอมจากผู้ติดต่อก่อนบันทึก วิธีเลือกแต่ละช่องดูได้ที่หน้ากติกาการใช้งาน', '#/new'],
+  ['สร้างโครงการใหม่', 'กด + โครงการใหม่ เลือกวันที่ติดต่อ (บันทึกย้อนหลังได้) แล้วกรอก 3 ขั้น: ประเภทอาคาร รูปแบบโครงการ สถานะหน้างาน และช่องทางที่ได้ Lead → ที่ตั้งและรูปหน้างาน → ผู้ติดต่อ ยอดที่คาดว่าจะได้ ประเภทสินค้า และนัดครั้งถัดไป ต้องได้รับความยินยอมจากผู้ติดต่อก่อนบันทึก วิธีเลือกแต่ละช่องดูได้ที่หน้ากติกาการใช้งาน', '#/new'],
   ['Lead ด่วน เมื่ออยู่หน้างาน', 'หน้าแรก → Lead ด่วน ถ่ายรูปหน้างานหรือนามบัตร ใส่ชื่อโครงการ เบอร์ ช่องทาง และความยินยอม ระบบบันทึกพิกัดให้ แล้วกรอกต่อภายหลังจากการ์ด "Lead ด่วน รอกรอกต่อ" ในหน้าแรก', '#/quick'],
   ['ดูว่าวันนี้ต้องตามใคร', 'หน้าแผนงานแสดงโครงการที่เลยนัด นัดวันนี้ และโครงการที่เงียบเกิน 30 วัน เรียงตามยอดคาดการณ์ พร้อมวาระนัดและสิ่งที่ต้องเตรียม กดนำทางนัดวันนี้ได้ใน Google Maps', '#/plan'],
   ['บันทึกการติดตาม', 'เลือกขั้นการขาย Lead/Visit → Contact → Opportunity → Close Sale อัปเดตสถานะหน้างาน เขียนรายละเอียดที่คุย แล้วเลือกวันนัดครั้งถัดไป วาระนัด และสิ่งที่ต้องเตรียม ถ้าข้อมูลที่ขั้นนั้นต้องมียังไม่ครบ ระบบจะให้กรอกเพิ่มในหน้าเดียวกัน', '#/pick'],
   ['เมื่อปิดการขายได้ บันทึก SO และ DP', 'เลือกสถานะ Close Sale ระบบจะเปิดหน้าบันทึกเลขที่ SO มูลค่า SO เงินมัดจำ และวันที่จัดส่งต่อทันที', '#/projects'],
-  ['บันทึกใบเสนอราคา (QT) และซื้อเพิ่ม', 'หน้าโครงการ → + QT ใส่มูลค่าแยกตามสายสินค้า หรือแพ็กเกจรายยูนิต แก้ไขราคาเป็นครั้งที่ 2, 3 ได้ ลูกค้าเดิมซื้อเพิ่มให้กด "+ ซื้อเพิ่ม / เฟสถัดไป" ในหน้าโครงการเดิม ห้ามสร้างโครงการใหม่', '#/pick/so'],
+  ['บันทึกใบเสนอราคาและซื้อเพิ่ม', 'หน้าแรก → ใบเสนอราคา หรือหน้าโครงการ → + ใบเสนอราคา ใส่มูลค่าแยกตามประเภทสินค้า หรือแพ็กเกจรายยูนิต แก้ไขราคาเป็นครั้งที่ 2, 3 ได้ ลูกค้าเดิมซื้อเพิ่มให้กด "+ ซื้อเพิ่ม / เฟสถัดไป" ในหน้าโครงการเดิม ห้ามสร้างโครงการใหม่', '#/pick/so'],
   ['ดูผลงานและ Pipeline coverage', 'หน้าผลงานแสดงจำนวนโครงการแต่ละขั้นเทียบเดือนก่อน ยอด SO เทียบเป้า พยากรณ์ยอดเดือนนี้ และ coverage ถ้าต่ำกว่า 3 เท่า ควรหาโครงการเพิ่ม', '#/perf'],
   ['ส่งสรุปเข้า Teams ทุกเย็น', 'หน้าสรุป เลือกรายวัน กดคัดลอกข้อความ แล้ววางในแชทของทีม ข้อความไม่มีชื่อและเบอร์ผู้ติดต่อ', '#/summary'],
   ['สำรองข้อมูลทุกสัปดาห์', 'หน้าข้อมูล/สำรอง ตั้งรหัสผ่านไฟล์สำรอง แล้วกดสำรองตอนนี้ เก็บไฟล์ไว้ใน OneDrive ของบริษัท', '#/data'],
@@ -1976,7 +2009,7 @@ var IMPORT_COLS = [
   ['ptype', ['projecttype', 'ประเภทโครงการ', 'ประเภทอาคาร']], ['role', ['ตำแหน่งผู้ติดต่อ', 'ประเภทการติดต่อ']], ['contactName', ['ชื่อผู้ติดต่อ']], ['phone', ['เบอร์ติดต่อ', 'เบอร์']], ['name', ['ชื่อโครงการ']],
   ['empName', ['staffname', 'ชื่อพนักงาน']], ['empId', ['empid', 'รหัสพนักงาน']], ['info', ['projectinformation', 'รายละเอียดโครงการ']], ['note', ['note', 'หมายเหตุ']], ['status', ['สถานะ']],
   ['location', ['location', 'ละติจูด', 'พิกัด']], ['address', ['address', 'ที่อยู่']], ['province', ['จังหวัด']], ['developer', ['บริษัทเจ้าของ', 'developer']], ['line', ['line']], ['consent', ['ความยินยอม']],
-  ['channel2', ['แหล่งที่มา']], ['products', ['หมวดสินค้า', 'สายสินค้า']], ['dp', ['dp']], ['date', ['date', 'วันที่บันทึก', 'วันที่']]
+  ['channel2', ['แหล่งที่มา']], ['products', ['หมวดสินค้า', 'ประเภทสินค้า', 'สายสินค้า']], ['dp', ['dp']], ['date', ['date', 'วันที่บันทึก', 'วันที่']]
 ];
 function normH(s) { return String(s == null ? '' : s).toLowerCase().replace(/[\s"'​]+/g, ''); }
 function mapHeader(row) {
@@ -2182,7 +2215,7 @@ function render() {
     else if (base === 'quick') { var qpr = S.quickPreset || {}; S.quickPreset = null; S.draft = { name: '', phone: '', channel: qpr.channel || '', channelDetail: qpr.channelDetail || '', channelOther: '', consent: false, photos: [], lat: null, lng: null, acc: null, allCh: !!qpr.channel, geoBusy: true }; S.ui.errors = {}; getPos().then(function (pos) { if (S.draft && S.route === '#/quick') { S.draft.lat = pos.lat; S.draft.lng = pos.lng; S.draft.acc = pos.acc; S.draft.geoBusy = false; rerender(); } }, function () { if (S.draft && S.route === '#/quick') { S.draft.geoBusy = false; rerender(); } }); }
     else if (base === 'contact') { var cp = projById(parts[1]), cc = cp && parts[2] ? contactsOf(cp).find(function (x) { return x.id === parts[2]; }) : null; S.draft = cp ? (cc ? { name: cc.name, contactRole: cc.role, contactRoleDetail: cc.roleDetail, contactRoleOther: cc.roleOther, phone: cc.phone, line: cc.line, consent: !!cc.consent, primary: false } : { name: '', contactRole: '', contactRoleDetail: '', contactRoleOther: '', phone: '', line: '', consent: false, primary: false }) : null; S.ui.errors = {}; }
     else if (base === 'review') { if (!parts[1]) { var rl = reviewList(); if (rl.length) { location.replace('#/review/' + rl[0].id); return; } } var rp = projById(parts[1]); S.draft = rp ? draftP(rp) : null; S.ui.errors = {}; }
-    else if (base === 'sale') { var ex = parts[2] && Store.sales.find(function (s) { return s.id === parts[2]; }), lq = quotesOf(parts[1])[0]; S.draft = ex ? linesToDraft(ex.lines, JSON.parse(JSON.stringify(ex))) : linesToDraft(lq ? lq.lines : null, { id: null, soNo: '', soDate: todayISO(), soValue: '', dp: '', deliveryDate: '', soStatus: SO_STATUS[0] }); S.ui.errors = {}; }
+    else if (base === 'sale') { var ex = parts[2] && Store.sales.find(function (s) { return s.id === parts[2]; }), lq = quotesOf(parts[1])[0]; S.draft = ex ? linesToDraft(ex.lines, JSON.parse(JSON.stringify(ex)), ex.linesOther) : linesToDraft(lq ? lq.lines : null, { id: null, soNo: '', soDate: todayISO(), soValue: '', dp: '', deliveryDate: '', soStatus: SO_STATUS[0] }, lq ? lq.linesOther : ''); S.ui.errors = {}; }
     else if (base === 'quote') { S.draft = quoteDraft(parts[1], parts[2]); S.ui.errors = {}; }
     else if (base === 'phase') { var rp0 = projById(parts[1]); S.draft = rp0 ? { phaseName: 'เฟส ' + (familyOf(rp0).length + 1), units: '', estimate: '', start: ST.PRES } : null; S.ui.errors = {}; }
     else if (base === 'delivery') { S.draft = { stepDate: todayISO() }; S.ui.errors = {}; }
@@ -2342,7 +2375,7 @@ var H = {
       if (!d.consent) e.consent = 'ต้องได้รับความยินยอมก่อนบันทึก';
       if (d.estimate === '' || d.estimate == null) e.estimate = 'กรุณาใส่ยอดที่คาดว่าจะได้ (ใส่ 0 ได้ถ้ายังไม่ทราบ)';
       if (!d.closingDate && !d.closingDateNA) e.closingDate = 'กรุณาเลือกวันที่';
-      if (!(d.products || []).length) e.products = 'กรุณาเลือกสายสินค้าที่เสนอ';
+      if (!(d.products || []).length) e.products = 'กรุณาเลือกประเภทสินค้าที่เสนอ';
       if (!d.id) { if (!d.nextDate && !d.nextDateNA) e.nextDate = 'กรุณาเลือกวันที่'; else if (d.nextDate) agendaErr(e, d); }
     }
     S.ui.errors = e;
@@ -2365,6 +2398,7 @@ var H = {
   },
   copy: function () { var txt = $('#sumtext').textContent; copyText(txt).then(function (ok) { if (ok && !Store.state.onb.copied) { Store.state.onb.copied = true; Store.saveState(); } toast(ok ? 'คัดลอกแล้ว วางในแชท Teams ได้ทันที' : 'คัดลอกไม่สำเร็จ กดค้างที่ข้อความเพื่อคัดลอก'); }); },
   export: function () { exportExcel(); },
+  exportanon: function () { exportExcel(null, true); },
   backup: function () { makeBackup(); },
   wipe: function () {
     confirmBox('ล้างข้อมูลทั้งหมด', 'ข้อมูลโครงการ การติดตาม SO และรูปทั้งหมดของผู้ใช้นี้ในเครื่องนี้จะถูกลบถาวร (ข้อมูลของผู้ใช้อื่นในเครื่องไม่ถูกลบ) ควรสำรองข้อมูลก่อน ต้องการล้างใช่หรือไม่', 'ล้างข้อมูล', true).then(function (ok) { if (!ok) return; wipeAll(); });
@@ -2508,11 +2542,12 @@ function saveSale(pid) {
   if (dup) e.soNo = 'เลขที่ SO นี้บันทึกไว้แล้ว';
   var sl = linesOf(d), pp = projById(pid);
   if (!Object.keys(sl).length && (pp.products || []).length === 1 && Number(d.soValue) > 0) { sl = {}; sl[pp.products[0]] = Number(d.soValue); }
-  if (!Object.keys(sl).length) e.lines = 'กรุณาใส่มูลค่าอย่างน้อย 1 สายสินค้า';
-  else if (linesSum(sl) !== Number(d.soValue)) e.lines = 'ยอดรวมทุกสายสินค้า (' + fmt(linesSum(sl)) + ') ต้องเท่ากับมูลค่า SO (' + fmt(d.soValue) + ')';
+  linesOtherErr(d, e);
+  if (!Object.keys(sl).length) e.lines = 'กรุณาใส่มูลค่าอย่างน้อย 1 ประเภทสินค้า';
+  else if (linesSum(sl) !== Number(d.soValue)) e.lines = 'ยอดรวมทุกประเภทสินค้า (' + fmt(linesSum(sl)) + ') ต้องเท่ากับมูลค่า SO (' + fmt(d.soValue) + ')';
   S.ui.errors = e; if (Object.keys(e).length) { S.ui.focusErr = true; rerender(); return; }
   var s = d.id ? Store.sales.find(function (x) { return x.id === d.id; }) : stamp({ id: uid(), kind: 'sale', projectId: pid, createdAt: nowISO() });
-  s.soNo = clean(d.soNo, 40); s.soDate = d.soDate; s.soValue = Number(d.soValue) || 0; s.dp = Number(d.dp) || 0; s.deliveryDate = d.deliveryDate || ''; s.soStatus = d.soStatus; s.needsValue = false; s.lines = sl;
+  s.soNo = clean(d.soNo, 40); s.soDate = d.soDate; s.soValue = Number(d.soValue) || 0; s.dp = Number(d.dp) || 0; s.deliveryDate = d.deliveryDate || ''; s.soStatus = d.soStatus; s.needsValue = false; s.lines = sl; s.linesOther = sl[OTHER] ? clean(d.L_ot, 80) : '';
   var p = projById(pid);
   Store.save(s).then(function () { if (p.status !== ST.WON && validSale(s)) { p.status = ST.WON; p.nextDate = ''; p.stageAt = s.soDate; return Store.save(p); } }).then(function () { toast('บันทึก SO แล้ว'); S.draft = null; location.hash = '#/project/' + pid; }).catch(function () { toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); });
 }
@@ -2549,7 +2584,7 @@ function importOptions(code) {
   next.staff = (Array.isArray(o.staff) ? o.staff : []).slice(0, 500).map(function (s) { return { empId: clean(s && s.empId, 20), name: clean(s && s.name, 80), branch: clean(s && s.branch, 60), team: clean(s && s.team, 60) }; }).filter(function (s) { return s.empId; });
   next.targets = {};
   if (o.targets && typeof o.targets === 'object') Object.keys(o.targets).slice(0, 500).forEach(function (e) { var m = o.targets[e]; if (m && typeof m === 'object') Object.keys(m).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k) && isFinite(m[k])) { next.targets[clean(e, 20)] = next.targets[clean(e, 20)] || {}; next.targets[clean(e, 20)][k] = Math.round(Number(m[k])); } }); });
-  Store.state.options = migrateState({ options: next, optVer: 3 }).options; Store.state.onb.skipSetup = false;
+  Store.state.options = migrateState({ options: next, optVer: 4 }).options; Store.state.onb.skipSetup = false;
   var me = next.staff.find(function (s) { return s.empId === P().empId; });
   if (me) { var p = P(); p.name = me.name || p.name; p.branch = me.branch || p.branch; p.team = me.team || p.team; }
   Store.saveState().then(function () { S.ui.imp = ''; toast('นำเข้าชุดตัวเลือกแล้ว' + (me ? ' · อัปเดตชื่อและสาขาจาก Staff Master' : '')); rerender(); });
@@ -2618,7 +2653,7 @@ function buildXlsxZ(sheets) {
     return new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer().then(function (b) { return { name: f.name, data: data, z: new Uint8Array(b) }; });
   })).then(zipStore).catch(function () { return buildXlsx(sheets); });
 }
-var TEMPLATE_H = ['Emp ID', 'Staff Name', 'Date', 'ช่องทางการติดต่อ', 'Project Type ประเภทอาคาร', 'ประเภทการติดต่อ', 'ชื่อโครงการ', 'ชื่อผู้ติดต่อ', 'เบอร์ผู้ติดต่อ', 'Address', 'Location (ละติจูด,ลองจิจูด)', 'Project information รายละเอียดโครงการ', 'Note', 'สถานะที่ติดตามโครงการ', 'สถานะหน้างาน', 'ยอดที่คาดว่าจะได้ Estimate Sale', 'วันที่คาดว่าจะปิด Closing Date', 'เลขที่ใบสั่งขาย (SO.)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง', 'รูปแบบโครงการ', 'สายสินค้าที่เสนอ'];
+var TEMPLATE_H = ['Emp ID', 'Staff Name', 'Date', 'ช่องทางการติดต่อ', 'Project Type ประเภทอาคาร', 'ประเภทการติดต่อ', 'ชื่อโครงการ', 'ชื่อผู้ติดต่อ', 'เบอร์ผู้ติดต่อ', 'Address', 'Location (ละติจูด,ลองจิจูด)', 'Project information รายละเอียดโครงการ', 'Note', 'สถานะที่ติดตามโครงการ', 'สถานะหน้างาน', 'ยอดที่คาดว่าจะได้ Estimate Sale', 'วันที่คาดว่าจะปิด Closing Date', 'เลขที่ใบสั่งขาย (SO.)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง', 'รูปแบบโครงการ', 'ประเภทสินค้าที่เสนอ'];
 function exportTemplate() {
   var o = O(), flat = function (l) { return l.reduce(function (a, g) { return a.concat(subOf(g)); }, []); };
   var siteL = SITE.map(function (v, i) { return (i + 1) + ' ' + v; });
@@ -2632,7 +2667,7 @@ function exportTemplate() {
     [4, 'ช่องทางการติดต่อ, ประเภทอาคาร, ประเภทการติดต่อ, สถานะ, สถานะหน้างาน และรูปแบบโครงการ เลือกจากรายการ (ลูกศรในช่อง) ค่าที่ไม่อยู่ในรายการยังนำเข้าได้ ระบบบันทึกเป็น "อื่น ๆ" และเก็บข้อความเดิมไว้'],
     [5, 'สถานะใช้ ' + STATUSES.join(', ') + ' แถวสุดท้ายของโครงการคือสถานะปัจจุบัน'],
     [6, 'เบอร์ติดต่อ ถ้า Excel ตัดเลข 0 ข้างหน้าออก ระบบเติมให้เอง'],
-    [7, 'Location ใส่ละติจูด,ลองจิจูด เช่น 13.756300,100.501800 · ยอดเงินใส่เป็นตัวเลขเท่านั้น · สายสินค้าที่เสนอ ใส่ได้หลายค่าคั่นด้วยจุลภาค เช่น Built-in, HDI ตกแต่งบ้าน'],
+    [7, 'Location ใส่ละติจูด,ลองจิจูด เช่น 13.756300,100.501800 · ยอดเงินใส่เป็นตัวเลขเท่านั้น · ประเภทสินค้าที่เสนอ ใส่ได้หลายค่าคั่นด้วยจุลภาค เช่น Built-in, HDI ตกแต่งบ้าน'],
     [8, 'มีเลขที่ SO ให้ใส่ในแถวที่ปิดการขาย ไฟล์เดิมไม่มีมูลค่า SO ต้องเข้าไปกรอกมูลค่าในแอปหลังนำเข้า'],
     [9, 'เสร็จแล้วไปที่ ข้อมูล/สำรอง → นำเข้าข้อมูลเดิม เลือกไฟล์นี้ ระบบแสดงผลให้ตรวจก่อนนำเข้าจริง และยกเลิกการนำเข้าทั้งชุดได้']
   ];
@@ -2644,15 +2679,45 @@ function exportTemplate() {
   ]);
   download(blob, 'PS_template_import.xlsx'); toast('ดาวน์โหลดไฟล์ต้นแบบแล้ว');
 }
+/* ไฟล์สำหรับวิเคราะห์: ตัดข้อมูลส่วนบุคคลและข้อความอิสระที่อาจมีข้อมูลส่วนบุคคลออก แล้วเพิ่ม sheet คำอธิบายคอลัมน์ */
+var ANON_DROP = ['Staff Name', 'ชื่อโครงการ', 'ชื่อผู้ติดต่อ', 'เบอร์ผู้ติดต่อ', 'Address', 'Location (ละติจูด,ลองจิจูด)', 'LINE', 'Project information รายละเอียดโครงการ', 'Note รายละเอียดที่คุยล่าสุด', 'Note รายละเอียดที่คุย', 'ละติจูด', 'ลองจิจูด', 'สิ่งที่ต้องเตรียม', 'หมายเหตุ', 'บริษัทเจ้าของโครงการ / Developer', 'ค่าเดิมก่อนอัปเดต v1.7', 'อื่น ๆ (ระบุ)', 'แพ็กเกจ'];
+var COL_DESC = {
+  'Emp ID': 'รหัสพนักงานเจ้าของข้อมูล', 'Date': 'วันที่ติดต่อโครงการครั้งแรก (ค.ศ.)', 'ช่องทางการติดต่อ': 'กลุ่มช่องทางที่ได้ Lead มาครั้งแรก', 'Project Type ประเภทอาคาร': 'กลุ่มประเภทอาคาร เลือกตามการใช้งานหลักของพื้นที่', 'ประเภทการติดต่อ': 'กลุ่มของผู้ติดต่อหลัก ตามความสัมพันธ์กับการซื้อ',
+  'รูปหน้างาน 1': 'มีรูปหน้างานหรือไม่', 'รูปหน้างาน 2': 'มีรูปหน้างานหรือไม่', 'สถานะที่ติดตามโครงการ': 'ขั้นการขายปัจจุบัน: Lead/Visit → Contact → Opportunity → Close Sale หรือ ไม่ได้งาน / เลื่อน/ระงับ', 'สถานะหน้างาน': 'ความคืบหน้าการก่อสร้าง 1–5 (5 = เข้าอยู่แล้ว)',
+  'ยอดที่คาดว่าจะได้ Estimate Sale': 'บาท ก่อน VAT · พยากรณ์ยอดใช้ร้อยละ 10 / 25 / 50 ตามขั้น Lead/Visit / Contact / Opportunity', 'วันที่คาดว่าจะปิด Closing Date': 'วันที่คาดว่าจะได้ใบสั่งขาย "-" คือยังไม่ทราบ', 'เลขที่ใบสั่งขาย (SO No.)': 'เลขที่ใบสั่งขายล่าสุดที่ไม่ยกเลิก', 'DP (ก่อน VAT)': 'เงินมัดจำ บาท ก่อน VAT', 'วันที่ จัดส่ง': 'วันที่จัดส่งตามใบสั่งขาย',
+  'Project ID': 'รหัสอ้างอิงที่ใช้เชื่อมทุก sheet', 'รหัสโครงการ': 'รหัสโครงการที่พนักงานเห็นในแอป', 'รหัสโครงการเดิม': 'รหัสก่อนเปลี่ยน Emp ID', 'สาขา': 'สาขาของพนักงาน', 'ทีม': 'ทีมของพนักงาน', 'จังหวัด': 'จังหวัดที่ตั้งโครงการ',
+  'ช่องทางการติดต่อ (รายการย่อย)': 'รายการย่อยของช่องทาง', 'ประเภทอาคาร (รายการย่อย)': 'รายการย่อยของประเภทอาคาร', 'ประเภทการติดต่อ (รายการย่อย)': 'รายการย่อยของประเภทการติดต่อ', 'ความยินยอมของผู้ติดต่อ': 'ผู้ติดต่อยินยอมให้บันทึกและติดต่อกลับหรือไม่', 'วันที่ให้ความยินยอม': 'วันที่ได้รับความยินยอม',
+  'ประเภทสินค้าที่เสนอ': 'Built-in / Loose Furniture / Home Decoration / Home Service / อื่น ๆ', 'เหตุผลที่ไม่ได้งาน': 'เหตุผลเมื่อสถานะเป็นไม่ได้งาน', 'นัดติดตามครั้งถัดไป': 'วันนัดครั้งถัดไป', 'มูลค่า SO (ก่อน VAT)': 'มูลค่าใบสั่งขาย บาท ก่อน VAT', 'วันที่ SO': 'วันที่ของใบสั่งขาย ใช้นับยอดขายเข้าเดือน', 'สถานะ SO': 'เปิด SO แล้ว / จัดส่งแล้ว / ยกเลิก SO (ยกเลิกไม่นับยอด)',
+  'จำนวนครั้งที่ติดตาม': 'จำนวนการบันทึกติดตามทั้งหมดของโครงการ', 'วันที่ติดต่อโครงการ': 'วันที่ติดต่อจริง', 'วันที่บันทึกในระบบ': 'วันเวลาที่บันทึกจริงในแอป', 'บันทึกย้อนหลัง (วัน)': 'จำนวนวันที่บันทึกช้ากว่าวันที่ติดต่อจริง', 'วันที่แก้ไขล่าสุด': 'เวลาแก้ไขล่าสุด (UTC)', 'วันที่ส่งออก': 'เวลาที่ส่งออกไฟล์ (UTC)',
+  'รูปแบบโครงการ': 'สร้างใหม่ โดย Developer / สร้างใหม่ โดยเจ้าของ / อาคารเดิม (รีโนเวท)', 'วันที่เปลี่ยนสถานะหน้างาน': 'วันที่สถานะหน้างานเปลี่ยนล่าสุด', 'วันที่เข้าขั้นปัจจุบัน': 'วันที่เข้าขั้นการขายปัจจุบัน', 'จำนวนวันในขั้นปัจจุบัน': 'จำนวนวันที่อยู่ในขั้นปัจจุบัน เกิน 60 วันถือว่าค้าง', 'วาระนัดครั้งถัดไป': 'สิ่งที่จะทำในนัดครั้งถัดไป',
+  'เวลานัด': 'เวลานัด (ถ้ามี)', 'จำนวนผู้ติดต่อ': 'จำนวนผู้ติดต่อของโครงการ', 'สถานะการกรอก': 'ครบ หรือ Lead ด่วน (ยังกรอกไม่ครบ)', 'จำนวนรูป': 'จำนวนรูปหน้างาน', 'รหัสโครงการหลัก': 'มีค่าเมื่อเป็นเฟสซื้อเพิ่มของโครงการเดิม', 'เฟส / ล็อต': 'ชื่อเฟสหรือล็อต', 'จำนวนยูนิต': 'จำนวนยูนิตของเฟส',
+  'ใบเสนอราคาล่าสุด': 'เลขที่และครั้งที่ของใบเสนอราคาล่าสุด', 'มูลค่าใบเสนอราคาล่าสุด': 'บาท ก่อน VAT', 'ขั้นส่งมอบ Built-in': 'ขั้นตอนส่งมอบงาน Built-in ปัจจุบัน', 'วันที่ส่งมอบ': 'วันที่ส่งมอบงานให้ลูกค้า', 'ติดตามหลังส่งมอบ 6 เดือน': 'วันที่โทรติดตามหลังส่งมอบครบ 6 เดือน', 'ติดตามหลังส่งมอบ 12 เดือน': 'วันที่โทรติดตามหลังส่งมอบครบ 12 เดือน',
+  'Follow ID': 'รหัสการติดตาม', 'วันที่ติดต่อ': 'วันที่คุยกับลูกค้าจริง', 'ประเภทอาคาร': 'กลุ่มประเภทอาคารของโครงการ', 'สถานะก่อน': 'ขั้นการขายก่อนบันทึกครั้งนี้', 'สถานะหลัง': 'ขั้นการขายหลังบันทึกครั้งนี้', 'นัดครั้งถัดไป': 'วันนัดที่ตั้งในการบันทึกครั้งนี้', 'ระยะห่างจากโครงการ (เมตร)': 'ระยะจากพิกัดโครงการ ณ เวลาบันทึก',
+  'วาระนัด': 'สิ่งที่จะทำในนัดครั้งถัดไป', 'ประเภทการบันทึก': 'สร้างโครงการ / ติดตาม / โทร', 'ผลการโทร': 'ผลการโทรเมื่อเป็นการบันทึกจากการโทร', 'Sale ID': 'รหัสใบสั่งขายในแอป', 'ลูกค้าเดิม / เฟสซื้อเพิ่ม': '"ใช่" เมื่อเป็นลูกค้าเดิมหรือเฟสซื้อเพิ่ม ใช้คำนวณยอดจากลูกค้าเดิม',
+  'Month': 'เดือนที่ปิดงวด', 'สถานะ ณ สิ้นเดือน': 'ขั้นการขาย ณ วันสุดท้ายของเดือน', 'กำหนดการหน้างานสร้างเสร็จ (ข้อมูลเดิม)': 'ข้อมูลก่อนเวอร์ชัน 1.7', 'วันที่ปิดงวด': 'เวลาที่ปิดงวด', 'Quote ID': 'รหัสใบเสนอราคาในแอป', 'เลขที่ใบเสนอราคา (Quotation No.)': 'เลขที่ใบเสนอราคา', 'ครั้งที่': 'ครั้งที่แก้ไขใบเสนอราคา', 'วันที่': 'วันที่ของใบเสนอราคา', 'มูลค่า (ก่อน VAT)': 'มูลค่าใบเสนอราคา', 'ยืนราคาถึง': 'วันหมดอายุราคา', 'รูปแบบราคา': 'ราคารวม หรือ แพ็กเกจรายยูนิต'
+};
+function colDesc(h) { if (COL_DESC[h]) return COL_DESC[h]; if (/^(SO|ใบเสนอราคา) /.test(h)) return 'มูลค่าแยกตามประเภทสินค้า บาท ก่อน VAT'; return ''; }
+function anonSheets(sheets) {
+  var out = [], desc = [];
+  sheets.forEach(function (sh) {
+    if (sh.name === 'Contacts') return;
+    var keep = []; sh.header.forEach(function (h, i) { if (ANON_DROP.indexOf(h) < 0) keep.push(i); });
+    out.push({ name: sh.name, header: keep.map(function (i) { return sh.header[i]; }), rows: sh.rows.map(function (r) { return keep.map(function (i) { return r[i]; }); }) });
+    keep.forEach(function (i) { desc.push([sh.name, sh.header[i], colDesc(sh.header[i])]); });
+  });
+  [['กติกา', 'Lead ใหม่', 'โครงการที่สร้างใหม่ในเดือน ไม่นับเฟสซื้อเพิ่ม'], ['กติกา', 'Contact / Opportunity', 'ดีล (โครงการหรือเฟส) ที่เข้าขั้นนั้นในเดือน'], ['กติกา', 'Close Sale / ยอด SO', 'นับตามวันที่ SO ยอดก่อน VAT ไม่นับ SO ที่ยกเลิก'], ['กติกา', 'อัตราปิดการขาย', 'Close Sale ÷ (Close Sale + ไม่ได้งาน) แยกลูกค้าใหม่ กับ ซื้อซ้ำ'], ['กติกา', 'พยากรณ์ยอด', 'SO แล้ว + ยอดคาดการณ์ของดีลที่คาดว่าปิดเดือนนี้ × ร้อยละ 10 / 25 / 50 ตามขั้น'], ['กติกา', 'ข้อมูลที่ตัดออก', 'ไฟล์นี้ไม่มีชื่อโครงการ ชื่อและเบอร์ผู้ติดต่อ LINE ที่อยู่ พิกัด และข้อความอิสระ']].forEach(function (r) { desc.push(r); });
+  out.push({ name: 'คำอธิบายคอลัมน์', header: ['Sheet', 'คอลัมน์', 'ความหมาย'], rows: desc, widths: [18, 36, 90], noFilter: true });
+  return out;
+}
 function exportName(ym) { return 'PS_' + (P().empId || 'EMP').replace(/[^\w-]/g, '') + '_' + (ym || todayISO()) + '.xlsx'; }
-function exportExcel(ym) {
+function exportExcel(ym, anon) {
   var from = ym ? ym + '-01' : '', end = ym ? monthEnd(ym) : '', inM = function (d) { return !ym || (d && d >= from && d <= end); };
   var exp = nowISO(), lastF = {}, lastN = {}, lastS = {}, cntF = {};
   liveFollows().slice().sort(function (a, b) { return (a.date + a.createdAt).localeCompare(b.date + b.createdAt); }).forEach(function (f) { lastF[f.projectId] = f; if (f.note) lastN[f.projectId] = f.note; cntF[f.projectId] = (cntF[f.projectId] || 0) + 1; });
   liveSales().filter(validSale).slice().sort(function (a, b) { return (a.soDate || '').localeCompare(b.soDate || ''); }).forEach(function (s) { lastS[s.projectId] = s; });
   var H1 = ['Emp ID', 'Staff Name', 'Date', 'ช่องทางการติดต่อ', 'Project Type ประเภทอาคาร', 'ประเภทการติดต่อ', 'ชื่อโครงการ', 'ชื่อผู้ติดต่อ', 'เบอร์ผู้ติดต่อ', 'Address', 'Location (ละติจูด,ลองจิจูด)', 'รูปหน้างาน 1', 'รูปหน้างาน 2', 'Project information รายละเอียดโครงการ', 'Note รายละเอียดที่คุยล่าสุด', 'สถานะที่ติดตามโครงการ', 'สถานะหน้างาน', 'ยอดที่คาดว่าจะได้ Estimate Sale', 'วันที่คาดว่าจะปิด Closing Date', 'เลขที่ใบสั่งขาย (SO.)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง',
-    'Project ID', 'รหัสโครงการ', 'รหัสโครงการเดิม', 'สาขา', 'ทีม', 'จังหวัด', 'บริษัทเจ้าของโครงการ / Developer', 'ช่องทางการติดต่อ (รายการย่อย)', 'ประเภทอาคาร (รายการย่อย)', 'ประเภทการติดต่อ (รายการย่อย)', 'LINE', 'ความยินยอมของผู้ติดต่อ', 'วันที่ให้ความยินยอม', 'สายสินค้าที่เสนอ', 'เหตุผลที่ไม่ได้งาน', 'นัดติดตามครั้งถัดไป', 'มูลค่า SO (ก่อน VAT)', 'วันที่ SO', 'สถานะ SO', 'จำนวนครั้งที่ติดตาม', 'วันที่ติดต่อโครงการ', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด', 'วันที่ส่งออก',
-    'รูปแบบโครงการ', 'วันที่เปลี่ยนสถานะหน้างาน', 'วันที่เข้าขั้นปัจจุบัน', 'จำนวนวันในขั้นปัจจุบัน', 'วาระนัดครั้งถัดไป', 'สิ่งที่ต้องเตรียม', 'ค่าเดิมก่อนอัปเดต v1.7', 'เวลานัด', 'จำนวนผู้ติดต่อ', 'สถานะการกรอก', 'จำนวนรูป', 'รหัสโครงการหลัก', 'เฟส / ล็อต', 'จำนวนยูนิต', 'QT ล่าสุด', 'มูลค่า QT ล่าสุด', 'ขั้นส่งมอบ Built-in', 'วันที่ส่งมอบ', 'ติดตามหลังส่งมอบ 6 เดือน', 'ติดตามหลังส่งมอบ 12 เดือน'];
+    'Project ID', 'รหัสโครงการ', 'รหัสโครงการเดิม', 'สาขา', 'ทีม', 'จังหวัด', 'บริษัทเจ้าของโครงการ / Developer', 'ช่องทางการติดต่อ (รายการย่อย)', 'ประเภทอาคาร (รายการย่อย)', 'ประเภทการติดต่อ (รายการย่อย)', 'LINE', 'ความยินยอมของผู้ติดต่อ', 'วันที่ให้ความยินยอม', 'ประเภทสินค้าที่เสนอ', 'เหตุผลที่ไม่ได้งาน', 'นัดติดตามครั้งถัดไป', 'มูลค่า SO (ก่อน VAT)', 'วันที่ SO', 'สถานะ SO', 'จำนวนครั้งที่ติดตาม', 'วันที่ติดต่อโครงการ', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด', 'วันที่ส่งออก',
+    'รูปแบบโครงการ', 'วันที่เปลี่ยนสถานะหน้างาน', 'วันที่เข้าขั้นปัจจุบัน', 'จำนวนวันในขั้นปัจจุบัน', 'วาระนัดครั้งถัดไป', 'สิ่งที่ต้องเตรียม', 'ค่าเดิมก่อนอัปเดต v1.7', 'เวลานัด', 'จำนวนผู้ติดต่อ', 'สถานะการกรอก', 'จำนวนรูป', 'รหัสโครงการหลัก', 'เฟส / ล็อต', 'จำนวนยูนิต', 'ใบเสนอราคาล่าสุด', 'มูลค่าใบเสนอราคาล่าสุด', 'ขั้นส่งมอบ Built-in', 'วันที่ส่งมอบ', 'ติดตามหลังส่งมอบ 6 เดือน', 'ติดตามหลังส่งมอบ 12 เดือน'];
   var mrec = ym ? monthRec(ym) : null, snapIds = {}; if (mrec && mrec.closed) mrec.items.forEach(function (i) { snapIds[i.projectId] = 1; });
   var R1 = liveProjects().filter(function (p) { return !ym || (p.recordDate <= end && (snapIds[p.id] || inM(p.recordDate) || liveFollows().some(function (f) { return f.projectId === p.id && inM(f.date); }) || liveSales().some(function (s) { return s.projectId === p.id && inM(s.soDate); }))); }).map(function (p) {
     var f = lastF[p.id] || {}, s = lastS[p.id] || {};
@@ -2663,17 +2728,19 @@ function exportExcel(ym) {
   });
   var H2 = ['Follow ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'วันที่ติดต่อ', 'ชื่อโครงการ', 'ประเภทอาคาร', 'สถานะก่อน', 'สถานะหลัง', 'เหตุผลที่ไม่ได้งาน', 'Note รายละเอียดที่คุย', 'นัดครั้งถัดไป', 'ละติจูด', 'ลองจิจูด', 'ระยะห่างจากโครงการ (เมตร)', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด', 'วาระนัด', 'สิ่งที่ต้องเตรียม', 'สถานะหน้างาน', 'ประเภทการบันทึก', 'ผลการโทร', 'เวลานัด'];
   var R2 = liveFollows().filter(function (f) { return inM(f.date); }).map(function (f) { var p = projById(f.projectId) || {}; return [f.id, f.projectId, p.code || '', f.empId, f.empName, f.branch, f.team, f.date, p.name || '', p.ptype || '', f.statusBefore, f.statusAfter, f.lostReason, f.note, f.nextDate, f.lat != null ? +f.lat.toFixed(6) : '', f.lng != null ? +f.lng.toFixed(6) : '', f.distance != null ? f.distance : '', localTs(f.createdAt), lagDays(f.date, f.createdAt, f.importFile), (f.updatedAt || '').slice(0, 19), agendaText(f.agenda, f.agendaOther), f.prep || '', f.site ? siteLabel(f.site) : '', f.ctype === FIRST_CTYPE ? 'สร้างโครงการ' : f.ctype === 'โทร' ? 'โทร' : 'ติดตาม', f.callResult || '', f.nextTime || '']; });
-  var H3 = ['Sale ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'ชื่อโครงการ', 'ประเภทอาคาร', 'ประเภทการติดต่อ', 'เลขที่ใบสั่งขาย (SO.)', 'วันที่ SO', 'มูลค่า SO (ก่อน VAT)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง', 'สถานะ SO', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด'].concat(O().product.map(function (k) { return 'SO ' + k; }), ['ลูกค้าเดิม / เฟสซื้อเพิ่ม']);
-  var R3 = liveSales().filter(function (s) { return inM(s.soDate); }).map(function (s) { var p = projById(s.projectId) || {}; return [s.id, s.projectId, p.code || '', s.empId, s.empName, s.branch, s.team, p.name || '', p.ptype || '', p.contactRole || '', s.soNo, s.soDate, s.soValue || 0, s.dp || 0, s.deliveryDate, s.soStatus, localTs(s.createdAt), lagDays(s.soDate, s.createdAt, s.importFile), (s.updatedAt || '').slice(0, 19)].concat(O().product.map(function (k) { return s.lines && s.lines[k] ? s.lines[k] : ''; }), [isRepeat(p) ? 'ใช่' : '']); });
+  var H3 = ['Sale ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'ชื่อโครงการ', 'ประเภทอาคาร', 'ประเภทการติดต่อ', 'เลขที่ใบสั่งขาย (SO No.)', 'วันที่ SO', 'มูลค่า SO (ก่อน VAT)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง', 'สถานะ SO', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด'].concat(O().product.map(function (k) { return 'SO ' + k; }), ['SO อื่น ๆ', 'อื่น ๆ (ระบุ)', 'ลูกค้าเดิม / เฟสซื้อเพิ่ม']);
+  var R3 = liveSales().filter(function (s) { return inM(s.soDate); }).map(function (s) { var p = projById(s.projectId) || {}; return [s.id, s.projectId, p.code || '', s.empId, s.empName, s.branch, s.team, p.name || '', p.ptype || '', p.contactRole || '', s.soNo, s.soDate, s.soValue || 0, s.dp || 0, s.deliveryDate, s.soStatus, localTs(s.createdAt), lagDays(s.soDate, s.createdAt, s.importFile), (s.updatedAt || '').slice(0, 19)].concat(O().product.map(function (k) { return s.lines && s.lines[k] ? s.lines[k] : ''; }), [s.lines && s.lines[OTHER] ? s.lines[OTHER] : '', s.linesOther || '', isRepeat(p) ? 'ใช่' : '']); });
   try {
     var H4 = ['Month', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'Project ID', 'รหัสโครงการ', 'ชื่อโครงการ', 'ประเภทอาคาร', 'ช่องทางการติดต่อ', 'จังหวัด', 'ประเภทการติดต่อ', 'สถานะ ณ สิ้นเดือน', 'ยอดที่คาดว่าจะได้ Estimate Sale', 'วันที่คาดว่าจะปิด Closing Date', 'กำหนดการหน้างานสร้างเสร็จ (ข้อมูลเดิม)', 'วันที่ปิดงวด', 'รูปแบบโครงการ', 'สถานะหน้างาน'];
     var R4 = []; Store.months.filter(function (m) { return !m.deleted && m.closed && (!ym || m.month === ym); }).sort(function (a, b) { return a.month.localeCompare(b.month); }).forEach(function (m) { (m.items || []).forEach(function (i) { R4.push([m.month, m.empId, m.empName, m.branch, m.team, i.projectId, i.code, i.name, i.ptype, i.channel || '', i.province, i.contactRole, i.status, i.estimate || 0, i.closingDate, i.completion, (m.closedAt || '').slice(0, 19), i.pform || '', i.site ? siteLabel(i.site) : '']); }); });
     var H5 = ['Project ID', 'รหัสโครงการ', 'ชื่อโครงการ', 'ชื่อผู้ติดต่อ', 'ประเภทการติดต่อ', 'ประเภทการติดต่อ (รายการย่อย)', 'เบอร์ผู้ติดต่อ', 'LINE', 'ผู้ติดต่อหลัก', 'ความยินยอม', 'วันที่ยินยอม'];
     var R5 = []; R1.forEach(function (r) { var p = projById(r[22]); if (!p) return; contactsOf(p).forEach(function (c) { R5.push([p.id, p.code, p.name, c.name, c.role || '', c.roleOther ? 'อื่น ๆ: ' + c.roleOther : (c.roleDetail && c.roleDetail !== c.role ? c.roleDetail : ''), fmtPhone(c.phone), c.line || '', c.primary ? 'ใช่' : '', c.consent ? 'ยินยอม' : 'ไม่ยินยอม', c.primary ? (p.consentAt || '').slice(0, 10) : (c.consentAt || '').slice(0, 10)]); }); });
-    var sheetsX = [{ name: 'Projects', header: H1, rows: R1 }, { name: 'FollowUps', header: H2, rows: R2 }, { name: 'Sales', header: H3, rows: R3 }, { name: 'MonthlySnapshot', header: H4, rows: R4 }, { name: 'Contacts', header: H5, rows: R5 }, { name: 'Quotations', header: ['Quote ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'ชื่อโครงการ', 'เลขที่ QT', 'ครั้งที่', 'วันที่', 'มูลค่า (ก่อน VAT)', 'ยืนราคาถึง', 'รูปแบบราคา', 'แพ็กเกจ', 'หมายเหตุ'].concat(O().product.map(function (k) { return 'QT ' + k; })), rows: liveQuotes().filter(function (q) { return inM(q.date); }).map(function (q) { var p = projById(q.projectId) || {}; return [q.id, q.projectId, p.code || '', q.empId, p.name || '', q.qtNo, q.rev || 1, q.date, q.value || 0, q.validUntil || '', q.priceMode === 'package' ? 'แพ็กเกจรายยูนิต' : 'ราคารวม', (q.packages || []).map(function (r) { return r.type + ' ' + r.price + '×' + r.units; }).join('; '), q.note || ''].concat(O().product.map(function (k) { return q.lines && q.lines[k] ? q.lines[k] : ''; })); }) }];
+    var sheetsX0 = [{ name: 'Projects', header: H1, rows: R1 }, { name: 'FollowUps', header: H2, rows: R2 }, { name: 'Sales', header: H3, rows: R3 }, { name: 'MonthlySnapshot', header: H4, rows: R4 }, { name: 'Contacts', header: H5, rows: R5 }, { name: 'Quotations', header: ['Quote ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'ชื่อโครงการ', 'เลขที่ใบเสนอราคา (Quotation No.)', 'ครั้งที่', 'วันที่', 'มูลค่า (ก่อน VAT)', 'ยืนราคาถึง', 'รูปแบบราคา', 'แพ็กเกจ', 'หมายเหตุ'].concat(O().product.map(function (k) { return 'ใบเสนอราคา ' + k; }).concat(['ใบเสนอราคา อื่น ๆ', 'อื่น ๆ (ระบุ)'])), rows: liveQuotes().filter(function (q) { return inM(q.date); }).map(function (q) { var p = projById(q.projectId) || {}; return [q.id, q.projectId, p.code || '', q.empId, p.name || '', q.qtNo, q.rev || 1, q.date, q.value || 0, q.validUntil || '', q.priceMode === 'package' ? 'แพ็กเกจรายยูนิต' : 'ราคารวม', (q.packages || []).map(function (r) { return r.type + ' ' + r.price + '×' + r.units; }).join('; '), q.note || ''].concat(O().product.map(function (k) { return q.lines && q.lines[k] ? q.lines[k] : ''; }).concat([q.lines && q.lines[OTHER] ? q.lines[OTHER] : '', q.linesOther || ''])); }) }];
+    var sheetsX = anon ? anonSheets(sheetsX0) : sheetsX0;
     toast('กำลังสร้างไฟล์ Excel…');
     buildXlsxZ(sheetsX).then(function (blob) {
-      download(blob, exportName(ym));
+      download(blob, exportName(ym).replace(/\.xlsx$/, anon ? '_ANALYSIS.xlsx' : '.xlsx'));
+      if (anon) { toast('ส่งออกไฟล์สำหรับวิเคราะห์แล้ว'); return; }
       var done = function () { toast('ส่งออก Excel แล้ว'); rerender(); };
       if (ym) { if (mrec && mrec.closed) { mrec.exportedAt = nowISO(); Store.save(mrec).then(done); } else done(); }
       else { Store.state.lastExport = nowISO(); Store.saveState().then(done); }
