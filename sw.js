@@ -1,6 +1,6 @@
 /* Project Sales Tracker · service worker
    เมื่ออัปเดตแอป ให้เปลี่ยนเลข CACHE ทุกครั้ง (เช่น v1.0.1) */
-var CACHE = 'ps-tracker-v1.10.0';
+var CACHE = 'ps-tracker-v1.11.0';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
