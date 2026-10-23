@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KJL2qvsbvFD0rxg+5o8FloAflO5WUi48D+q17SpkMFg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PJGyGPWsBRXdjqL4GU/4tjUdK28rFK/kOvSUHKLJZcg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#ffbf0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -165,6 +165,10 @@ details.fold>summary{cursor:pointer;font-weight:700;color:var(--text-strong);pad
 a.chip{text-decoration:none}.chip.redchip{border:1.5px solid var(--danger);color:var(--danger-text);font-weight:700}
 .ptiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.ptile{background:var(--surface);border:1px solid var(--line);border-radius:12px;text-align:center;padding:8px 2px;text-decoration:none;color:var(--text);display:flex;flex-direction:column;justify-content:center;min-height:68px}
 .ptile b{font-size:21px;color:var(--text-strong);line-height:1.2}.ptile span{font-size:12px;line-height:1.25}.ptile.rd{border:1.5px solid var(--danger)}.ptile.rd b{color:var(--danger-text)}
+button.ptile{font:inherit;cursor:pointer;min-height:64px}.ptile[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}.ptile[aria-pressed=true] b,.ptile[aria-pressed=true] span{color:#2b2b2b;font-weight:700}
+.lsearch{margin:0;border:1.5px solid var(--line);box-shadow:none;border-radius:12px}.pbar{display:flex;gap:8px;align-items:center}.pbar select{flex:1;min-width:0;min-height:44px}.pbar .btn{white-space:nowrap;min-height:44px}
+.fchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.chip.fx{display:inline-flex;align-items:center;gap:4px;min-height:36px}.linkbtn{background:none;border:0;color:var(--text-strong);text-decoration:underline;padding:6px;font:inherit;cursor:pointer}
+.lcard{gap:4px}.lcr{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}.lname{font-size:16px;min-width:0;overflow-wrap:anywhere}.ell{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nowrap{white-space:nowrap}.lcode{font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0}
 .ptile[aria-current]{background:var(--accent);border-color:var(--accent)}.ptile[aria-current] b,.ptile[aria-current] span{color:#2b2b2b;font-weight:700}
 .hrow{display:flex;gap:12px;align-items:center;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:pointer}.hrow input{width:22px;height:22px;flex:none}
 .gbar2{height:10px;border-radius:99px;background:#ececec;overflow:hidden}.gbar2 i{display:block;height:100%;background:var(--accent)}
@@ -312,7 +316,7 @@ table.fx{table-layout:fixed;font-size:13px}table.fx th,table.fx td{padding:8px 4
    Replace Store.* persistence to add server sync later.
    ========================================================= */
 
-var APP_VERSION = '1.12.1';
+var APP_VERSION = '1.12.2';
 var SCHEMA_VERSION = 2;
 var DB_NAME = 'ps-tracker';
 var KDF_ITER = 250000;
@@ -1260,42 +1264,74 @@ function searchText(p, notes, sos) {
   var f = notes || '', s = sos || '';
   return [(p.contacts || []).map(function (c) { return c.deleted ? '' : c.name + ' ' + digits(c.phone) + ' ' + (c.line || ''); }).join(' '), p.name, p.code, p.codeOld, p.developer, p.contactName, digits(p.phone), p.line, p.province, p.address, p.info, p.ptype, p.ptypeDetail, p.ptypeOther, p.pform, p.channel, p.channelDetail, p.channelOther, p.contactRole, p.contactRoleDetail, p.contactRoleOther, siteLabel(p.site), (p.products || []).join(' '), f, s].join(' ').toLowerCase();
 }
+var PFL = [['active', 'กำลังติดตาม'], ['won', 'Close Sale'], ['lost', 'ไม่ได้งาน'], ['hold', 'เลื่อน/ระงับ'], ['all', 'ทั้งหมด']];
+var PSORT = [['next', 'นัดใกล้สุด'], ['est', 'ยอดมาก → น้อย'], ['age', 'ค้างในขั้นนานสุด'], ['close', 'วันปิดใกล้สุด']];
+function pSel(id, label, opts, val) { return '<div class="field"><label for="' + id + '" class="lbl">' + label + '</label><select id="' + id + '" class="inp" data-live="' + id + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(val || '') === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></div>'; }
+function pFilters() {
+  var u = S.ui, f = [];
+  if (u.pst) f.push(['pst', 'ขั้น: ' + u.pst]);
+  if (u.pper) f.push(['pper', { m1: 'เดือนนี้', m3: '3 เดือนล่าสุด', y: 'ปีนี้' }[u.pper] || u.pper]);
+  if (u.pt) f.push(['pt', u.pt]);
+  if (u.ps) f.push(['ps', 'หน้างาน ' + u.ps]);
+  return f;
+}
 function vProjects() {
   var u = S.ui; u.pf = u.pf || 'active'; u.sort = u.sort || 'next'; u.limit = u.limit || 20;
   var all = liveProjects(), cnt = { active: 0, won: 0, lost: 0, hold: 0, all: all.length };
   all.forEach(function (p) { if (ACTIVE.indexOf(p.status) >= 0) cnt.active++; else if (p.status === ST.WON) cnt.won++; else if (p.status === ST.LOST) cnt.lost++; else cnt.hold++; });
-  var fl = [['active', 'กำลังติดตาม'], ['won', 'Close Sale'], ['lost', 'ไม่ได้งาน'], ['hold', 'เลื่อน/ระงับ'], ['all', 'ทั้งหมด']];
-  var sel = function (id, live, label, opts, val) { return '<div class="field"><label for="' + id + '" class="sr">' + label + '</label><select id="' + id + '" class="inp" data-live="' + live + '">' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(val || '') === String(o[0]) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></div>'; };
-  var body = '<div class="stack"><div class="field"><label for="q" class="sr">ค้นหา Lead</label><input id="q" class="inp" type="search" data-live="q" value="' + esc(u.q || '') + '" placeholder="ค้นหาชื่อ ผู้ติดต่อ เบอร์ เลขที่ QT/SO" autocomplete="off"></div>' +
-    '<div class="tabs" role="group" aria-label="สถานะโครงการ">' + fl.map(function (f) { return '<button type="button" class="chip" data-act="pf" data-v="' + f[0] + '" aria-pressed="' + (u.pf === f[0]) + '">' + f[1] + ' ' + cnt[f[0]] + '</button>'; }).join('') + '</div>' +
-    '<div class="grid2">' + sel('pst', 'pst', 'ขั้นการขาย', [['', 'ทุกขั้น']].concat(ACTIVE.map(function (x) { return [x, 'ขั้น: ' + x]; })), u.pst) + sel('pper', 'pper', 'ช่วงเวลา', [['', 'ช่วงเวลา: ทั้งหมด'], ['m1', 'เดือนนี้'], ['m3', '3 เดือนล่าสุด'], ['y', 'ปีนี้']], u.pper) +
-    '<div class="field"><label for="pt" class="sr">ประเภทอาคาร</label><select id="pt" class="inp" data-live="pt"><option value="">ทุกประเภทอาคาร</option>' + groupNames(O().ptype).map(function (t) { return '<option' + (u.pt === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></div>' +
-    sel('ps', 'ps', 'สถานะหน้างาน', [['', 'ทุกสถานะหน้างาน']].concat(SITE.map(function (t, i) { return [String(i + 1), 'หน้างาน ' + (i + 1) + ' ' + t]; })), u.ps) + '</div>' +
-    '<div class="tabs" role="group" aria-label="เรียงลำดับ">' + [['next', 'นัดใกล้สุด'], ['est', 'ยอดมาก → น้อย'], ['age', 'ค้างในขั้นนานสุด'], ['close', 'วันปิดใกล้สุด']].map(function (x) { return '<button type="button" class="chip" data-act="psort" data-v="' + x[0] + '" aria-pressed="' + (u.sort === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+  var body = '<div class="stack"><div class="hsearch lsearch" role="search">' + icon('search', 20) + '<label for="q" class="sr">ค้นหา Lead</label><input id="q" type="search" data-live="q" value="' + esc(u.q || '') + '" placeholder="ค้นหาชื่อ ผู้ติดต่อ เบอร์ เลขที่ QT/SO" autocomplete="off" enterkeyhint="search"></div>' +
+    '<div class="ptiles" role="group" aria-label="สถานะ Lead">' + PFL.map(function (f) { return '<button type="button" class="ptile" data-act="pf" data-v="' + f[0] + '" aria-pressed="' + (u.pf === f[0]) + '"><b>' + cnt[f[0]] + '</b><span>' + f[1] + '</span></button>'; }).join('') + '</div>' +
+    '<div id="pbar" class="stack" style="gap:8px"></div>' +
     '<div id="plist" class="stack"></div></div>';
   return shell({ title: 'Leads', right: '<a class="btn primary small" href="#/new">+ Lead ใหม่</a>' }, body);
 }
+function renderPBar(n) {
+  var u = S.ui, el = $('#pbar'); if (!el) return; var f = pFilters(), q = (u.q || '').trim();
+  var h = '<div class="pbar"><button type="button" class="btn small" data-act="pfilter" aria-haspopup="dialog">' + icon('sliders', 18) + ' ตัวกรอง' + (f.length ? ' (' + f.length + ')' : '') + '</button>' +
+    '<label for="psel" class="sr">เรียงลำดับ</label><select id="psel" class="inp small" data-live="psel">' + PSORT.map(function (x) { return '<option value="' + x[0] + '"' + (u.sort === x[0] ? ' selected' : '') + '>เรียง: ' + x[1] + '</option>'; }).join('') + '</select></div>' +
+    (f.length ? '<div class="fchips">' + f.map(function (x) { return '<button type="button" class="chip fx" data-act="pfx" data-k="' + x[0] + '" aria-label="ลบตัวกรอง ' + esc(x[1]) + '">' + esc(x[1]) + ' ' + icon('close', 14) + '</button>'; }).join('') + (f.length > 1 ? '<button type="button" class="linkbtn small" data-act="pfclr">ล้างทั้งหมด</button>' : '') + '</div>' : '') +
+    (q ? '<span class="small muted">ค้นหาจากทุกสถานะ</span>' : '');
+  if (el._h !== h) { el._h = h; el.innerHTML = h; }
+  var b = $('#pfn'); if (b) b.textContent = 'ดูผล ' + n + ' รายการ';
+}
+function openPFilter() {
+  var u = S.ui, m = $('#modal');
+  m.innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="pfh"><div class="sheet"><div class="grab"></div><h2 id="pfh" style="font-size:18px">ตัวกรอง Lead</h2>' +
+    pSel('pst', 'ขั้นการขาย', [['', 'ทุกขั้น']].concat(ACTIVE.map(function (x) { return [x, x]; })), u.pst) +
+    pSel('pper', 'วันที่บันทึก Lead', [['', 'ทั้งหมด'], ['m1', 'เดือนนี้'], ['m3', '3 เดือนล่าสุด'], ['y', 'ปีนี้']], u.pper) +
+    pSel('pt', 'ประเภทอาคาร', [['', 'ทุกประเภทอาคาร']].concat(groupNames(O().ptype).map(function (t) { return [t, t]; })), u.pt) +
+    pSel('ps', 'สถานะหน้างาน', [['', 'ทุกสถานะหน้างาน']].concat(SITE.map(function (t, i) { return [String(i + 1), (i + 1) + ' ' + t]; })), u.ps) +
+    '<div class="grid2"><button type="button" class="btn" data-act="pfclr">ล้างทั้งหมด</button><button type="button" class="btn primary" data-act="pfdone" id="pfn">ดูผล</button></div></div></div>';
+  var bg = $('.modalbg', m); bg.onclick = function (e) { if (e.target === bg) H.pfdone(); };
+  renderPList(); var f = $('#pst', m); if (f) f.focus();
+}
 function renderPList() {
   var u = S.ui, el = $('#plist'); if (!el) return;
-  var q = (u.q || '').toLowerCase().trim(), qd = digits(q), ix = q ? sIndex() : null, t = todayISO();
+  var q = (u.q || '').toLowerCase().trim(), ix = q ? sIndex() : null, t = todayISO();
   var from = u.pper === 'm1' ? curMonth() + '-01' : u.pper === 'm3' ? addMonths(curMonth(), -2) + '-01' : u.pper === 'y' ? t.slice(0, 4) + '-01-01' : '';
   var list = liveProjects().filter(function (p) {
-    var ok = u.pf === 'all' || (u.pf === 'active' && ACTIVE.indexOf(p.status) >= 0) || (u.pf === 'won' && p.status === ST.WON) || (u.pf === 'lost' && p.status === ST.LOST) || (u.pf === 'hold' && p.status === ST.HOLD);
+    // search covers every status; a stage filter implies its own status
+    var ok = q || u.pst || u.pf === 'all' || (u.pf === 'active' && ACTIVE.indexOf(p.status) >= 0) || (u.pf === 'won' && p.status === ST.WON) || (u.pf === 'lost' && p.status === ST.LOST) || (u.pf === 'hold' && p.status === ST.HOLD);
     if (!ok) return false; if (u.pt && p.ptype !== u.pt) return false; if (u.ps && String(p.site || '') !== String(u.ps)) return false;
     if (u.pst && p.status !== u.pst) return false; if (from && (p.recordDate || '') < from) return false;
     if (!q) return true; var h = ix[p.id] || '';
     return q.split(/\s+/).every(function (w) { return wordHit(h, w); });
   });
   var cmp = { next: function (a, b) { return (a.nextDate || '9999').localeCompare(b.nextDate || '9999'); }, est: function (a, b) { return (b.estimate || 0) - (a.estimate || 0); }, age: function (a, b) { return (a.stageAt || '9999').localeCompare(b.stageAt || '9999'); }, close: function (a, b) { return (a.closingDate || '9999').localeCompare(b.closingDate || '9999'); } }[u.sort] || function () { return 0; };
-  list.sort(cmp);
+  list.sort(cmp); renderPBar(list.length);
   var sum = list.reduce(function (s, p) { return s + (ACTIVE.indexOf(p.status) >= 0 ? (p.estimate || 0) : 0); }, 0), shown = list.slice(0, u.limit);
-  el.innerHTML = '<span class="small" style="font-weight:600">' + list.length + ' โครงการ' + (sum ? ' · ยอดคาดการณ์รวม ' + fmt(sum) + ' บาท' : '') + '</span>' + (shown.length ? shown.map(function (p) {
-    var act = ACTIVE.indexOf(p.status) >= 0, late = p.nextDate && p.nextDate < t && act, nd = stageDays(p), old = act && nd != null && nd > 60, nc = contactsOf(p).length;
-    return '<a class="card link' + (late || old ? ' alert' : '') + '" href="#/project/' + esc(p.id) + '"><div class="between" style="align-items:flex-start"><div><b class="strong" style="font-size:16px">' + esc(p.name) + '</b><div class="small">' + esc(dv(p, 'ptype') || 'ยังไม่ระบุประเภทอาคาร') + (p.pform ? ' · ' + esc(p.pform.replace('สร้างใหม่ โดย ', '')) : '') + (p.province ? ' · ' + esc(p.province) : '') + ' · ' + esc(p.code) + (p.site ? ' <span class="tag">หน้างาน ' + p.site + '</span>' : '') + (p.quick ? ' <span class="tag">Lead ด่วน</span>' : '') + '</div></div>' + badge(p.status) + '</div>' +
-      '<div class="between small"><span>' + (p.contactName ? esc(p.contactName) + (nc > 1 ? ' +' + (nc - 1) + ' คน' : '') + ' · ' + esc(dv(p, 'contactRole') || '-') : esc(fmtPhone(p.phone))) + '</span><b class="strong">' + fmt(p.estimate) + ' บาท</b></div>' +
-      (act ? '<span class="small' + (old ? ' dangerText' : '') + '" style="' + (old ? 'font-weight:700' : '') + '">อยู่ขั้นนี้ ' + (nd == null ? '-' : nd) + ' วัน' + (old ? ' · เกิน 60 วัน' : '') + ' · ปิด ' + (p.closingDate ? be(p.closingDate) : '-') + '</span>' : '') +
-      (p.nextDate && act ? '<span class="small ' + (late ? 'dangerText' : 'muted') + '" style="font-weight:700">' + (late ? 'เลยนัด · ' : 'นัดติดตาม ') + be(p.nextDate) + '</span>' : '') + '</a>';
-  }).join('') + (list.length > shown.length ? '<button class="btn block" data-act="pmore">แสดงอีก ' + Math.min(20, list.length - shown.length) + ' โครงการ (แสดง ' + shown.length + ' จาก ' + list.length + ')</button>' : '') : '<div class="card muted">ไม่พบโครงการ</div>');
+  el.innerHTML = '<span class="small" style="font-weight:600">' + list.length + ' รายการ' + (sum ? ' · ยอดคาดการณ์รวม ' + fmt(sum) + ' บาท' : '') + '</span>' + (shown.length ? shown.map(function (p) {
+    var act = ACTIVE.indexOf(p.status) >= 0, late = p.nextDate && p.nextDate < t && act, nd = stageDays(p), old = act && nd != null && nd > 60, nc = contactsOf(p).length, l3;
+    if (!act) l3 = '<span class="small muted">บันทึก ' + (p.recordDate ? be(p.recordDate) : '-') + '</span>';
+    else if (late) l3 = '<span class="small dangerText" style="font-weight:700">เลยนัด ' + diffDays(p.nextDate, t) + ' วัน · ' + be(p.nextDate) + '</span>';
+    else if (p.nextDate) l3 = '<span class="small" style="font-weight:600">' + (p.nextDate === t ? 'นัดวันนี้' : 'นัด ' + be(p.nextDate)) + (p.nextTime ? ' ' + esc(p.nextTime) + ' น.' : '') + '</span>';
+    else l3 = '<span class="small muted">ยังไม่มีนัดครั้งถัดไป</span>';
+    if (old) l3 += '<span class="small dangerText" style="font-weight:700"> · ค้างขั้นนี้ ' + nd + ' วัน</span>';
+    return '<a class="card link lcard' + (late || old ? ' alert' : '') + '" href="#/project/' + esc(p.id) + '">' +
+      '<div class="lcr"><b class="strong lname">' + esc(p.name) + '</b>' + badge(p.status) + '</div>' +
+      '<div class="lcr small"><span class="ell">' + (p.contactName ? esc(p.contactName) + (nc > 1 ? ' +' + (nc - 1) : '') + ' · ' + esc(dv(p, 'contactRole') || '-') : esc(fmtPhone(p.phone) || '-')) + '</span><b class="strong nowrap">' + fmt(p.estimate) + ' บาท</b></div>' +
+      '<div class="lcr"><span class="ell">' + l3 + '</span><span class="lcode">' + (p.quick ? '<span class="tag">Lead ด่วน</span> ' : '') + esc(p.code) + '</span></div></a>';
+  }).join('') + (list.length > shown.length ? '<button class="btn block" data-act="pmore">แสดงอีก ' + Math.min(20, list.length - shown.length) + ' รายการ (แสดง ' + shown.length + ' จาก ' + list.length + ')</button>' : '') : '<div class="card muted">ไม่พบ Lead' + (pFilters().length || q ? ' ตามเงื่อนไขนี้' : '') + '</div>');
 }
 function newDraft() { return { recordDate: todayISO(), name: '', ptype: '', ptypeDetail: '', ptypeOther: '', pform: '', site: '', developer: '', info: '', channel: '', channelDetail: '', channelOther: '', province: '', address: '', lat: null, lng: null, acc: null, photos: [], contactName: '', contactRole: '', contactRoleDetail: '', contactRoleOther: '', phone: '', line: '', consent: false, estimate: '', closingDate: '', closingDateNA: false, products: [], nextDate: '', nextDateNA: false, agenda: [], agendaOther: '', prep: '' }; }
 function vProjectForm(id) {
@@ -2736,7 +2772,8 @@ document.addEventListener('input', function (e) {
 document.addEventListener('change', function (e) {
   var t = e.target;
   if (t.dataset.num && t.value) { var n = parseAmt(t.value); if (n == null || isNaN(n)) { toast('ใส่จำนวนเงินเป็นบาทเต็ม ไม่ติดลบ ไม่มีทศนิยม'); t.value = ''; if (S.draft && t.dataset.bind) S.draft[t.dataset.bind] = ''; } else t.value = fmt(n); }
-  if (t.dataset.live === 'pt') { S.ui.pt = t.value; renderPList(); }
+  if (t.dataset.live === 'pt') { S.ui.pt = t.value; S.ui.limit = 20; renderPList(); }
+  if (t.dataset.live === 'psel') { S.ui.sort = t.value; renderPList(); }
   if (t.dataset.live === 'ps') { S.ui.ps = t.value; S.ui.limit = 20; renderPList(); }
   if (t.dataset.live === 'pst') { S.ui.pst = t.value; S.ui.limit = 20; renderPList(); }
   if (t.dataset.live === 'pper') { S.ui.pper = t.value; S.ui.limit = 20; renderPList(); }
@@ -2752,7 +2789,7 @@ document.addEventListener('change', function (e) {
   if (t.dataset.restore && t.files && t.files[0]) { restoreBackup(t.files[0]); t.value = ''; }
   if (t.dataset.import && t.files && t.files[0]) { readImportFile(t.files[0]); t.value = ''; }
 });
-document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'pin') H.unlock(); if ((e.key === ' ' || e.key === 'Enter') && e.target.getAttribute && e.target.getAttribute('role') === 'checkbox') { e.preventDefault(); e.target.click(); } if (e.key === 'Enter' && e.target.id === 'hs') { var r = hsFind(S.ui.hs); if (r.length === 1) location.hash = '#/project/' + r[0].p.id; else if (r.length) H.hsall(); } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('#pfh')) { H.pfdone(); return; } if (e.key === 'Enter' && e.target.id === 'pin') H.unlock(); if ((e.key === ' ' || e.key === 'Enter') && e.target.getAttribute && e.target.getAttribute('role') === 'checkbox') { e.preventDefault(); e.target.click(); } if (e.key === 'Enter' && e.target.id === 'hs') { var r = hsFind(S.ui.hs); if (r.length === 1) location.hash = '#/project/' + r[0].p.id; else if (r.length) H.hsall(); } });
 document.addEventListener('click', function (e) {
   touch();
   var cl = e.target.closest('a[data-call]');
@@ -2790,8 +2827,12 @@ var H = {
   bphotos: function () { S.ui.bAllPhotos = !S.ui.bAllPhotos; rerender(); },
   period: function (t) { S.ui.period = t.dataset.v; rerender(); },
   mstep: function (t) { var m = addMonths(S.ui.month || monthOf(todayISO()), +t.dataset.v); if (m > monthOf(todayISO())) return; S.ui.month = m; rerender(); },
-  pf: function (t) { S.ui.pf = t.dataset.v; S.ui.limit = 20; if (S.ui.pf !== 'active') S.ui.pst = ''; $all('[data-act="pf"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.ui.pf); }); renderPList(); },
-  psort: function (t) { S.ui.sort = t.dataset.v; $all('[data-act="psort"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.ui.sort); }); renderPList(); },
+  pf: function (t) { S.ui.pf = t.dataset.v; S.ui.limit = 20; S.ui.pst = ''; $all('[data-act="pf"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.ui.pf); }); renderPList(); },
+  psort: function (t) { S.ui.sort = t.dataset.v; renderPList(); },
+  pfilter: function () { openPFilter(); },
+  pfdone: function () { var m = $('#modal'); if (m) m.innerHTML = ''; renderPList(); var b = $('[data-act=pfilter]'); if (b) b.focus(); },
+  pfx: function (t) { S.ui[t.dataset.k] = ''; S.ui.limit = 20; renderPList(); },
+  pfclr: function () { var u = S.ui; u.pst = u.pper = u.pt = u.ps = ''; u.limit = 20; if ($('#pfh')) openPFilter(); else renderPList(); },
   hsall: function () { S.ui.q = S.ui.hs || ''; S.ui.pf = 'all'; S.ui.limit = 20; S.ui.pst = ''; S.ui.pt = ''; S.ui.ps = ''; S.ui.pper = ''; location.hash = '#/projects'; },
   resched: function (t) { S.mv = null; openMove('appt', t.dataset.id); },
   dmove: function (t) { S.mv = null; openMove(t.dataset.k, t.dataset.p, t.dataset.s); },
