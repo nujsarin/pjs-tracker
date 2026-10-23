@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PJGyGPWsBRXdjqL4GU/4tjUdK28rFK/kOvSUHKLJZcg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zU4yq8+4U9/rsb6eWxDzrRURCDDsl7Dqe1z9UVhb30A='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#ffbf0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -316,7 +316,7 @@ table.fx{table-layout:fixed;font-size:13px}table.fx th,table.fx td{padding:8px 4
    Replace Store.* persistence to add server sync later.
    ========================================================= */
 
-var APP_VERSION = '1.12.2';
+var APP_VERSION = '1.13.0';
 var SCHEMA_VERSION = 2;
 var DB_NAME = 'ps-tracker';
 var KDF_ITER = 250000;
@@ -331,7 +331,7 @@ STATUS_HINT[ST.PRES] = 'ได้คุยกับผู้ติดต่อ�
 STATUS_HINT[ST.QUOTE] = 'มีความต้องการชัดเจน กำลังเสนอแบบหรือราคา';
 STATUS_HINT[ST.WON] = 'ได้ใบสั่งขาย (SO)';
 STATUS_HINT[ST.LOST] = 'ลูกค้าไม่เลือกเรา';
-STATUS_HINT[ST.HOLD] = 'โครงการเลื่อนหรือหยุดชั่วคราว';
+STATUS_HINT[ST.HOLD] = 'ลูกค้าหรือหน้างานเลื่อน หรือหยุดชั่วคราว';
 var OLD_STATUS = { 'ใหม่': ST.NEW, 'นำเสนอแล้ว': ST.PRES, 'เสนอราคาแล้ว': ST.QUOTE, 'เจรจา': ST.QUOTE, 'ได้งาน': ST.WON };
 var SO_STATUS = ['เปิด SO แล้ว', 'จัดส่งแล้ว', 'ยกเลิก SO'];
 
@@ -353,7 +353,7 @@ var DEFAULT_OPTIONS = {
   staff: [], targets: {}
 };
 var OPTION_GROUPS = [
-  ['ptype', 'ประเภทอาคาร'], ['pform', 'รูปแบบโครงการ'], ['channel', 'ช่องทางการติดต่อ'], ['role', 'ประเภทการติดต่อ'],
+ ['ptype', 'ประเภทอาคาร'], ['pform', 'ลักษณะงาน'], ['channel', 'ช่องทางการติดต่อ'], ['role', 'ประเภทการติดต่อ'],
   ['product', 'ประเภทสินค้า'], ['agenda', 'วาระนัด'], ['lost', 'เหตุผลที่ไม่ได้งาน'], ['crew', 'ทีมที่ร่วมนัด']
 ];
 var OPTION_RULE = { ptype: 'เลือกตามการใช้งานหลักของพื้นที่ ไม่ใช่รูปทรงอาคาร', pform: 'แยกอาคารใหม่กับอาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง', channel: 'เลือกตามจุดแรกที่ได้ Lead มา', role: 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ', product: 'แยกมูลค่าตามประเภทสินค้าได้ในใบเสนอราคาและ SO', agenda: 'เลือกได้หลายข้อต่อนัด', lost: '' };
@@ -369,7 +369,7 @@ var LEG = {
 };
 var PRODUCT_HINT = { 'Built-in': 'ตู้ครัว ตู้เสื้อผ้า งานสั่งทำติดตั้งกับอาคาร', 'Loose Furniture': 'โซฟา เตียง โต๊ะ เก้าอี้ ตู้ที่ยกย้ายได้', 'Home Decoration': 'ผ้าม่าน วอลล์เปเปอร์ พรม โคมไฟ ของแต่งบ้าน', 'Home Service': 'ขนย้าย ตรวจรับบ้านและคอนโด ทำความสะอาด ล้างแอร์ กำจัดไรฝุ่นและคราบ เปลี่ยนหนังหุ้มโซฟา' };
 var PRODUCT_RENAME = { 'Loose furniture': 'Loose Furniture', 'HDI ตกแต่งบ้าน': 'Home Decoration' }, DESIGN_OLD = 'บริการออกแบบ';
-var FLABEL = { ptype: 'ประเภทอาคาร', pform: 'รูปแบบโครงการ', site: 'สถานะหน้างาน', channel: 'ช่องทางการติดต่อ', contactName: 'ชื่อผู้ติดต่อ', contactRole: 'ประเภทการติดต่อ', estimate: 'ยอดที่คาดว่าจะได้', closingDate: 'วันที่คาดว่าจะปิด', products: 'ประเภทสินค้าที่เสนอ' };
+var FLABEL = { ptype: 'ประเภทอาคาร', pform: 'ลักษณะงาน', site: 'สถานะหน้างาน', channel: 'ช่องทางการติดต่อ', contactName: 'ชื่อผู้ติดต่อ', contactRole: 'ประเภทการติดต่อ', estimate: 'ยอดที่คาดว่าจะได้', closingDate: 'วันที่คาดว่าจะปิด', products: 'ประเภทสินค้าที่เสนอ' };
 var FIRST_CTYPE = 'พบโครงการใหม่';
 
 /* ---------------- utilities ---------------- */
@@ -830,7 +830,7 @@ function planRow(p) {
 function sugCard(x) { return pCard(x.p, esc(x.why), '#8a6d00', { noAgenda: true }); }
 function doneRow(f) {
   var p = projById(f.projectId) || {}, t = todayISO();
-  return '<a class="card link" href="#/project/' + esc(f.projectId) + '" style="display:flex;flex-direction:column;gap:2px"><span class="between"><b class="strong">' + esc(p.name || '-') + '</b>' + badge(f.statusAfter) + '</span><span class="small">' + (f.ctype === FIRST_CTYPE ? 'สร้างโครงการใหม่' : (f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'ติดตาม · สถานะ ' + esc(f.statusAfter))) + (f.date !== t ? ' · <b class="strong">ย้อนหลัง</b> วันที่ติดต่อ ' + be(f.date) : '') + ' · บันทึก ' + localTs(f.createdAt).slice(11) + ' น.</span>' + (f.note && f.ctype !== FIRST_CTYPE ? '<span class="small" style="color:var(--text-strong)">' + esc(f.note.slice(0, 120)) + '</span>' : '') + '</a>';
+ return '<a class="card link" href="#/project/' + esc(f.projectId) + '" style="display:flex;flex-direction:column;gap:2px"><span class="between"><b class="strong">' + esc(p.name || '-') + '</b>' + badge(f.statusAfter) + '</span><span class="small">' + (f.ctype === FIRST_CTYPE ? 'สร้าง Lead ใหม่' : (f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'ติดตาม · สถานะ ' + esc(f.statusAfter))) + (f.date !== t ? ' · <b class="strong">ย้อนหลัง</b> วันที่ติดต่อ ' + be(f.date) : '') + ' · บันทึก ' + localTs(f.createdAt).slice(11) + ' น.</span>' + (f.note && f.ctype !== FIRST_CTYPE ? '<span class="small" style="color:var(--text-strong)">' + esc(f.note.slice(0, 120)) + '</span>' : '') + '</a>';
 }
 function sparkleDone() {
   function st(x, y, r, c) { return '<path fill="' + c + '" d="M' + x + ' ' + (y - r) + 'Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + 'Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) + 'Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + 'Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'Z"/>'; }
@@ -877,16 +877,16 @@ function vPlan(tab) {
     if (D.now.length) c += sec('นัดวันนี้ (' + D.now.length + ')', 'เรียงตามเวลา', route + D.now.slice(0, lim).map(planItem).join('') + planMore(tab, Math.min(lim, D.now.length), D.now.length));
     if (SG.length) c += sec('ควรติดต่อ (' + SG.length + ')', 'ใกล้วันปิด · หน้างานพร้อมวัดพื้นที่ · ไม่ได้ติดต่อเกิน 14 วัน · ยังไม่มีนัด', SG.slice(0, (S.ui.plimT || {}).sug || 10).map(sugCard).join('') + (SG.length > ((S.ui.plimT || {}).sug || 10) ? '<button class="btn block" data-act="plmore" data-t="sug">ดูเพิ่มอีก ' + Math.min(20, SG.length - ((S.ui.plimT || {}).sug || 10)) + ' รายการ</button>' : ''));
     if (D.deliv.length) c += sec('งานส่งมอบที่ต้องตาม (' + D.deliv.length + ')', 'งาน Built-in ที่ใกล้วันติดตั้งหรือรอลูกค้าอนุมัติแบบ', D.deliv.map(function (p) { var al = delivAlert(p); return '<div class="card' + (al.red ? ' alert' : '') + '" style="display:flex;flex-direction:column;gap:6px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px"><span class="small" style="font-weight:700;color:' + (al.red ? 'var(--danger-text)' : '#8a6d00') + '">' + esc(al.text) + '</span><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + esc(al.sub || '') + '</span></a><div class="acts"><a class="chip" href="#/delivery/' + esc(p.id) + '">' + icon('list', 16) + 'งานส่งมอบ</a><button type="button" class="chip" data-act="dmove" data-k="install" data-p="' + esc(p.id) + '">' + icon('cal', 16) + 'เลื่อนติดตั้ง</button>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main">' + icon('phone', 16) + 'โทร</a>' : '') + '</div></div>'; }).join(''));
-    if (!c) c = '<div class="empty">' + sparkleDone() + '<h2>ไม่มีนัดวันนี้</h2><p class="muted" style="margin:0">' + (D.late.length ? 'ยังมีงานเลยนัด ' + D.late.length + ' โครงการ' : 'ลองหา Lead ใหม่ หรือเตรียมนัดล่วงหน้า') + '</p><div class="grid2" style="width:100%;margin-top:8px"><a class="btn primary" href="#/new">+ Lead ใหม่</a><a class="btn" href="#/plan/' + (D.late.length ? 'late">ดูงานเลยนัด' : 'ahead">ดูนัดล่วงหน้า') + '</a></div></div>';
+ if (!c) c = '<div class="empty">' + sparkleDone() + '<h2>ไม่มีนัดวันนี้</h2><p class="muted" style="margin:0">' + (D.late.length ? 'ยังมีงานเลยนัด ' + D.late.length + ' ราย' : 'ลองหา Lead ใหม่ หรือเตรียมนัดล่วงหน้า') + '</p><div class="grid2" style="width:100%;margin-top:8px"><a class="btn primary" href="#/new">+ Lead ใหม่</a><a class="btn" href="#/plan/' + (D.late.length ? 'late">ดูงานเลยนัด' : 'ahead">ดูนัดล่วงหน้า') + '</a></div></div>';
   }
   else if (tab === 'late') {
-    if (!D.late.length) c = '<div class="empty">' + sparkleDone() + '<h2>ไม่มีโครงการที่เลยนัด</h2></div>';
+ if (!D.late.length) c = '<div class="empty">' + sparkleDone() + '<h2>ไม่มี Lead ที่เลยนัด</h2></div>';
     else {
       var gs = [['1–7 วัน', 1, 7], ['8–30 วัน', 8, 30], ['เกิน 30 วัน', 31, 1e9]], n = 0;
       gs.forEach(function (g) {
         var L = D.late.filter(function (x) { var k = diffDays(x.p.nextDate, t); return k >= g[1] && k <= g[2]; }); if (!L.length) return;
         c += '<h2 class="h2">เลยนัด ' + g[0] + ' (' + L.length + ')</h2>';
-        if (g[1] === 31) c += '<div class="card warn stack" style="gap:8px"><b class="strong">' + L.length + ' โครงการไม่มีความเคลื่อนไหวเกิน 30 วัน</b><span class="small">ถ้าลูกค้ายังไม่พร้อม เปลี่ยนเป็น "เลื่อน/ระงับ" เพื่อให้แผนงานเหลือเฉพาะงานที่เดินอยู่</span><a class="btn small" style="align-self:flex-start;border:1.5px solid var(--text-strong)" href="#/hold">เลือกโครงการที่จะเลื่อน/ระงับ</a></div>';
+ if (g[1] === 31) c += '<div class="card warn stack" style="gap:8px"><b class="strong">' + L.length + ' รายไม่มีความเคลื่อนไหวเกิน 30 วัน</b><span class="small">ถ้าลูกค้ายังไม่พร้อม เปลี่ยนเป็น "เลื่อน/ระงับ" เพื่อให้แผนงานเหลือเฉพาะงานที่เดินอยู่</span><a class="btn small" style="align-self:flex-start;border:1.5px solid var(--text-strong)" href="#/hold">เลือก Lead ที่จะเลื่อน/ระงับ</a></div>';
         L.forEach(function (x) { if (n < lim) c += planItem(x); n++; });
       });
       c += planMore(tab, Math.min(lim, D.late.length), D.late.length);
@@ -906,25 +906,25 @@ function vPlan(tab) {
   else if (tab === 'after') c = '<span class="small">ลูกค้าที่ส่งมอบครบ 6 และ 12 เดือน · โทรถามความพึงพอใจ และเสนอสินค้าเพิ่ม</span>' + (D.after.length ? D.after.map(afterCard).join('') : '<div class="card muted">ยังไม่มีลูกค้าที่ครบกำหนด</div>');
   else c = '<h2 class="h2">บันทึกแล้ววันนี้ (' + D.done.length + ')</h2>' + (D.done.length ? D.done.map(doneRow).join('') : '<div class="card muted">วันนี้ยังไม่มีการบันทึก</div>');
   var dvs = false && D.deliv.length ? '<h2 class="h2">งานส่งมอบ Built-in ที่ต้องตาม</h2>' + D.deliv.map(function (p) { var al = delivAlert(p); return '<a class="card link' + (al.red ? ' alert' : ' warn') + '" href="#/delivery/' + esc(p.id) + '"><b class="strong">' + esc(p.name) + '</b><br><span class="small' + (al.red ? ' dangerText' : '') + '" style="font-weight:700">' + esc(al.text) + '</span></a>'; }).join('') : '';
-  var near = false && D.near.length ? '<h2 class="h2">โอกาสใหม่: หน้างานพร้อมวัดพื้นที่</h2><span class="small" style="margin-top:-8px">โครงการที่สถานะหน้างานเป็น 3 หรือ 4 และยังไม่มีนัดวัดพื้นที่</span>' + D.near.map(function (p) { return '<a class="card warn link" href="#/project/' + esc(p.id) + '"><span class="between"><b class="strong">' + esc(p.name) + '</b><span class="tag">หน้างาน ' + p.site + '</span></span><span class="small">เปลี่ยนเป็นขั้น ' + p.site + ' เมื่อ ' + be(p.siteAt) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span></a>'; }).join('') : '';
+ var near = false && D.near.length ? '<h2 class="h2">โอกาสใหม่: หน้างานพร้อมวัดพื้นที่</h2><span class="small" style="margin-top:-8px">Lead ที่สถานะหน้างานเป็น 3 หรือ 4 และยังไม่มีนัดวัดพื้นที่</span>' + D.near.map(function (p) { return '<a class="card warn link" href="#/project/' + esc(p.id) + '"><span class="between"><b class="strong">' + esc(p.name) + '</b><span class="tag">หน้างาน ' + p.site + '</span></span><span class="small">เปลี่ยนเป็นขั้น ' + p.site + ' เมื่อ ' + be(p.siteAt) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span></a>'; }).join('') : '';
   return shell({ title: 'แผนงาน', right: '<a class="btn primary small" href="#/pick">+ บันทึกการติดตาม</a>' }, '<div class="stack">' + nav + '<div id="tlist" class="stack">' + c + '</div></div>');
 }
 function vHold() {
   var L = holdList(), m = S.ui.holdSel = S.ui.holdSel || {}, n = L.filter(function (x) { return m[x.p.id]; }).length, t = todayISO();
-  var body = '<div class="stack"><span class="small">โครงการที่เลยนัดเกิน 30 วัน เลือกโครงการที่ลูกค้ายังไม่พร้อม ระบบจะบันทึกประวัติ "เปลี่ยนเป็นเลื่อน/ระงับ" ให้ทุกโครงการ และนำออกจากแผนงาน เปิดกลับมาติดตามได้ทุกเมื่อ</span>' +
-    (L.length ? '<button class="btn small" data-act="holdsel" data-all="1">' + (n === L.length ? 'ไม่เลือกทั้งหมด' : 'เลือกทั้งหมด ' + L.length + ' โครงการ') + '</button>' + L.map(function (x) { var p = x.p; return '<div class="hrow" role="checkbox" tabindex="0" aria-checked="' + !!m[p.id] + '" data-act="holdsel" data-id="' + esc(p.id) + '"><input type="checkbox" tabindex="-1" aria-hidden="true"' + (m[p.id] ? ' checked' : '') + '><span style="flex:1;min-width:0"><b class="strong">' + esc(p.name) + '</b><br><span class="small">' + esc(p.status) + ' · เลยนัด ' + diffDays(p.nextDate, t) + ' วัน · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span></span></div>'; }).join('') : '<div class="card muted">ไม่มีโครงการที่เลยนัดเกิน 30 วัน</div>') + '</div>';
-  return shell({ title: 'เลื่อน/ระงับหลายโครงการ', back: '#/plan/late', nav: false, action: '<button class="btn primary" data-act="holddo"' + (n ? '' : ' disabled') + '>เปลี่ยนเป็นเลื่อน/ระงับ (' + n + ')</button>' }, body);
+ var body = '<div class="stack"><span class="small">Lead ที่เลยนัดเกิน 30 วัน เลือก Lead ที่ลูกค้ายังไม่พร้อม ระบบจะบันทึกประวัติ "เปลี่ยนเป็นเลื่อน/ระงับ" ให้ทุก Lead และนำออกจากแผนงาน เปิดกลับมาติดตามได้ทุกเมื่อ</span>' +
+ (L.length ? '<button class="btn small" data-act="holdsel" data-all="1">' + (n === L.length ? 'ไม่เลือกทั้งหมด' : 'เลือกทั้งหมด ' + L.length + ' ราย') + '</button>' + L.map(function (x) { var p = x.p; return '<div class="hrow" role="checkbox" tabindex="0" aria-checked="' + !!m[p.id] + '" data-act="holdsel" data-id="' + esc(p.id) + '"><input type="checkbox" tabindex="-1" aria-hidden="true"' + (m[p.id] ? ' checked' : '') + '><span style="flex:1;min-width:0"><b class="strong">' + esc(p.name) + '</b><br><span class="small">' + esc(p.status) + ' · เลยนัด ' + diffDays(p.nextDate, t) + ' วัน · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span></span></div>'; }).join('') : '<div class="card muted">ไม่มี Lead ที่เลยนัดเกิน 30 วัน</div>') + '</div>';
+ return shell({ title: 'เลื่อน/ระงับหลาย Lead', back: '#/plan/late', nav: false, action: '<button class="btn primary" data-act="holddo"' + (n ? '' : ' disabled') + '>เปลี่ยนเป็นเลื่อน/ระงับ (' + n + ')</button>' }, body);
 }
 function bulkHold() {
   var m = S.ui.holdSel || {}, L = holdList().filter(function (x) { return m[x.p.id]; }), t = todayISO(); if (!L.length) return;
-  confirmBox('เปลี่ยนเป็นเลื่อน/ระงับ', 'เปลี่ยน ' + L.length + ' โครงการเป็น "เลื่อน/ระงับ" และนำออกจากแผนงาน ใช่หรือไม่', 'เปลี่ยน').then(function (ok) {
+ confirmBox('เปลี่ยนเป็นเลื่อน/ระงับ', 'เปลี่ยน ' + L.length + ' รายเป็น "เลื่อน/ระงับ" และนำออกจากแผนงาน ใช่หรือไม่', 'เปลี่ยน').then(function (ok) {
     if (!ok) return;
     var chain = Promise.resolve();
     L.forEach(function (x) { var p = x.p; chain = chain.then(function () {
       var f = stamp({ id: uid(), kind: 'follow', projectId: p.id, createdAt: nowISO(), date: t, channel: p.channel || '', ctype: '', statusBefore: p.status, statusAfter: ST.HOLD, lostReason: '', note: 'เปลี่ยนเป็นเลื่อน/ระงับจากแผนงาน: เลยนัดเกิน 30 วัน', nextDate: '', site: p.site || 0, agenda: [], agendaOther: '', prep: '', lat: null, lng: null });
       p.status = ST.HOLD; p.stageAt = t; p.nextDate = ''; p.nextDateNA = false; p.nextTime = ''; p.nextAgenda = []; p.nextAgendaOther = ''; p.nextPrep = '';
       return Store.save(f).then(function () { return Store.save(p); }); }); });
-    chain.then(function () { S.ui.holdSel = {}; toast('เปลี่ยนเป็นเลื่อน/ระงับแล้ว ' + L.length + ' โครงการ'); location.hash = '#/plan/late'; }).catch(function () { toast('บันทึกไม่สำเร็จบางรายการ ลองอีกครั้ง'); rerender(); });
+ chain.then(function () { S.ui.holdSel = {}; toast('เปลี่ยนเป็นเลื่อน/ระงับแล้ว ' + L.length + ' ราย'); location.hash = '#/plan/late'; }).catch(function () { toast('บันทึกไม่สำเร็จบางรายการ ลองอีกครั้ง'); rerender(); });
   });
 }
 
@@ -972,19 +972,19 @@ function todayCard(D) {
   var title = 'วันนี้', rows = '';
   if (today.length) rows = today.slice(0, 3).map(function (x) { return todayRow(x.p, x.p.nextTime ? x.p.nextTime + '<small>น.</small>' : 'วันนี้<small>ไม่ระบุเวลา</small>', apptSub(x.p)); }).join('');
   else if (D.ahead.length) { title = 'วันนี้ไม่มีนัด · นัดถัดไป'; rows = D.ahead.slice(0, 3).map(function (p) { var dd = parseISO(p.nextDate); return todayRow(p, (p.nextDate === tm1 ? 'พรุ่งนี้' : TH_DAY[dd.getDay()]) + '<small>' + be(p.nextDate).slice(0, 5) + (p.nextTime ? ' · ' + p.nextTime : '') + '</small>', apptSub(p)); }).join(''); }
-  else if (liveProjects().some(function (p) { return ACTIVE.indexOf(p.status) >= 0; })) { title = 'ควรติดต่อ'; var sg = suggestList().slice(0, 3); rows = sg.length ? sg.map(function (x) { return todayRow(x.p, '•', esc(x.why) + ' · ยอดคาดการณ์ ' + fmt(x.p.estimate), 'var(--text-strong)', { set: true }); }).join('') : '<span class="small muted">ทุกโครงการมีนัดหรือติดตามล่าสุดแล้ว ลองหา Lead ใหม่</span>'; foot = '<span class="small" style="border-top:1px solid var(--line);padding-top:8px">ระบบแนะนำจากวันที่คาดว่าจะปิด สถานะหน้างาน และวันที่ติดต่อล่าสุด</span>'; }
+ else if (liveProjects().some(function (p) { return ACTIVE.indexOf(p.status) >= 0; })) { title = 'ควรติดต่อ'; var sg = suggestList().slice(0, 3); rows = sg.length ? sg.map(function (x) { return todayRow(x.p, '•', esc(x.why) + ' · ยอดคาดการณ์ ' + fmt(x.p.estimate), 'var(--text-strong)', { set: true }); }).join('') : '<span class="small muted">ทุก Lead มีนัดหรือติดตามล่าสุดแล้ว ลองหา Lead ใหม่</span>'; foot = '<span class="small" style="border-top:1px solid var(--line);padding-top:8px">ระบบแนะนำจากวันที่คาดว่าจะปิด สถานะหน้างาน และวันที่ติดต่อล่าสุด</span>'; }
   else return '<section class="card stack" style="gap:10px;padding:16px;align-items:flex-start"><b class="strong" style="font-size:16px">เริ่มต้นวันแรก</b><span class="small">ยังไม่มี Lead ในเครื่องนี้ บันทึก Lead แรกได้ใน 30 วินาที</span><a class="btn primary" href="#/quick">+ Lead แรก</a><a href="#/guide/staff" class="small" style="font-weight:700">อ่านคู่มือใช้งาน</a></section>';
   return '<section class="card stack" style="gap:0;padding:14px" aria-labelledby="td-h"><div class="between" style="padding-bottom:4px"><b id="td-h" class="strong" style="font-size:16px">' + title + '</b><a href="#/plan" style="font-weight:700;font-size:14px">ดูแผนงาน ›</a></div>' + rows + foot + '</section>';
 }
 function actionCard(D, lastBak) {
   var t = D.t, rows = [], A = function (href, ic, title, sub, red) { rows.push('<a class="arow' + (red ? ' rd' : '') + '" href="' + href + '"><span style="display:flex;gap:10px;align-items:center;min-width:0"><i aria-hidden="true">' + ic + '</i><span style="min-width:0"><b class="strong">' + title + '</b>' + (sub ? '<br><span class="small">' + sub + '</span>' : '') + '</span></span><b aria-hidden="true">›</b></a>'); };
-  if (D.late.length) { var old = D.late.slice().sort(function (a, b) { return a.p.nextDate.localeCompare(b.p.nextDate); })[0]; A('#/plan/late', '!', 'เลยนัด ' + D.late.length + ' โครงการ', 'นานสุด ' + diffDays(old.p.nextDate, t) + ' วัน · ' + esc(old.p.name), true); }
+ if (D.late.length) { var old = D.late.slice().sort(function (a, b) { return a.p.nextDate.localeCompare(b.p.nextDate); })[0]; A('#/plan/late', '!', 'เลยนัด ' + D.late.length + ' ราย', 'นานสุด ' + diffDays(old.p.nextDate, t) + ' วัน · ' + esc(old.p.name), true); }
   if (D.pay.lateN) A('#/plan/pay', '฿', 'เลยกำหนดชำระ ' + D.pay.lateN + ' SO', 'ยอดคงค้างรวม ' + fmt(D.pay.total) + ' บาท', true);
   if (D.pay.rcN) A('#/plan/pay', '฿', 'ใบเสร็จรอออก ' + D.pay.rcN + ' รายการ', 'รับเงินแล้วเกิน 3 วัน', false);
   var tw = D.ahead.filter(function (p) { return (p.nextTeam || []).length && p.nextTeamOk !== 'ทีมยืนยันแล้ว' && p.nextDate <= addDays(t, 3); }).concat(D.now.filter(function (x) { return x.kind === 'today' && (x.p.nextTeam || []).length && x.p.nextTeamOk !== 'ทีมยืนยันแล้ว'; }).map(function (x) { return x.p; }));
   if (tw.length) A('#/project/' + esc(tw[0].id), '👥', 'รอทีมยืนยัน ' + tw.length + ' นัด', 'นัดภายใน 3 วัน · ' + esc(tw[0].name), false);
-  var qp = quickPending(); if (qp.length) A('#/edit/' + esc(qp[0].id), '✎', 'Lead ด่วน รอกรอกต่อ ' + qp.length + ' โครงการ', esc(qp[0].name), false);
-  var rv = liveProjects().filter(function (p) { return reviewKeys(p).length; }).length; if (rv) A('#/review', '✎', 'เลือกข้อมูลใหม่หลังอัปเดต ' + rv + ' โครงการ', 'โครงการละไม่ถึง 10 วินาที', false);
+ var qp = quickPending(); if (qp.length) A('#/edit/' + esc(qp[0].id), '✎', 'Lead ด่วน รอกรอกต่อ ' + qp.length + ' ราย', esc(qp[0].name), false);
+ var rv = liveProjects().filter(function (p) { return reviewKeys(p).length; }).length; if (rv) A('#/review', '✎', 'เลือกข้อมูลใหม่หลังอัปเดต ' + rv + ' ราย', 'รายละไม่ถึง 10 วินาที', false);
   var pm = addMonths(curMonth(), -1); if (!isClosed(pm) && monthHasData(pm)) A('#/month/' + pm, '▦', 'ปิดงวด ' + monthName(pm), 'ยังไม่ปิดงวดเดือนที่แล้ว', false);
   if (liveProjects().length && (lastBak === null || lastBak >= 14)) A('#/data', '⟳', lastBak === null ? 'ยังไม่เคยสำรองข้อมูล' : 'ยังไม่ได้สำรองข้อมูล ' + lastBak + ' วัน', 'ถ้ามือถือหายหรือเสีย ข้อมูลจะหายทั้งหมด', true);
   if (!rows.length) return '<div class="card okline" style="padding:12px 14px">✓ ไม่มีงานค้าง</div>';
@@ -1014,14 +1014,14 @@ function hsMaps() {
 }
 function hsWhy(p, w, qd, m) {
   var has = function (v) { v = String(v || '').toLowerCase(); return !!v && w.every(function (x) { return v.indexOf(x) >= 0; }); }, hasD = function (v) { return qd.length >= 3 && digits(v).indexOf(qd) >= 0; };
-  if (has(p.name)) return [0, 'ชื่อโครงการ'];
-  if (has(p.code) || has(p.codeOld)) return [1, 'รหัสโครงการ ' + p.code];
+ if (has(p.name)) return [0, 'ชื่อ Lead'];
+ if (has(p.code) || has(p.codeOld)) return [1, 'รหัส Lead ' + p.code];
   var cs = contactsOf(p);
   for (var i = 0; i < cs.length; i++) { if (has(cs[i].name)) return [2, 'ผู้ติดต่อ: ' + cs[i].name]; if (hasD(cs[i].phone)) return [2, 'เบอร์: ' + fmtPhone(cs[i].phone) + (cs[i].name ? ' (' + cs[i].name + ')' : '')]; }
   var f = function (arr, lb) { for (var j = 0; j < (arr || []).length; j++) if (has(arr[j]) || hasD(arr[j]) && /\d{3}/.test(arr[j])) return lb + ': ' + arr[j]; return ''; };
   var x = f(m.qt[p.id], 'เลขที่ใบเสนอราคา') || f(m.so[p.id], 'เลขที่ SO') || f(m.rc[p.id], 'เลขที่ใบเสร็จ'); if (x) return [3, x];
   if (has(p.developer)) return [4, 'Developer: ' + p.developer];
-  return [5, 'ข้อมูลอื่นในโครงการ'];
+ return [5, 'ข้อมูลอื่นใน Lead'];
 }
 function hsFind(q) {
   q = (q || '').toLowerCase().trim(); if (!q) return [];
@@ -1038,9 +1038,9 @@ function hsCard(p, sub, acts) { if (acts) return '<div class="card" style="displ
 function hsCard0(p, sub) { return '<a class="card link" href="#/project/' + esc(p.id) + '" style="display:flex;flex-direction:column;gap:2px"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + sub + '</span></a>'; }
 function renderHS() {
   var el = $('#hsres'); if (!el) return; var q = (S.ui.hs || '').trim();
-  if (!q) { var rc = (Store.state.recent || []).map(projById).filter(function (p) { return p && !p.deleted; }).slice(0, 3); el.innerHTML = rc.length ? '<span class="small strong">เปิดล่าสุด</span>' + rc.map(function (p) { return hsCard(p, esc(p.code) + ' · ' + esc(p.contactName || '-'), true); }).join('') : '<span class="small">พิมพ์ชื่อโครงการ ชื่อหรือเบอร์ผู้ติดต่อ Developer หรือเลขที่ใบเสนอราคา / SO / ใบเสร็จ</span>'; return; }
+ if (!q) { var rc = (Store.state.recent || []).map(projById).filter(function (p) { return p && !p.deleted; }).slice(0, 3); el.innerHTML = rc.length ? '<span class="small strong">เปิดล่าสุด</span>' + rc.map(function (p) { return hsCard(p, esc(p.code) + ' · ' + esc(p.contactName || '-'), true); }).join('') : '<span class="small">พิมพ์ชื่อ Lead ชื่อหรือเบอร์ผู้ติดต่อ Developer หรือเลขที่ใบเสนอราคา / SO / ใบเสร็จ</span>'; return; }
   var r = hsFind(q);
-  el.innerHTML = '<span class="small strong">' + (r.length ? 'พบ ' + r.length + ' โครงการ' : 'ไม่พบ Lead ที่ตรงกับ "' + esc(q) + '"') + ' · ค้นหาในเครื่องนี้เท่านั้น</span>' + r.slice(0, 2).map(function (x) { return hsCard(x.p, 'ตรงกับ ' + esc(x.why[1]), true); }).join('') +
+ el.innerHTML = '<span class="small strong">' + (r.length ? 'พบ ' + r.length + ' ราย' : 'ไม่พบ Lead ที่ตรงกับ "' + esc(q) + '"') + ' · ค้นหาในเครื่องนี้เท่านั้น</span>' + r.slice(0, 2).map(function (x) { return hsCard(x.p, 'ตรงกับ ' + esc(x.why[1]), true); }).join('') +
     (r.length > 2 ? '<button class="btn block" data-act="hsall">ดูทั้งหมด ' + r.length + ' รายการใน Leads ›</button>' : '') + (r.length ? '' : '<a class="btn block" href="#/new">+ Lead ใหม่</a>');
 }
 function vSearch() {
@@ -1092,9 +1092,9 @@ function noteRecent(id) { var st = Store.state; if (!st) return; var r = (st.rec
 function vPick(mode) {
   var so = mode === 'so', qt = mode === 'qt', doc = so || qt;
   var list = liveProjects().filter(function (p) { return doc ? p.status !== ST.LOST : (p.status !== ST.WON && p.status !== ST.LOST); }).sort(function (a, b) { return doc ? ((so ? (b.status === ST.WON) - (a.status === ST.WON) : 0) || (b.estimate || 0) - (a.estimate || 0)) : (a.nextDate || '9').localeCompare(b.nextDate || '9'); });
-  var body = '<div class="stack"><p class="muted" style="margin:0">' + (qt ? 'เลือกโครงการที่ต้องการบันทึกใบเสนอราคา' : so ? 'เลือกโครงการที่ต้องการบันทึกใบสั่งขาย (SO) และเงินมัดจำ' : 'เลือกโครงการที่ต้องการบันทึกการติดตาม') + '</p>' +
-    (list.length ? list.map(function (p) { var lq = quotesOf(p.id)[0]; return '<a class="card link" href="' + (qt ? '#/quote/' : so ? '#/sale/' : '#/follow/') + esc(p.id) + '"><div class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</div><span class="small">' + esc(p.contactName || '-') + (doc ? ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (lq ? ' · ใบเสนอราคาล่าสุด ' + fmt(lq.value) : '') : ' · นัด ' + be(p.nextDate)) + '</span></a>'; }).join('') : '<div class="card">ยังไม่มีโครงการ <a href="#/new">สร้างโครงการใหม่</a></div>') + '</div>';
-  return shell({ title: qt ? 'เลือกโครงการเพื่อบันทึกใบเสนอราคา' : so ? 'เลือกโครงการเพื่อบันทึกใบสั่งขาย' : 'เลือกโครงการ', back: '#/today', close: true, nav: false }, body);
+ var body = '<div class="stack"><p class="muted" style="margin:0">' + (qt ? 'เลือก Lead ที่ต้องการบันทึกใบเสนอราคา' : so ? 'เลือก Lead ที่ต้องการบันทึกใบสั่งขาย (SO) และเงินมัดจำ' : 'เลือก Lead ที่ต้องการบันทึกการติดตาม') + '</p>' +
+ (list.length ? list.map(function (p) { var lq = quotesOf(p.id)[0]; return '<a class="card link" href="' + (qt ? '#/quote/' : so ? '#/sale/' : '#/follow/') + esc(p.id) + '"><div class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</div><span class="small">' + esc(p.contactName || '-') + (doc ? ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (lq ? ' · ใบเสนอราคาล่าสุด ' + fmt(lq.value) : '') : ' · นัด ' + be(p.nextDate)) + '</span></a>'; }).join('') : '<div class="card">ยังไม่มี Lead <a href="#/new">สร้าง Lead ใหม่</a></div>') + '</div>';
+ return shell({ title: qt ? 'เลือก Lead เพื่อบันทึกใบเสนอราคา' : so ? 'เลือก Lead เพื่อบันทึกใบสั่งขาย' : 'เลือก Lead', back: '#/today', close: true, nav: false }, body);
 }
 
 function optParts(item) {
@@ -1147,6 +1147,19 @@ function dateNA(f, d, label, opt) {
   opt = opt || {};
   return '<div class="field"><label for="d-' + esc(f) + '">' + label + ' <span class="req">*</span></label><div class="row" style="gap:8px"><input id="d-' + esc(f) + '" class="inp' + errCls(f) + '" type="date" data-bind="' + esc(f) + '" value="' + esc(d[f] || '') + '"' + (opt.min ? ' min="' + opt.min + '"' : '') + (opt.max ? ' max="' + opt.max + '"' : '') + '><button type="button" class="chip nachip" data-act="na" data-f="' + esc(f) + '" aria-pressed="' + !!d[f + 'NA'] + '" aria-label="' + label + ' ไม่ระบุ">-</button></div>' + err(f) + '</div>';
 }
+function textNA(f, id, label, max, area) {
+  var d = S.draft, v = d[f] || '', na = v === '-', ro = na ? ' readonly' : '';
+  var ctl = area ? '<textarea id="' + id + '" class="inp' + errCls(f) + '" data-bind="' + f + '" maxlength="' + max + '"' + ro + '>' + esc(v) + '</textarea>' : '<input id="' + id + '" class="inp' + errCls(f) + '" data-bind="' + f + '" value="' + esc(v) + '" maxlength="' + max + '" autocomplete="off"' + ro + '>';
+  return '<div class="field"><label for="' + id + '">' + label + ' <span class="req">*</span></label><div class="row" style="gap:8px;align-items:flex-start">' + ctl + '<button type="button" class="chip nachip" data-act="tna" data-f="' + f + '" aria-pressed="' + na + '" aria-label="' + label + ' ไม่มีข้อมูล">-</button></div>' + err(f) + '</div>';
+}
+function prodList() { return O().product.filter(function (x) { return x !== OTHER; }).concat([OTHER]); }
+function prodField(f, d) {
+  var of = f + 'Other', on = (d[f] || []).indexOf(OTHER) >= 0;
+  return '<fieldset><legend class="lbl">ประเภทสินค้าที่เสนอ <span class="req">*</span></legend>' + chips(f, prodList(), d[f], true) + err(f) +
+    (on ? '<label for="f-' + of + '" class="sr">ระบุสินค้าอื่น ๆ</label><input id="f-' + of + '" class="inp' + errCls(of) + '" style="margin-top:8px" data-bind="' + of + '" maxlength="80" placeholder="ระบุสินค้าอื่น ๆ" autocomplete="off" value="' + esc(d[of] || '') + '">' + err(of) : '') + '</fieldset>';
+}
+function prodErr(e, d, f) { if (!(d[f] || []).length) e[f] = 'กรุณาเลือกประเภทสินค้าที่เสนอ'; else if (d[f].indexOf(OTHER) >= 0 && !clean(d[f + 'Other'])) e[f + 'Other'] = 'กรุณาระบุสินค้าอื่น ๆ'; }
+function prodText(p) { return (p.products || []).map(function (x) { return x === OTHER ? 'อื่น ๆ: ' + (p.productsOther || '-') : x; }).join(', '); }
 function timeField(d) { var td = d.nextDate === todayISO(); return '<div class="field"><label for="f-ntime">เวลานัด' + (td ? ' <span class="req">*</span>' : ' (ถ้ามี)') + '</label><input id="f-ntime" class="inp' + errCls('nextTime') + '" type="time" data-bind="nextTime" value="' + esc(d.nextTime || '') + '">' + (td ? '<span class="hint">นัดวันนี้ต้องระบุเวลา</span>' : '') + err('nextTime') + '</div>'; }
 function nowHM() { var n = new Date(); return pad(n.getHours()) + ':' + pad(n.getMinutes()); }
 function todayTimeErr(e, d) { if (d.nextDate !== todayISO()) return; if (!/^\d{2}:\d{2}$/.test(d.nextTime || '')) e.nextTime = 'นัดวันนี้ กรุณาระบุเวลา'; else if (d.nextTime <= nowHM()) e.nextTime = 'เวลานี้ผ่านไปแล้ว กรุณาเลือกเวลาหลัง ' + nowHM() + ' น.'; }
@@ -1170,12 +1183,12 @@ function fieldsFor(keys, d, pre) {
     if (k === 'ptype') return '<fieldset><legend class="lbl">ประเภทอาคาร <span class="req">*</span></legend>' + chipsG(f, o.ptype, d, 'ประเภทอาคาร') + err(f) + '</fieldset>';
     if (k === 'channel') return '<fieldset><legend class="lbl">ช่องทางการติดต่อ (จุดแรกที่ได้ Lead มา) <span class="req">*</span></legend>' + chipsG(f, o.channel, d, 'ช่องทางการติดต่อ') + err(f) + '</fieldset>';
     if (k === 'contactRole') return '<fieldset><legend class="lbl">ประเภทการติดต่อ (ผู้ติดต่อเป็นใคร) <span class="req">*</span></legend>' + chipsG(f, o.role, d, 'ประเภทการติดต่อ') + err(f) + '</fieldset>';
-    if (k === 'pform') return '<fieldset><legend class="lbl">รูปแบบโครงการ <span class="req">*</span></legend>' + chips(f, o.pform, d[f]) + err(f) + '</fieldset>';
+ if (k === 'pform') return '<fieldset><legend class="lbl">ลักษณะงาน <span class="req">*</span></legend>' + chips(f, o.pform, d[f]) + err(f) + '</fieldset>';
     if (k === 'site') return '<fieldset><legend class="lbl">สถานะหน้างาน <span class="req">*</span></legend>' + siteChips(f, d) + err(f) + '</fieldset>';
     if (k === 'contactName') return '<div class="field"><label for="g-' + f + '">ชื่อผู้ติดต่อ <span class="req">*</span></label><input id="g-' + f + '" class="inp' + errCls(f) + '" data-bind="' + f + '" value="' + esc(d[f] || '') + '" maxlength="100" autocomplete="off">' + err(f) + '</div>';
     if (k === 'estimate') return '<div class="field"><label for="g-' + f + '">ยอดที่คาดว่าจะได้ (บาท ก่อน VAT) <span class="req">*</span></label><input id="g-' + f + '" class="inp big' + errCls(f) + '" inputmode="numeric" data-bind="' + f + '" data-num="1" value="' + esc(d[f] === '' || d[f] == null ? '' : fmt(d[f])) + '">' + err(f) + '</div>';
     if (k === 'closingDate') return dateNA(f, d, 'วันที่คาดว่าจะปิด');
-    if (k === 'products') return '<fieldset><legend class="lbl">ประเภทสินค้าที่เสนอ <span class="req">*</span></legend>' + chips(f, o.product, d[f], true) + err(f) + '</fieldset>';
+    if (k === 'products') return prodField(f, d);
     return '';
   }).join('');
 }
@@ -1186,12 +1199,12 @@ function fieldsErr(keys, d, pre, e) {
     if (k === 'ptype') setGrpErr(e, d, f, o.ptype);
     else if (k === 'channel') setGrpErr(e, d, f, o.channel);
     else if (k === 'contactRole') setGrpErr(e, d, f, o.role);
-    else if (k === 'pform' && !d[f]) e[f] = 'กรุณาเลือกรูปแบบโครงการ';
+ else if (k === 'pform' && !d[f]) e[f] = 'กรุณาเลือกลักษณะงาน';
     else if (k === 'site' && !d[f]) e[f] = 'กรุณาเลือกสถานะหน้างาน';
     else if (k === 'contactName' && !clean(d[f])) e[f] = 'กรุณาใส่ชื่อผู้ติดต่อ';
     else if (k === 'estimate' && (d[f] === '' || d[f] == null)) e[f] = 'กรุณาใส่ยอดที่คาดว่าจะได้';
     else if (k === 'closingDate' && !d[f] && !d[f + 'NA']) e[f] = 'กรุณาเลือกวันที่คาดว่าจะปิด';
-    else if (k === 'products' && !(d[f] || []).length) e[f] = 'กรุณาเลือกประเภทสินค้าที่เสนอ';
+    else if (k === 'products') prodErr(e, d, f);
   });
 }
 function applyFields(keys, d, pre, p, date) {
@@ -1203,14 +1216,14 @@ function applyFields(keys, d, pre, p, date) {
     else if (k === 'contactName') p.contactName = clean(d[f], 100);
     else if (k === 'estimate') p.estimate = Number(d[f]) || 0;
     else if (k === 'closingDate') { p.closingDate = d[f + 'NA'] ? '' : d[f]; p.closingDateNA = !!d[f + 'NA']; }
-    else if (k === 'products') p.products = (d[f] || []).slice();
+    else if (k === 'products') { p.products = (d[f] || []).slice(); p.productsOther = p.products.indexOf(OTHER) >= 0 ? clean(d[f + 'Other'], 80) : ''; }
   });
 }
 function draftP(p) {
   var d = {};
   ['ptype', 'channel', 'contactRole'].forEach(function (k) { d['P' + k] = p[k] || ''; d['P' + k + 'Detail'] = p[k + 'Detail'] || ''; d['P' + k + 'Other'] = p[k + 'Other'] || ''; });
   d.Ppform = p.pform || ''; d.Psite = p.site ? String(p.site) : ''; d.PcontactName = p.contactName || ''; d.Pestimate = p.estimate == null ? '' : p.estimate;
-  d.PclosingDate = p.closingDate || ''; d.PclosingDateNA = !!p.closingDateNA; d.Pproducts = (p.products || []).slice();
+  d.PclosingDate = p.closingDate || ''; d.PclosingDateNA = !!p.closingDateNA; d.Pproducts = (p.products || []).slice(); d.PproductsOther = p.productsOther || '';
   return d;
 }
 function sIndex() {
@@ -1232,7 +1245,7 @@ function dupMatches(name, phone, exceptId) {
     var why = [];
     if (ph.length >= 9 && contactsOf(p).some(function (c) { return digits(c.phone) === ph; })) why.push('เบอร์ตรงกัน');
     var pn = normPName(p.name);
-    if (nn.length >= 4 && pn.length >= 4 && (pn === nn || (Math.min(pn.length, nn.length) >= 6 && (pn.indexOf(nn) >= 0 || nn.indexOf(pn) >= 0)) || bigramSim(pn, nn) >= 0.8)) why.push(pn === nn ? 'ชื่อโครงการตรงกัน' : 'ชื่อโครงการใกล้เคียง');
+ if (nn.length >= 4 && pn.length >= 4 && (pn === nn || (Math.min(pn.length, nn.length) >= 6 && (pn.indexOf(nn) >= 0 || nn.indexOf(pn) >= 0)) || bigramSim(pn, nn) >= 0.8)) why.push(pn === nn ? 'ชื่อ Lead ตรงกัน' : 'ชื่อ Lead ใกล้เคียง');
     if (why.length) out.push({ p: p, why: why });
   });
   return out.sort(function (a, b) { return b.why.length - a.why.length; }).slice(0, 3);
@@ -1240,9 +1253,9 @@ function dupMatches(name, phone, exceptId) {
 function dupBox(list) {
   return new Promise(function (res) {
     var m = $('#modal');
-    m.innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="sheet"><div class="grab"></div><h2 id="dt" style="font-size:18px">อาจซ้ำกับโครงการที่มีอยู่</h2><span class="small">พบ ' + list.length + ' โครงการที่ชื่อหรือเบอร์ใกล้เคียงกัน</span>' +
-      list.map(function (x) { var p = x.p; return '<div class="card stack" style="gap:4px"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + esc(p.code) + ' · ' + esc(p.contactName || '-') + (p.nextDate ? ' · นัดถัดไป ' + be(p.nextDate) : '') + '</span><span class="small" style="font-weight:700;color:var(--danger-text)">' + esc(x.why.join(' · ')) + '</span><button class="btn small primary" data-m="open" data-id="' + esc(p.id) + '">เปิดโครงการเดิม แล้วบันทึกการติดตาม</button></div>'; }).join('') +
-      '<button class="btn" data-m="new">ไม่ใช่โครงการเดียวกัน สร้างใหม่</button><button class="btn small" style="border:0;text-decoration:underline" data-m="cancel">กลับไปแก้ไข</button></div></div>';
+ m.innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="dt"><div class="sheet"><div class="grab"></div><h2 id="dt" style="font-size:18px">อาจซ้ำกับ Lead ที่มีอยู่</h2><span class="small">พบ ' + list.length + ' รายที่ชื่อหรือเบอร์ใกล้เคียงกัน</span>' +
+ list.map(function (x) { var p = x.p; return '<div class="card stack" style="gap:4px"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + esc(p.code) + ' · ' + esc(p.contactName || '-') + (p.nextDate ? ' · นัดถัดไป ' + be(p.nextDate) : '') + '</span><span class="small" style="font-weight:700;color:var(--danger-text)">' + esc(x.why.join(' · ')) + '</span><button class="btn small primary" data-m="open" data-id="' + esc(p.id) + '">เปิด Lead เดิม แล้วบันทึกการติดตาม</button></div>'; }).join('') +
+ '<button class="btn" data-m="new">ไม่ใช่ Lead เดียวกัน สร้างใหม่</button><button class="btn small" style="border:0;text-decoration:underline" data-m="cancel">กลับไปแก้ไข</button></div></div>';
     var done = function (v) { m.innerHTML = ''; S.busyUntil = 0; res(v); };
     $all('[data-m]', m).forEach(function (b) { b.onclick = function () { done(b.dataset.m === 'open' ? 'open:' + b.dataset.id : b.dataset.m); }; });
     $('[data-m]', m).focus();
@@ -1252,7 +1265,7 @@ function icsEsc(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/[,;]
 function downloadIcs(p) {
   var tm = /^\d{2}:\d{2}$/.test(p.nextTime || '') ? p.nextTime : '09:00', d = p.nextDate.replace(/-/g, ''), hh = +tm.slice(0, 2), mm = tm.slice(3);
   var end = pad(Math.min(23, hh + 1)) + mm + '00', st = tm.replace(':', '') + '00', stamp0 = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
-  var desc = [agendaText(p.nextAgenda, p.nextAgendaOther) ? 'วาระ: ' + agendaText(p.nextAgenda, p.nextAgendaOther) : '', p.nextPrep && p.nextPrep !== '-' ? 'เตรียม: ' + p.nextPrep : '', 'รหัสโครงการ ' + p.code].filter(Boolean).join('\n');
+ var desc = [agendaText(p.nextAgenda, p.nextAgendaOther) ? 'วาระ: ' + agendaText(p.nextAgenda, p.nextAgendaOther) : '', p.nextPrep && p.nextPrep !== '-' ? 'เตรียม: ' + p.nextPrep : '', 'รหัส Lead ' + p.code].filter(Boolean).join('\n');
   var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//ILM//PS Tracker//TH', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT', 'UID:' + p.id + '-' + d + '@ps-tracker', 'DTSTAMP:' + stamp0, 'DTSTART:' + d + 'T' + st, 'DTEND:' + d + 'T' + end, 'SUMMARY:' + icsEsc('นัด ' + p.name), 'DESCRIPTION:' + icsEsc(desc)];
   if (p.lat != null) L.push('LOCATION:' + icsEsc(p.lat.toFixed(6) + ',' + p.lng.toFixed(6)));
   L.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc('นัด ' + p.name), 'TRIGGER:-PT1H', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR');
@@ -1262,7 +1275,7 @@ function downloadIcs(p) {
 function quickPending() { return liveProjects().filter(function (p) { return p.quick && p.status !== ST.LOST; }); }
 function searchText(p, notes, sos) {
   var f = notes || '', s = sos || '';
-  return [(p.contacts || []).map(function (c) { return c.deleted ? '' : c.name + ' ' + digits(c.phone) + ' ' + (c.line || ''); }).join(' '), p.name, p.code, p.codeOld, p.developer, p.contactName, digits(p.phone), p.line, p.province, p.address, p.info, p.ptype, p.ptypeDetail, p.ptypeOther, p.pform, p.channel, p.channelDetail, p.channelOther, p.contactRole, p.contactRoleDetail, p.contactRoleOther, siteLabel(p.site), (p.products || []).join(' '), f, s].join(' ').toLowerCase();
+  return [(p.contacts || []).map(function (c) { return c.deleted ? '' : c.name + ' ' + digits(c.phone) + ' ' + (c.line || ''); }).join(' '), p.name, p.code, p.codeOld, p.developer, p.contactName, digits(p.phone), p.line, p.province, p.address, p.info, p.ptype, p.ptypeDetail, p.ptypeOther, p.pform, p.channel, p.channelDetail, p.channelOther, p.contactRole, p.contactRoleDetail, p.contactRoleOther, siteLabel(p.site), (p.products || []).join(' '), p.productsOther || '', f, s].join(' ').toLowerCase();
 }
 var PFL = [['active', 'กำลังติดตาม'], ['won', 'Close Sale'], ['lost', 'ไม่ได้งาน'], ['hold', 'เลื่อน/ระงับ'], ['all', 'ทั้งหมด']];
 var PSORT = [['next', 'นัดใกล้สุด'], ['est', 'ยอดมาก → น้อย'], ['age', 'ค้างในขั้นนานสุด'], ['close', 'วันปิดใกล้สุด']];
@@ -1336,42 +1349,42 @@ function renderPList() {
 function newDraft() { return { recordDate: todayISO(), name: '', ptype: '', ptypeDetail: '', ptypeOther: '', pform: '', site: '', developer: '', info: '', channel: '', channelDetail: '', channelOther: '', province: '', address: '', lat: null, lng: null, acc: null, photos: [], contactName: '', contactRole: '', contactRoleDetail: '', contactRoleOther: '', phone: '', line: '', consent: false, estimate: '', closingDate: '', closingDateNA: false, products: [], nextDate: '', nextDateNA: false, agenda: [], agendaOther: '', prep: '' }; }
 function vProjectForm(id) {
   var d = S.draft, isNew = !id, st = S.ui.step || 1;
-  var labels = ['1 โครงการ', '2 ที่ตั้งและรูป', '3 ผู้ติดต่อและยอด'];
+  var labels = ['1 ที่มาของ Lead', '2 หน้างานและที่ตั้ง', '3 ผู้ติดต่อและยอด'];
   var steps = '<div class="steps" aria-label="ขั้นตอน ' + st + ' จาก 3">' + labels.map(function (l, i) { return '<div class="' + (i < st ? 'on' : '') + '"><span class="bar"></span><small' + (i + 1 === st ? ' class="strong"' : '') + '>' + l + '</small></div>'; }).join('') + '</div>';
   var b = '';
   if (st === 1) {
-    b = '<div class="field"><label for="f-rd">วันที่ติดต่อโครงการ <span class="req">*</span></label><input id="f-rd" class="inp' + errCls('recordDate') + '" type="date" data-bind="recordDate" value="' + esc(d.recordDate) + '" max="' + todayISO() + '"><span class="hint">ถ้าบันทึกย้อนหลัง ให้เลือกวันที่ติดต่อจริง ระบบเก็บวันที่บันทึกจริงไว้ให้อัตโนมัติ</span>' + err('recordDate') + '</div>' +
-      '<div class="field"><label for="f-name">ชื่อโครงการ <span class="req">*</span></label><input id="f-name" class="inp' + errCls('name') + '" data-bind="name" value="' + esc(d.name) + '" maxlength="150">' + err('name') + '</div>' +
-      '<fieldset><legend class="lbl">ประเภทอาคาร <span class="req">*</span></legend>' + chipsG('ptype', O().ptype, d, 'ประเภทอาคาร') + err('ptype') + '</fieldset>' +
-      '<fieldset><legend class="lbl">รูปแบบโครงการ <span class="req">*</span></legend>' + chips('pform', O().pform, d.pform) + err('pform') + '</fieldset>' +
-      '<fieldset><legend class="lbl">สถานะหน้างาน <span class="req">*</span></legend>' + siteChips('site', d) + (d.siteGuess ? '<span class="hint" style="display:block;margin-top:6px">ประมาณจากกำหนดสร้างเสร็จเดิม กรุณายืนยัน</span>' : '') + err('site') + '</fieldset>' +
-      '<div class="field"><label for="f-dev">บริษัทเจ้าของโครงการ / Developer <span class="req">*</span></label><input id="f-dev" class="inp' + errCls('developer') + '" data-bind="developer" value="' + esc(d.developer) + '" maxlength="150">' + err('developer') + '</div>' +
-      '<div class="field"><label for="f-info">Project information · รายละเอียดโครงการ <span class="req">*</span></label><textarea id="f-info" class="inp' + errCls('info') + '" data-bind="info" maxlength="1000">' + esc(d.info) + '</textarea>' + err('info') + '</div>' +
-      '<fieldset><legend class="lbl">ช่องทางการติดต่อ (จุดแรกที่ได้ Lead มา) <span class="req">*</span></legend>' + chipsG('channel', O().channel, d, 'ช่องทางการติดต่อ') + err('channel') + '</fieldset>';
+    b = '<fieldset><legend class="lbl">ช่องทางการติดต่อ (จุดแรกที่ได้ Lead มา) <span class="req">*</span></legend>' + chipsG('channel', O().channel, d, 'ช่องทางการติดต่อ') + err('channel') + '</fieldset>' +
+      '<div class="field"><label for="f-rd">วันที่ได้ Lead <span class="req">*</span></label><input id="f-rd" class="inp' + errCls('recordDate') + '" type="date" data-bind="recordDate" value="' + esc(d.recordDate) + '" max="' + todayISO() + '"><span class="hint">ถ้าบันทึกย้อนหลัง ให้เลือกวันที่ได้ Lead จริง ระบบเก็บวันที่บันทึกจริงไว้ให้อัตโนมัติ</span>' + err('recordDate') + '</div>' +
+ '<div class="field"><label for="f-name">ชื่อ Lead <span class="req">*</span></label><input id="f-name" class="inp' + errCls('name') + '" data-bind="name" value="' + esc(d.name) + '" maxlength="150" autocomplete="off" placeholder="เช่น บ้านคุณสมชาย บางนา"><span class="hint">ชื่อที่ใช้เรียกและค้นหา Lead นี้ เช่น ชื่อลูกค้า ชื่ออาคาร หรือชื่อโครงการ</span>' + err('name') + '</div>';
   } else if (st === 2) {
     var loc = d.lat != null ? '<div class="card okc" role="status"><b class="okText">' + d.lat.toFixed(6) + ', ' + d.lng.toFixed(6) + '</b>' + (d.acc ? '<span class="small"> · ความแม่นยำประมาณ ±' + Math.round(d.acc) + ' เมตร</span>' : '') + (inThailand(d.lat, d.lng) ? '' : '<br><span class="errmsg">พิกัดอยู่นอกประเทศไทย กรุณาตรวจสอบ</span>') + '<br><a href="' + mapUrl(d.lat, d.lng) + '" target="_blank" rel="noopener noreferrer">เปิดดูใน Google Maps</a> · <button type="button" class="chip" style="min-height:32px" data-act="clearloc">ล้างพิกัด</button></div>' : '';
-    b = '<div class="field"><label for="f-prov">จังหวัด <span class="req">*</span></label><select id="f-prov" class="inp' + errCls('province') + '" data-bind="province"><option value="">เลือกจังหวัด</option>' + PROVINCES.map(function (x) { return '<option' + (d.province === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' + err('province') + '</div>' +
-      '<div class="field"><label for="f-addr">Address · ที่อยู่โครงการ <span class="req">*</span></label><textarea id="f-addr" class="inp' + errCls('address') + '" data-bind="address" maxlength="500">' + esc(d.address) + '</textarea>' + err('address') + '</div>' +
+    b = '<fieldset><legend class="lbl">ประเภทอาคาร <span class="req">*</span></legend>' + chipsG('ptype', O().ptype, d, 'ประเภทอาคาร') + err('ptype') + '</fieldset>' +
+      '<fieldset><legend class="lbl">ลักษณะงาน <span class="req">*</span></legend>' + chips('pform', O().pform, d.pform) + err('pform') + '</fieldset>' +
+      '<fieldset><legend class="lbl">สถานะหน้างาน <span class="req">*</span></legend>' + siteChips('site', d) + (d.siteGuess ? '<span class="hint" style="display:block;margin-top:6px">ประมาณจากกำหนดสร้างเสร็จเดิม กรุณายืนยัน</span>' : '') + err('site') + '</fieldset>' +
+ textNA('developer', 'f-dev', 'Developer / บริษัทเจ้าของโครงการ', 150) +
+      '<div class="field"><label for="f-prov">จังหวัด <span class="req">*</span></label><select id="f-prov" class="inp' + errCls('province') + '" data-bind="province"><option value="">เลือกจังหวัด</option>' + PROVINCES.map(function (x) { return '<option' + (d.province === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' + err('province') + '</div>' +
+      '<div class="field"><label for="f-addr">ที่อยู่หน้างาน <span class="req">*</span></label><textarea id="f-addr" class="inp' + errCls('address') + '" data-bind="address" maxlength="500">' + esc(d.address) + '</textarea>' + err('address') + '</div>' +
       '<div class="field"><span class="lbl">Location (ละติจูด, ลองจิจูด)</span><button type="button" class="btn" data-act="geo">' + icon('pin', 18) + ' ใช้ตำแหน่งปัจจุบัน</button>' + loc +
       '<label for="f-map" class="hint">หรือวางลิงก์ Google Maps / พิมพ์ ละติจูด,ลองจิจูด</label><input id="f-map" class="inp" data-act-change="maplink" placeholder="เช่น 13.7563, 100.5018" autocomplete="off"></div>' +
       '<div class="field"><span class="lbl">รูปหน้างาน แบบแปลน นามบัตร (สูงสุด 6 รูป)</span><div class="photos">' + [0, 1, 2, 3, 4, 5].slice(0, Math.min(6, d.photos.length + 1)).map(function (i) {
         var pid = d.photos[i];
         return '<label class="photo">' + (pid ? '<img data-photo="' + esc(pid) + '" alt="รูปหน้างาน ' + (i + 1) + '"><button type="button" class="rm" data-act="rmphoto" data-i="' + i + '" aria-label="ลบรูปที่ ' + (i + 1) + '">×</button>' : icon('cam', 26) + '<span>รูปที่ ' + (i + 1) + '</span>') + '<input type="file" accept="image/*" data-photo-slot="' + i + '" aria-label="เลือกรูปหน้างาน ' + (i + 1) + '"></label>';
-      }).join('') + '</div><span class="hint">ระบบย่อรูปอัตโนมัติ · ถ่ายเฉพาะหน้างาน หลีกเลี่ยงใบหน้าบุคคลและทะเบียนรถ</span></div>';
+      }).join('') + '</div><span class="hint">ระบบย่อรูปอัตโนมัติ · ถ่ายเฉพาะหน้างาน หลีกเลี่ยงใบหน้าบุคคลและทะเบียนรถ</span></div>' +
+      textNA('info', 'f-info', 'ข้อมูลเพิ่มเติม', 1000, true);
   } else {
     b = '<div class="field"><label for="f-ct">ชื่อผู้ติดต่อ <span class="req">*</span></label><input id="f-ct" class="inp' + errCls('contactName') + '" data-bind="contactName" value="' + esc(d.contactName) + '" maxlength="100" autocomplete="off">' + err('contactName') + '</div>' +
       '<fieldset><legend class="lbl">ประเภทการติดต่อ (ผู้ติดต่อเป็นใคร) <span class="req">*</span></legend>' + chipsG('contactRole', O().role, d, 'ประเภทการติดต่อ') + err('contactRole') + '</fieldset>' +
-      '<div class="grid2"><div class="field"><label for="f-ph">เบอร์ผู้ติดต่อ <span class="req">*</span></label><input id="f-ph" class="inp' + errCls('phone') + '" type="tel" inputmode="numeric" data-bind="phone" value="' + esc(d.phone) + '" maxlength="12" autocomplete="off">' + err('phone') + '</div>' +
-      '<div class="field"><label for="f-line">LINE <span class="req">*</span></label><input id="f-line" class="inp' + errCls('line') + '" data-bind="line" value="' + esc(d.line) + '" maxlength="60" autocomplete="off">' + err('line') + '</div></div>' +
+      '<div class="field"><label for="f-ph">เบอร์ผู้ติดต่อ <span class="req">*</span></label><input id="f-ph" class="inp' + errCls('phone') + '" type="tel" inputmode="numeric" data-bind="phone" value="' + esc(d.phone) + '" maxlength="12" autocomplete="off">' + err('phone') + '</div>' +
+      textNA('line', 'f-line', 'LINE', 60) +
       '<div class="field"><label for="f-est">ยอดที่คาดว่าจะได้ · Estimate Sale (บาท ก่อน VAT) <span class="req">*</span></label><input id="f-est" class="inp big' + errCls('estimate') + '" inputmode="numeric" data-bind="estimate" data-num="1" value="' + esc(d.estimate === '' || d.estimate == null ? '' : fmt(d.estimate)) + '">' + err('estimate') + '</div>' +
       dateNA('closingDate', d, 'วันที่คาดว่าจะปิด · Closing Date') +
-      '<fieldset><legend class="lbl">ประเภทสินค้าที่เสนอ <span class="req">*</span></legend>' + chips('products', O().product, d.products, true) + err('products') + '</fieldset>' +
+      prodField('products', d) +
       (isNew ? dateNA('nextDate', d, 'นัดติดตามครั้งถัดไป', { min: todayISO() }) + (d.nextDate ? timeField(d) + agendaFields(d) : '') : '') +
       '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.consent + '" data-act="consent"><span class="box">' + (d.consent ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ผู้ติดต่อยินยอมให้บริษัทฯ บันทึกข้อมูลและติดต่อกลับเพื่อนำเสนอสินค้าและบริการ <span class="req">*</span></span></button>' + err('consent');
   }
   var body = '<div class="stack">' + steps + b + '</div>';
-  var action = '<button class="btn" data-act="stepback"' + (st === 1 ? ' disabled' : '') + '>ย้อนกลับ</button><button class="btn primary" style="flex:2" data-act="stepnext">' + (st === 3 ? 'บันทึกโครงการ' : 'ถัดไป') + '</button>';
-  return shell({ title: isNew ? 'Lead ใหม่' : 'แก้ไขโครงการ', back: isNew ? '#/today' : '#/project/' + id, close: true, nav: false, action: action }, body);
+  var action = '<button class="btn" data-act="stepback"' + (st === 1 ? ' disabled' : '') + '>ย้อนกลับ</button><button class="btn primary" style="flex:2" data-act="stepnext">' + (st === 3 ? 'บันทึก Lead' : 'ถัดไป') + '</button>';
+ return shell({ title: isNew ? 'Lead ใหม่' : 'แก้ไข Lead', back: isNew ? '#/today' : '#/project/' + id, close: true, nav: false, action: action }, body);
 }
 function mapUrl(lat, lng) { return 'https://www.google.com/maps?q=' + encodeURIComponent(lat.toFixed(6) + ',' + lng.toFixed(6)); }
 
@@ -1390,17 +1403,17 @@ function tlRows(f) {
   return kvRow('ผู้ติดต่อ', f.contactName ? esc(f.contactName) : '') + kvRow('สถานะหน้างาน', f.site && f.ctype !== 'โทร' ? esc(siteLabel(f.site)) : '') +
     kvRow('ความพึงพอใจ', f.satisfaction ? esc(f.satisfaction) + (f.upsell ? ' · ' + esc(f.upsell) : '') : '') + kvRow('รายละเอียดที่คุย', f.note ? esc(f.note) : '') +
     kvRow('นัดครั้งถัดไป', f.nextDate ? be(f.nextDate) + (f.nextTime ? ' · ' + esc(f.nextTime) + ' น.' : '') : '') + kvRow('วาระ', (f.agenda || []).length && f.ctype !== 'โทร' ? esc(agendaText(f.agenda, f.agendaOther).replace(/ · /g, ', ')) : '') +
-    kvRow('เตรียม', f.prep && f.prep !== '-' && f.ctype !== 'โทร' ? esc(f.prep) : '') + kvRow('พิกัด', f.lat != null ? 'บันทึกพิกัด' + (f.distance != null ? ' (ห่างโครงการ ' + fmt(f.distance) + ' ม.)' : '') : '');
+ kvRow('เตรียม', f.prep && f.prep !== '-' && f.ctype !== 'โทร' ? esc(f.prep) : '') + kvRow('พิกัด', f.lat != null ? 'บันทึกพิกัด' + (f.distance != null ? ' (ห่างหน้างาน ' + fmt(f.distance) + ' ม.)' : '') : '');
 }
 function projExtras(p) {
   var qs = quotesOf(p.id), fam = familyOf(p), out = '';
   out += '<div class="card"><div class="between"><b class="strong">ใบเสนอราคา (' + qs.length + ')</b><a href="#/quote/' + esc(p.id) + '" style="font-weight:700">+ ใบเสนอราคา</a></div>' + (qs.length ? qs.map(function (q) { var exp = q.validUntil && q.validUntil < todayISO(); return '<a class="between" style="text-decoration:none;padding:10px 0;border-top:1px solid #f0f0f0" href="#/quote/' + esc(p.id) + '/' + esc(q.id) + '"><span><b class="strong">ใบเสนอราคา ' + esc(q.qtNo) + ' ครั้งที่ ' + (q.rev || 1) + '</b><br><span class="small">' + be(q.date) + ' · ยืนราคาถึง ' + be(q.validUntil) + (exp ? ' <b class="dangerText">หมดอายุ</b>' : '') + (q.priceMode === 'package' ? ' · แพ็กเกจ ' + (q.packages || []).reduce(function (a, r) { return a + (r.units || 0); }, 0) + ' ยูนิต' : '') + '</span></span><b class="strong">' + fmt(q.value) + '</b></a>'; }).join('') : '<div class="small muted">ยังไม่มีใบเสนอราคา</div>') + '</div>';
   if (fam.length > 1 || p.status === ST.WON) {
     var tot = 0;
-    out += '<section class="card stack" style="gap:8px;border:1.5px solid var(--accent)" aria-labelledby="fam-h"><h2 id="fam-h" class="h2" style="margin:0">การซื้อทั้งหมดในโครงการนี้</h2>' + fam.map(function (x) {
+ out += '<section class="card stack" style="gap:8px;border:1.5px solid var(--accent)" aria-labelledby="fam-h"><h2 id="fam-h" class="h2" style="margin:0">การซื้อทั้งหมดใน Lead นี้</h2>' + fam.map(function (x) {
       var v = x.status === ST.WON ? wonValue(x) : ACTIVE.indexOf(x.status) >= 0 || x.status === ST.HOLD ? (x.estimate || 0) : 0, so = salesOf(x.id).filter(validSale), lq = quotesOf(x.id)[0]; tot += v;
       return '<a href="#/project/' + esc(x.id) + '" class="between" style="text-decoration:none;color:inherit;border-top:1px solid #f0f0f0;padding-top:8px' + (x.id === p.id ? ';background:#fffaf0;margin:0 -8px;padding:8px' : '') + '"><span><b class="strong">' + esc(phaseLabel(x)) + (x.units ? ' · ' + fmt(x.units) + ' ยูนิต' : '') + '</b>' + (x.id === p.id ? ' (หน้านี้)' : '') + '<br><span class="small">' + (so.length ? 'SO ' + so.length + ' ใบ' : lq ? 'ใบเสนอราคาครั้งที่ ' + (lq.rev || 1) + ' · ' + fmt(lq.value) : esc(x.code)) + '</span></span><span style="text-align:right">' + badge(x.status) + '<br><b class="strong">' + fmt(v) + '</b></span></a>';
-    }).join('') + '<div class="between" style="border-top:1px solid #f0f0f0;padding-top:8px"><span class="small">ยอดรวมทั้งโครงการ (ปิดแล้ว + กำลังติดตาม)</span><b class="strong">' + fmt(tot) + '</b></div><a class="btn" style="border-style:dashed" href="#/phase/' + esc(p.id) + '">+ ซื้อเพิ่ม / เฟสถัดไป</a></section>';
+ }).join('') + '<div class="between" style="border-top:1px solid #f0f0f0;padding-top:8px"><span class="small">ยอดรวมทุกเฟส (ปิดแล้ว + กำลังติดตาม)</span><b class="strong">' + fmt(tot) + '</b></div><a class="btn" style="border-style:dashed" href="#/phase/' + esc(p.id) + '">+ ซื้อเพิ่ม / เฟสถัดไป</a></section>';
   }
   if (p.status === ST.WON && hasBuiltin(p)) { var n = delivStep(p), al = delivAlert(p); out += '<a class="card link stack' + (al && al.red ? ' alert' : '') + '" style="gap:4px" href="#/delivery/' + esc(p.id) + '"><span class="between"><b class="strong">งานส่งมอบ Built-in</b><b aria-hidden="true">›</b></span><span class="small">' + (n > 6 ? 'ส่งมอบครบแล้ว ' + be(p.delivery.d6) : 'ขั้นถัดไป: ' + esc(DSTEP[n - 1]) + ' (' + (n - 1) + '/6)') + '</span>' + (al ? '<span class="small ' + (al.red ? 'dangerText' : 'strong') + '" style="font-weight:700">' + esc(al.text) + '</span>' : '') + '</a>'; }
   return out;
@@ -1410,9 +1423,9 @@ function vProject(id) {
   var fs = followsOf(id), ss = salesOf(id), idx = PIPE.indexOf(p.status);
   var hero = (p.photos || []).length ? '<div class="hero n' + Math.min(3, p.photos.length) + '">' + p.photos.map(function (ph, i) { return '<div><img data-photo="' + esc(ph) + '" alt="รูปหน้างาน ' + (i + 1) + '"></div>'; }).join('') + '</div>' : '';
   var pipe = '<div class="pipe" aria-label="ขั้นการขาย: ' + esc(p.status) + '">' + PIPE.map(function (s, i) { return '<div class="' + (i < idx ? 'done' : i === idx ? 'cur' : '') + '"><span></span><small' + (i === idx ? ' class="strong"' : '') + '>' + esc(s.replace('แล้ว', '')) + '</small></div>'; }).join('') + '</div>';
-  var info = [['ยอดที่คาดว่าจะได้', fmt(p.estimate) + ' บาท'], ['วันที่คาดว่าจะปิด', p.closingDateNA ? '-' : be(p.closingDate)], ['สถานะหน้างาน', siteLabel(p.site) + (p.siteAt && p.site ? ' (ตั้งแต่ ' + be(p.siteAt) + ')' : '')], ['ประเภทสินค้าที่เสนอ', (p.products || []).join(', ') || '-'], ['ช่องทางการติดต่อ', dvFull(p, 'channel') || '-'], ['รูปแบบโครงการ', p.pform || '-']];
+ var info = [['ยอดที่คาดว่าจะได้', fmt(p.estimate) + ' บาท'], ['วันที่คาดว่าจะปิด', p.closingDateNA ? '-' : be(p.closingDate)], ['สถานะหน้างาน', siteLabel(p.site) + (p.siteAt && p.site ? ' (ตั้งแต่ ' + be(p.siteAt) + ')' : '')], ['ประเภทสินค้าที่เสนอ', prodText(p) || '-'], ['ช่องทางการติดต่อ', dvFull(p, 'channel') || '-'], ['ลักษณะงาน', p.pform || '-']];
   var rk = reviewKeys(p), leg = p.legacy || {};
-  var review = rk.length ? '<div class="card warn stack" style="gap:8px"><b class="strong">ข้อมูลบางช่องต้องเลือกใหม่หลังอัปเดต</b><span class="small">ยังไม่ได้เลือก: ' + esc(rk.map(function (k) { return FLABEL[k]; }).join(', ')) + (leg.ptype || leg.channel || leg.contactRole || leg.completion ? ' · ค่าเดิม: ' + esc([leg.ptype ? 'ประเภทโครงการ ' + leg.ptype : '', leg.channel ? 'ช่องทาง ' + leg.channel : '', leg.contactRole ? 'ประเภทการติดต่อ ' + leg.contactRole : '', leg.completion ? 'กำหนดสร้างเสร็จ ' + beMonth(leg.completion) : ''].filter(Boolean).join(' · ')) : '') + '</span><a class="btn small primary" href="#/review/' + esc(p.id) + '">เลือกข้อมูลที่ยังว่าง</a></div>' : '';
+ var review = rk.length ? '<div class="card warn stack" style="gap:8px"><b class="strong">ข้อมูลบางช่องต้องเลือกใหม่หลังอัปเดต</b><span class="small">ยังไม่ได้เลือก: ' + esc(rk.map(function (k) { return FLABEL[k]; }).join(', ')) + (leg.ptype || leg.channel || leg.contactRole || leg.completion ? ' · ค่าเดิม: ' + esc([leg.ptype ? 'ประเภทโครงการ ' + leg.ptype : '', leg.channel ? 'ช่องทาง ' + leg.channel : '', leg.contactRole ? 'ประเภทการติดต่อ ' + leg.contactRole : '', leg.completion ? 'กำหนดสร้างเสร็จ ' + beMonth(leg.completion) : ''].filter(Boolean).join(' · ')) : '') + '</span><a class="btn small primary" href="#/review/' + esc(p.id) + '">เลือกข้อมูลที่ยังว่าง</a></div>' : '';
   var lateN = p.nextDate && p.nextDate < todayISO() ? diffDays(p.nextDate, todayISO()) : 0, nmv = moveCount(p.moves, 'appt', (fs[0] || {}).createdAt);
   var nextCard = p.nextDate && ACTIVE.concat([ST.HOLD]).indexOf(p.status) >= 0 ? '<div class="card stack' + (lateN ? ' alert' : '') + '" style="gap:8px;border:1.5px solid ' + (lateN ? 'var(--danger)' : 'var(--accent)') + '"><b class="' + (lateN ? 'dangerText' : 'strong') + '">' + (lateN ? 'เลยนัด ' + lateN + ' วัน · นัด ' : 'นัดถัดไป วัน' + TH_DAY[parseISO(p.nextDate).getDay()] + ' ') + be(p.nextDate) + (p.nextTime ? ' · ' + esc(p.nextTime) + ' น.' : '') + (nmv ? ' <span class="tag wait">เลื่อนแล้ว ' + nmv + ' ครั้ง</span>' : '') + '</b>' + agendaBox(p) +
     (lateN ? '<button class="btn small" data-act="resched" data-id="' + esc(p.id) + '">เลื่อนนัด</button>' : '<div class="grid2"><button class="btn small" data-act="resched" data-id="' + esc(p.id) + '">เลื่อนนัด</button><button class="btn small" data-act="ics" data-id="' + esc(p.id) + '">' + icon('cal', 18) + ' ลงปฏิทิน</button></div>' + ((p.nextTeam || []).length ? '<div class="grid2"><button class="btn small" data-act="shareappt" data-id="' + esc(p.id) + '">ส่งนัดให้ทีม</button>' + (p.nextTeamOk !== 'ทีมยืนยันแล้ว' ? '<button class="btn small" data-act="teamok" data-id="' + esc(p.id) + '">ทีมตอบรับแล้ว</button>' : '<span class="small okText" style="align-self:center">ทีมยืนยันแล้ว</span>') + '</div>' : '')) + '</div>' : '';
@@ -1423,20 +1436,20 @@ function vProject(id) {
   }).join('') + '</div>';
   var body = '<div class="stack">' + hero + quickBtns +
     '<div class="between" style="align-items:flex-start"><div><span class="small">' + esc(p.code) + (p.codeOld ? ' (เดิม ' + esc(p.codeOld) + ')' : '') + ' · ติดต่อ ' + be(p.recordDate) + (lagDays(p.recordDate, p.createdAt, p.importFile) ? ' · บันทึกในระบบ ' + be(isoOf(new Date(p.createdAt))) : '') + '</span><h2 style="font-size:21px">' + esc(p.name) + '</h2><span class="small">' + esc(dv(p, 'ptype')) + (p.pform ? ' · ' + esc(p.pform) : '') + (p.developer && p.developer !== '-' ? ' · ' + esc(p.developer) : '') + '</span></div>' + badge(p.status) + '</div>' + review +
-    (!p.consent ? '<div class="card warn stack" style="gap:8px"><b class="strong">ยังไม่มีหลักฐานความยินยอมของผู้ติดต่อ</b><span class="small">' + (p.consentSource === 'ข้อมูลเดิม' ? 'โครงการนี้นำเข้าจากไฟล์เดิม ' : '') + 'ขอความยินยอมเมื่อติดต่อครั้งถัดไป แล้วกดยืนยัน</span><button class="btn small" data-act="confirmconsent" data-id="' + esc(p.id) + '">ผู้ติดต่อยินยอมแล้ว</button></div>' : '') +
+ (!p.consent ? '<div class="card warn stack" style="gap:8px"><b class="strong">ยังไม่มีหลักฐานความยินยอมของผู้ติดต่อ</b><span class="small">' + (p.consentSource === 'ข้อมูลเดิม' ? 'Lead นี้นำเข้าจากไฟล์เดิม ' : '') + 'ขอความยินยอมเมื่อติดต่อครั้งถัดไป แล้วกดยืนยัน</span><button class="btn small" data-act="confirmconsent" data-id="' + esc(p.id) + '">ผู้ติดต่อยินยอมแล้ว</button></div>' : '') +
     (idx >= 0 ? pipe + (ACTIVE.indexOf(p.status) >= 0 ? stageLine(p) : '') : (p.status === ST.LOST ? '<div class="card"><b>ไม่ได้งาน</b> · เหตุผล: ' + esc(p.lostReason || '-') + '</div>' : '')) + nextCard +
     '<div class="wide2"><div class="stack"><div class="grid2">' + info.map(function (x) { return '<div class="card" style="padding:10px 12px"><div class="small">' + x[0] + '</div><b class="strong">' + esc(x[1]) + '</b></div>'; }).join('') + '</div>' +
     '<div class="card"><span class="small">ที่ตั้ง · ' + esc(p.province) + '</span><div class="strong" style="font-weight:500">' + esc(p.address || '-') + '</div>' + (p.lat != null ? '<a href="' + mapUrl(p.lat, p.lng) + '" target="_blank" rel="noopener noreferrer" style="font-weight:700">' + p.lat.toFixed(6) + ', ' + p.lng.toFixed(6) + ' · เปิดใน Google Maps</a>' : '<span class="small muted">ยังไม่มีพิกัด</span>') + '</div>' +
-    contactCard + (p.quick ? '<a class="card warn link" href="#/edit/' + esc(p.id) + '"><b class="strong">Lead ด่วน: ข้อมูลยังไม่ครบ</b><br><span class="small">แตะเพื่อกรอกข้อมูลโครงการให้ครบ</span></a>' : '') +
+ contactCard + (p.quick ? '<a class="card warn link" href="#/edit/' + esc(p.id) + '"><b class="strong">Lead ด่วน: ข้อมูลยังไม่ครบ</b><br><span class="small">แตะเพื่อกรอกข้อมูล Lead ให้ครบ</span></a>' : '') +
     (p.info ? '<div class="card"><span class="small">Project information</span><div style="white-space:pre-wrap">' + esc(p.info) + '</div></div>' : '') +
     projExtras(p) +
     '<div class="card"><div class="between"><b class="strong">ใบสั่งขาย (SO)</b><a href="#/sale/' + esc(p.id) + '" style="font-weight:700">+ บันทึก SO</a></div>' + (ss.length ? ss.map(function (s) { return '<a class="between" style="text-decoration:none;padding:10px 0;border-top:1px solid #f0f0f0" href="#/sale/' + esc(p.id) + '/' + esc(s.id) + '"><span><b class="strong">' + esc(s.soNo) + '</b><br><span class="small">' + be(s.soDate) + ' · รับแล้ว ' + fmt(paidOf(s)) + ' · จัดส่ง ' + be(s.deliveryDate) + ' · ' + esc(s.soStatus) + (s.lines && Object.keys(s.lines).length ? '<br>' + esc(linesText(s.lines, s.linesOther)) : '') + '</span></span><b class="strong">' + (s.needsValue && !s.soValue ? '<span class="errmsg">ยังไม่มีมูลค่า</span>' : fmt(s.soValue)) + '</b></a>' + (function () { var rm = Math.max(0, (s.soValue || 0) - paidOf(s)), du = dueOf(s), lt = rm && validSale(s) && du && du < todayISO(); var nm = moveCount(s.moves, 'delivery'); return '<div class="between" style="padding:0 0 10px;gap:8px"><a href="#/pay/' + esc(s.id) + '" class="small" style="font-weight:700;min-height:44px;display:flex;align-items:center;' + (lt ? 'color:var(--danger-text)' : '') + '">การรับชำระ · ' + (rm ? (lt ? 'เลยกำหนด ' : 'คงค้าง ') + fmt(rm) + ' บาท' + (du ? ' · กำหนด ' + be(du) : '') : 'รับครบแล้ว') + ' ›</a>' + (validSale(s) && s.soStatus !== 'จัดส่งแล้ว' ? '<button class="btn small" data-act="dmove" data-k="delivery" data-p="' + esc(s.projectId) + '" data-s="' + esc(s.id) + '">' + (s.deliveryDate ? 'เลื่อนจัดส่ง' : 'ตั้งวันจัดส่ง') + (nm ? ' (' + nm + ')' : '') + '</button>' : '') + '</div>'; })(); }).join('') : '<div class="small muted">ยังไม่มีใบสั่งขาย</div>') + '</div></div>' +
     '<div class="stack"><div class="between"><h2 class="h2" style="margin:0">ประวัติการติดตาม (' + fs.length + ')</h2></div><div class="timeline">' + tlMerge(p, fs).map(function (it, i, arr) { if (it.m) return tlMove(it.m); var f = it.f;
-      return '<div class="tl"><div class="dot"><i' + (i === 0 ? ' style="background:var(--accent);border:2px solid #3a3a3a;width:14px;height:14px"' : '') + '></i>' + (i < arr.length - 1 ? '<b></b>' : '') + '</div><div class="body"><div class="between" style="align-items:flex-start;gap:8px"><span class="small strong">' + be(f.date) + (f.ctype === FIRST_CTYPE ? ' · สร้างโครงการ' : '') + ' · ' + (f.ctype === 'โทร' ? 'โทร · ' + esc(f.callResult || '') : f.ctype === 'หลังส่งมอบ' ? 'ติดตามหลังส่งมอบ ' + (f.milestone || '') + ' เดือน' : f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'สถานะ ' + esc(f.statusAfter)) + (f.editedAt ? ' · แก้ไขแล้ว ' + be(localTs(f.editedAt).slice(0, 10)) : '') + '</span>' + (canEditFollow(f) ? '<a class="tledit" href="#/fedit/' + esc(f.id) + '" aria-label="แก้ไขประวัติวันที่ ' + be(f.date) + '">แก้ไข</a>' : '') + '</div>' + tlRows(f) + '</div></div>';
+ return '<div class="tl"><div class="dot"><i' + (i === 0 ? ' style="background:var(--accent);border:2px solid #3a3a3a;width:14px;height:14px"' : '') + '></i>' + (i < arr.length - 1 ? '<b></b>' : '') + '</div><div class="body"><div class="between" style="align-items:flex-start;gap:8px"><span class="small strong">' + be(f.date) + (f.ctype === FIRST_CTYPE ? ' · สร้าง Lead' : '') + ' · ' + (f.ctype === 'โทร' ? 'โทร · ' + esc(f.callResult || '') : f.ctype === 'หลังส่งมอบ' ? 'ติดตามหลังส่งมอบ ' + (f.milestone || '') + ' เดือน' : f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'สถานะ ' + esc(f.statusAfter)) + (f.editedAt ? ' · แก้ไขแล้ว ' + be(localTs(f.editedAt).slice(0, 10)) : '') + '</span>' + (canEditFollow(f) ? '<a class="tledit" href="#/fedit/' + esc(f.id) + '" aria-label="แก้ไขประวัติวันที่ ' + be(f.date) + '">แก้ไข</a>' : '') + '</div>' + tlRows(f) + '</div></div>';
     }).join('') + '</div>' +
-    '<div class="grid2"><a class="btn small" href="#/edit/' + esc(p.id) + '">แก้ไขโครงการ</a><button class="btn small danger" data-act="delproj" data-id="' + esc(p.id) + '">ลบโครงการ</button></div></div></div></div>';
+ '<div class="grid2"><a class="btn small" href="#/edit/' + esc(p.id) + '">แก้ไข Lead </a><button class="btn small danger" data-act="delproj" data-id="' + esc(p.id) + '">ลบ Lead </button></div></div></div></div>';
   var sa = stageAction(p);
-  return shell({ title: 'รายละเอียดโครงการ', back: '#/projects', action: sa ? '<div class="grid2"><a class="btn" href="#/follow/' + esc(p.id) + '">บันทึกติดตาม</a><a class="btn primary" href="' + sa[0] + '">' + sa[1] + '</a></div>' : '<a class="btn primary" href="#/follow/' + esc(p.id) + '">+ บันทึกการติดตาม</a>' }, body);
+ return shell({ title: 'รายละเอียด Lead', back: '#/projects', action: sa ? '<div class="grid2"><a class="btn" href="#/follow/' + esc(p.id) + '">บันทึกติดตาม</a><a class="btn primary" href="' + sa[0] + '">' + sa[1] + '</a></div>' : '<a class="btn primary" href="#/follow/' + esc(p.id) + '">+ บันทึกการติดตาม</a>' }, body);
 }
 function stageAction(p) {
   var ss = salesOf(p.id).filter(validSale), unpaid = ss.find(function (x) { return paidOf(x) < (x.soValue || 0); });
@@ -1462,7 +1475,7 @@ function vFollow(pid) {
   var p = projById(pid); if (!p || p.deleted) return vNotFound();
   var d = S.draft, t = todayISO(), miss = gateMissing(p, d.statusAfter), closed = d.statusAfter === ST.WON || d.statusAfter === ST.LOST;
   var siteHint = p.siteGuess ? 'ระบบประมาณจากกำหนดสร้างเสร็จเดิม กรุณายืนยันหรือเลือกใหม่' : (p.site && d.site && Number(d.site) !== p.site ? 'เปลี่ยนจาก "' + siteLabel(p.site) + '" ระบบบันทึกวันที่เปลี่ยนไว้ให้' : '');
-  var body = '<div class="stack"><div class="card"><span class="small">โครงการ</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">' + esc(p.contactName || '-') + ' · สถานะปัจจุบัน: ' + esc(p.status) + (p.site ? ' · หน้างาน: ' + esc(siteLabel(p.site)) : '') + '</span></div>' +
+ var body = '<div class="stack"><div class="card"><span class="small">Lead </span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">' + esc(p.contactName || '-') + ' · สถานะปัจจุบัน: ' + esc(p.status) + (p.site ? ' · หน้างาน: ' + esc(siteLabel(p.site)) : '') + '</span></div>' +
     contactDateField(d, t) +
     '<fieldset><legend class="lbl">สถานะ <span class="req">*</span></legend>' + chips('statusAfter', STATUSES, d.statusAfter) + (STATUS_HINT[d.statusAfter] ? '<span class="hint" style="display:block;margin-top:6px">' + esc(STATUS_HINT[d.statusAfter]) + '</span>' : '') + err('statusAfter') + '</fieldset>' +
     (miss.length ? '<section class="card warn stack" style="gap:12px;border:1.5px solid var(--accent)" aria-labelledby="gate-h"><h2 id="gate-h" class="h2" style="margin:0">ข้อมูลที่ต้องมีก่อนเข้า ' + esc(d.statusAfter) + '</h2>' + fieldsFor(miss, d, 'P') + '</section>' : '') +
@@ -1517,8 +1530,8 @@ function vPerf() {
   var pipe = act.reduce(function (a, p) { return a + (p.estimate || 0); }, 0);
   var remain = tg ? Math.max(0, tg.amount - so) : null, cov = remain ? Math.round(pipe / remain * 10) / 10 : null;
   var covCard = !tg ? '<a class="card link" href="#/target"><b class="strong">Pipeline coverage</b><br><span class="small">ตั้งเป้าเดือนนี้ก่อน เพื่อดูว่างานในมือพอถึงเป้าหรือไม่</span></a>'
-    : remain === 0 ? '<div class="card okc"><b class="okText">ถึงเป้าเดือนนี้แล้ว · เกินเป้า ' + fmt(so - tg.amount) + ' บาท</b><br><span class="small">ยอดที่เกินนับเป็นผลงานของเดือนนี้ · กำลังติดตาม ' + act.length + ' โครงการ · ยอดคาดการณ์ ' + fmt(pipe) + ' บาท</span></div>'
-    : '<div class="card" style="border:1.5px solid ' + (cov >= 3 ? 'var(--ok)' : 'var(--danger)') + '"><div class="between"><b class="strong">งานในมือเทียบยอดที่ขาด (Pipeline coverage)</b><b style="font-size:24px;color:' + (cov >= 3 ? 'var(--ok-text)' : 'var(--danger-text)') + '">' + cov + ' เท่า</b></div><span class="small">ยอดคาดการณ์กำลังติดตาม ' + fmt(pipe) + ' บาท ÷ ยอดที่ยังขาดถึงเป้า ' + fmt(remain) + ' บาท · ' + (cov >= 3 ? 'งานในมือเพียงพอ' : 'ควรหาโครงการเพิ่ม (ควรมีอย่างน้อย 3 เท่า)') + '</span></div>';
+ : remain === 0 ? '<div class="card okc"><b class="okText">ถึงเป้าเดือนนี้แล้ว · เกินเป้า ' + fmt(so - tg.amount) + ' บาท</b><br><span class="small">ยอดที่เกินนับเป็นผลงานของเดือนนี้ · กำลังติดตาม ' + act.length + ' ราย · ยอดคาดการณ์ ' + fmt(pipe) + ' บาท</span></div>'
+ : '<div class="card" style="border:1.5px solid ' + (cov >= 3 ? 'var(--ok)' : 'var(--danger)') + '"><div class="between"><b class="strong">งานในมือเทียบยอดที่ขาด (Pipeline coverage)</b><b style="font-size:24px;color:' + (cov >= 3 ? 'var(--ok-text)' : 'var(--danger-text)') + '">' + cov + ' เท่า</b></div><span class="small">ยอดคาดการณ์กำลังติดตาม ' + fmt(pipe) + ' บาท ÷ ยอดที่ยังขาดถึงเป้า ' + fmt(remain) + ' บาท · ' + (cov >= 3 ? 'งานในมือเพียงพอ' : 'ควรหา Lead เพิ่ม (ควรมีอย่างน้อย 3 เท่า)') + '</span></div>';
   function table(title, field, list) {
     var rows = {}, order = list.slice();
     PIPE.forEach(function (k) { Object.keys(cur[k]).forEach(function (id) { var p = projById(id); if (!p) return; var v = p[field] && list.indexOf(p[field]) >= 0 ? p[field] : 'อื่น / ไม่ระบุ'; if (order.indexOf(v) < 0) order.push(v); rows[v] = rows[v] || {}; rows[v][k] = (rows[v][k] || 0) + 1; }); });
@@ -1532,13 +1545,13 @@ function vPerf() {
   var curM = monthOf(t), mopts = []; for (var mi = 0; mi < 24; mi++) mopts.push(addMonths(curM, -mi)); if (mopts.indexOf(ym) < 0) mopts.push(ym);
   var paidM = sales.reduce(function (a, s) { return a + paidOf(s); }, 0), PD = payData();
   var body = '<div class="stack"><div class="mstep" role="group" aria-label="เลือกเดือน"><button class="btn" data-act="mstep" data-v="-1" aria-label="เดือนก่อนหน้า">‹</button><select id="pm" class="inp" data-live="month" aria-label="เดือน">' + mopts.map(function (m) { return '<option value="' + m + '"' + (m === ym ? ' selected' : '') + '>' + monthName(m) + '</option>'; }).join('') + '</select><button class="btn" data-act="mstep" data-v="1" aria-label="เดือนถัดไป"' + (ym >= curM ? ' disabled' : '') + '>›</button></div>' +
-    '<div class="grid2">' + cards + '</div><span class="small muted" style="margin-top:-6px">นับจำนวนโครงการที่ไปถึงแต่ละขั้นในเดือนนี้ เทียบกับเดือนก่อน' + (noPrev ? ' · ' + monthShort(pym) + ' ไม่มีข้อมูลให้เทียบ' : '') + '</span>' +
+ '<div class="grid2">' + cards + '</div><span class="small muted" style="margin-top:-6px">นับจำนวน Lead ที่ไปถึงแต่ละขั้นในเดือนนี้ เทียบกับเดือนก่อน' + (noPrev ? ' · ' + monthShort(pym) + ' ไม่มีข้อมูลให้เทียบ' : '') + '</span>' +
     '<div class="card stack" style="gap:10px"><div class="between"><b>ยอด SO ' + monthName(ym) + ' (ก่อน VAT)</b><span class="small">' + (tg ? 'เป้า ' + fmt(tg.amount) + (tg.leader ? ' (หัวหน้ากำหนด)' : '') : '<a href="#/target">ตั้งเป้า</a>') + '</span></div>' +
     '<div><span style="font-size:30px;font-weight:700;color:var(--text-strong)">' + fmt(so) + '</span> <b>บาท</b></div><span class="small">รับชำระแล้ว ' + fmt(paidM) + ' บาท · คงเหลือ ' + fmt(Math.max(0, so - paidM)) + ' บาท</span>' +
     (tg ? '<div class="progress' + (pct >= 100 ? ' over' : '') + '" role="img" aria-label="ทำได้ร้อยละ ' + pct + ' ของเป้า ควรถึงร้อยละ ' + pace + '"><div style="width:' + Math.min(100, pct) + '%"></div>' + (pct < 100 ? '<i style="left:' + Math.min(100, pace) + '%"></i>' : '') + '</div>' +
       (pct >= 100 ? '<div class="between small"><b class="okText" style="font-size:15px">ร้อยละ ' + pct + ' ของเป้า · เกินเป้า ' + fmt(so - tg.amount) + ' บาท</b><span>ถึงเป้าแล้ว</span></div>' : '<div class="between small"><b class="strong">ร้อยละ ' + pct + ' ของเป้า</b><span>ควรถึงร้อยละ ' + pace + ' ณ วันนี้</span></div>') : '') + '</div>' +
     covCard + (PD.list.length ? '<a class="card link' + (PD.red ? ' alert' : '') + '" href="#/plan/pay"><div class="between"><b class="strong">ยอดคงค้างทั้งหมด</b><b class="' + (PD.red ? 'dangerText' : 'strong') + '" style="font-size:20px">' + fmt(PD.total) + ' บาท</b></div><span class="small">' + PD.list.length + ' SO ที่ยังรับไม่ครบ' + (PD.lateN ? ' · เลยกำหนดชำระ ' + PD.lateN + ' SO' : ' · ยังไม่มี SO ที่เลยกำหนด') + (PD.rcN ? ' · ใบเสร็จรอออก ' + PD.rcN + ' รายการ' : '') + ' · ทุกเดือน ไม่เฉพาะเดือนที่เลือก</span></a>' : '') + perfExtras(ym) +
-    '<details class="fold card" style="padding:0 14px"><summary>รายละเอียดตามช่องทาง ประเภทอาคาร ผู้ติดต่อ และรูปแบบโครงการ</summary><div class="wide2" style="padding-bottom:14px">' + table('ช่องทางการติดต่อ', 'channel', groupNames(O().channel)) + table('ประเภทอาคาร', 'ptype', groupNames(O().ptype)) + table('ประเภทการติดต่อ', 'contactRole', groupNames(O().role)) + table('รูปแบบโครงการ', 'pform', O().pform) + '</div></details>' +
+ '<details class="fold card" style="padding:0 14px"><summary>รายละเอียดตามช่องทาง ประเภทอาคาร ผู้ติดต่อ และลักษณะงาน</summary><div class="wide2" style="padding-bottom:14px">' + table('ช่องทางการติดต่อ', 'channel', groupNames(O().channel)) + table('ประเภทอาคาร', 'ptype', groupNames(O().ptype)) + table('ประเภทการติดต่อ', 'contactRole', groupNames(O().role)) + table('ลักษณะงาน', 'pform', O().pform) + '</div></details>' +
     '<h2 class="h2">SO เดือนนี้ (' + sales.length + ')</h2>' + (sales.length ? sales.sort(function (a, b) { return b.soDate.localeCompare(a.soDate); }).map(function (s) { var pr = projById(s.projectId) || {}; return '<a class="card link between" style="display:flex;gap:12px;align-items:center" href="#/sale/' + esc(s.projectId) + '/' + esc(s.id) + '"><span><b class="strong">' + esc(pr.name || '-') + '</b><br><span class="small">' + be(s.soDate) + ' · ' + esc(s.soNo) + ' · รับแล้ว ' + fmt(paidOf(s)) + ' · จัดส่ง ' + be(s.deliveryDate) + '</span></span><b class="strong">' + (s.needsValue && !s.soValue ? '<span class="errmsg">ยังไม่มีมูลค่า</span>' : fmt(s.soValue)) + '</b></a>'; }).join('') : '<div class="card muted">ยังไม่มี SO ในเดือนนี้</div>') +
     '<a class="card link between" href="#/months"><span><b class="strong">ประวัติรายเดือน · ปิดงวด</b><br><span class="small">' + monthName(ym) + ': ' + (isClosed(ym) ? 'ปิดงวดแล้ว' : 'ยังไม่ปิดงวด') + '</span></span><b aria-hidden="true">›</b></a></div>';
   return shell({ title: 'ผลงาน' }, body);
@@ -1594,7 +1607,7 @@ function perfExtras(ym) {
   // stage durations
   var sd = stageDurations(180), mx = Math.max.apply(null, ACTIVE.map(function (k) { return sd[k] || 0; }).concat([1])), stale = liveProjects().filter(function (p) { return ACTIVE.indexOf(p.status) >= 0 && stageDays(p) > 60; }).length;
   out += '<section class="card stack" style="gap:8px" aria-labelledby="sd-h"><h2 id="sd-h" class="h2" style="margin:0">เวลาเฉลี่ยที่อยู่ในแต่ละขั้น</h2>' + ACTIVE.map(function (k) { var v = sd[k]; return '<div class="barrow" style="grid-template-columns:110px minmax(0,1fr) 64px"><span>' + esc(k) + '</span><div class="bartrack"><div class="barfill" style="width:' + (v ? Math.max(4, Math.round(v / mx * 100)) : 0) + '%"></div></div><b class="strong" style="text-align:right;white-space:nowrap">' + (v == null ? '-' : v + ' วัน') + '</b></div>'; }).join('') +
-    '<span class="small">ดีลที่ออกจากขั้นใน 6 เดือนล่าสุด · ค้างในขั้นเกิน 60 วัน: ' + stale + ' โครงการ' + (stale ? ' · <a href="#/projects" data-act="showstale" style="font-weight:700">ดูรายการ</a>' : '') + '</span></section>';
+ '<span class="small">ดีลที่ออกจากขั้นใน 6 เดือนล่าสุด · ค้างในขั้นเกิน 60 วัน: ' + stale + ' ราย' + (stale ? ' · <a href="#/projects" data-act="showstale" style="font-weight:700">ดูรายการ</a>' : '') + '</span></section>';
   // lost reasons
   var lf = addMonths(ym, -2) + '-01', lr = {}, lv = 0, seen = {};
   liveFollows().filter(function (f) { return f.statusAfter === ST.LOST && f.date >= lf && f.date <= end; }).forEach(function (f) { if (seen[f.projectId]) return; seen[f.projectId] = 1; var k = f.lostReason || 'ไม่ระบุ'; lr[k] = (lr[k] || 0) + 1; var p = projById(f.projectId); lv += p ? p.estimate || 0 : 0; });
@@ -1613,7 +1626,7 @@ function buildReadable(period, anchor) {
   var QT = liveQuotes().filter(function (q) { return inR(q.date); }), SO = liveSales().filter(function (x) { return inR(x.soDate) && validSale(x); });
   var soSum = SO.reduce(function (a, x) { return a + (x.soValue || 0); }, 0), cm = monthOf(to < t ? to : t), tg = targetFor(cm), cum = liveSales().filter(function (x) { return monthOf(x.soDate) === cm && validSale(x); }).reduce(function (a, x) { return a + (x.soValue || 0); }, 0);
   var act = liveProjects().filter(function (p) { return ACTIVE.indexOf(p.status) >= 0; });
-  var L = ['สรุปงาน ' + (P().name || '') + ' · ' + ttl, '• บันทึกการติดตาม ' + F.length + ' ครั้ง', '• Lead ใหม่ ' + N.length + ' โครงการ', '• ใบเสนอราคา ' + QT.length + ' ใบ มูลค่า ' + fmt(QT.reduce(function (a, q) { return a + (q.value || 0); }, 0)) + ' บาท', '• SO ' + SO.length + ' ใบ มูลค่า ' + fmt(soSum) + ' บาท'];
+ var L = ['สรุปงาน ' + (P().name || '') + ' · ' + ttl, '• บันทึกการติดตาม ' + F.length + ' ครั้ง', '• Lead ใหม่ ' + N.length + ' ราย', '• ใบเสนอราคา ' + QT.length + ' ใบ มูลค่า ' + fmt(QT.reduce(function (a, q) { return a + (q.value || 0); }, 0)) + ' บาท', '• SO ' + SO.length + ' ใบ มูลค่า ' + fmt(soSum) + ' บาท'];
   if (tg && tg.amount) L.push('• ยอด SO ' + monthName(cm) + ' ' + fmt(cum) + ' / เป้า ' + fmt(tg.amount) + ' บาท (ร้อยละ ' + Math.round(cum / tg.amount * 1000) / 10 + ')');
   if (period === 'day') L.push('• นัดพรุ่งนี้ ' + act.filter(function (p) { return p.nextDate === addDays(anchor, 1); }).length + ' · เลยนัด ' + act.filter(function (p) { return p.nextDate && p.nextDate < anchor; }).length);
   var top = SO.slice().sort(function (a, b) { return (b.soValue || 0) - (a.soValue || 0); }).slice(0, 3);
@@ -1675,7 +1688,7 @@ function vSummary() {
   var text = buildSummary(u.period, u.anchor, u.detail);
   var body = '<div class="stack"><div class="seg" style="grid-template-columns:repeat(3,1fr)" role="group" aria-label="ช่วงเวลา">' + [['day', 'รายวัน'], ['week', 'รายสัปดาห์'], ['month', 'รายเดือน']].map(function (x) { return '<button type="button" data-act="period" data-v="' + x[0] + '" aria-pressed="' + (u.period === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
     '<div class="field"><label for="sa">วันที่อ้างอิง</label><input id="sa" class="inp" type="date" data-live="anchor" value="' + esc(u.anchor) + '" max="' + todayISO() + '"></div>' +
-    '<div class="card between"><div><span id="dl" class="strong">แสดงรายการรายโครงการ</span><br><span class="small">ไม่รวมชื่อและเบอร์ผู้ติดต่อทุกกรณี</span></div><button type="button" class="switch" role="switch" aria-labelledby="dl" aria-checked="' + !!u.detail + '" data-act="detail"></button></div>' +
+ '<div class="card between"><div><span id="dl" class="strong">แสดงรายการราย Lead </span><br><span class="small">ไม่รวมชื่อและเบอร์ผู้ติดต่อทุกกรณี</span></div><button type="button" class="switch" role="switch" aria-labelledby="dl" aria-checked="' + !!u.detail + '" data-act="detail"></button></div>' +
     '<div class="card stack" style="gap:8px;border:1.5px solid var(--accent)"><b class="strong">สรุปสำหรับหัวหน้า (อ่านง่าย)</b><pre class="pre" id="sumread" style="margin:0">' + esc(buildReadable(u.period, u.anchor)) + '</pre><button class="btn" data-act="copyread">คัดลอกสรุปอ่านง่าย</button></div>' +
     '<span class="small" style="font-weight:600">ข้อความสำหรับ Power Automate · รูปแบบเดิม ห้ามแก้ไข</span><pre class="pre" id="sumtext">' + esc(text) + '</pre></div>';
   return shell({ title: 'สรุปส่ง Teams', action: '<button class="btn primary" data-act="copy">คัดลอกข้อความ (Power Automate)</button>' }, body);
@@ -1687,17 +1700,17 @@ function vData() {
     '<div class="card stack" style="gap:10px;border:1.5px solid var(--accent)"><b class="strong">สำรองข้อมูลเข้ารหัส</b><div class="between small"><span>สำรองล่าสุด</span><b class="strong">' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง') + '</b></div>' +
     '<div class="field"><label for="bp">รหัสผ่านไฟล์สำรอง (อย่างน้อย 8 ตัวอักษร)</label><input id="bp" class="inp" type="password" autocomplete="new-password" data-bind-ui="bpass"></div>' +
     '<div class="grid2"><button class="btn" data-act="backup">สำรองตอนนี้</button><label class="btn" style="position:relative">กู้คืน<input type="file" accept=".json,application/json" data-restore="1" style="position:absolute;inset:0;opacity:0" aria-label="เลือกไฟล์สำรองเพื่อกู้คืน"></label></div>' +
-    '<div class="between"><span id="bap" class="small">รวมรูปของโครงการที่จบแล้ว (ไฟล์ใหญ่ขึ้น)</span><button type="button" class="switch" role="switch" aria-labelledby="bap" aria-checked="' + !!S.ui.bAllPhotos + '" data-act="bphotos"></button></div>' +
-    '<span class="hint">ไฟล์สำรองมีข้อมูลทั้งหมด และรูปของโครงการที่ยังติดตามอยู่ ใช้รหัสผ่านเดียวกันตอนกู้คืน หากลืมรหัสผ่านจะเปิดไฟล์ไม่ได้</span></div>' +
+ '<div class="between"><span id="bap" class="small">รวมรูปของ Lead ที่จบแล้ว (ไฟล์ใหญ่ขึ้น)</span><button type="button" class="switch" role="switch" aria-labelledby="bap" aria-checked="' + !!S.ui.bAllPhotos + '" data-act="bphotos"></button></div>' +
+ '<span class="hint">ไฟล์สำรองมีข้อมูลทั้งหมด และรูปของ Lead ที่ยังติดตามอยู่ ใช้รหัสผ่านเดียวกันตอนกู้คืน หากลืมรหัสผ่านจะเปิดไฟล์ไม่ได้</span></div>' +
     '<div class="card stack" style="gap:10px"><div class="between"><b class="strong">ส่งออก Excel (ฉบับเต็ม)</b></div><span class="small">สำหรับหัวหน้าหรือใช้งานภายใน มีชื่อ เบอร์ LINE ที่อยู่ พิกัด และ sheet Contacts</span>' +
     '<div class="between small"><span>ส่งออกล่าสุด</span><b class="strong">' + (st.lastExport ? be(st.lastExport) : 'ยังไม่เคยส่งออก') + '</b></div>' +
-    '<div class="card" style="background:#f6f6f6;border:0"><b class="strong">' + esc(exportName()) + '</b><br><span class="small">Sheet โครงการ ' + liveProjects().length + ' แถว · การติดตาม ' + liveFollows().length + ' แถว · SO ' + liveSales().length + ' แถว</span></div>' +
+ '<div class="card" style="background:#f6f6f6;border:0"><b class="strong">' + esc(exportName()) + '</b><br><span class="small">Sheet โครงการ ' + liveProjects().length + ' แถว · การติดตาม ' + liveFollows().length + ' แถว · SO ' + liveSales().length + ' แถว</span></div>' +
     '<button class="btn primary block" data-act="export">ส่งออก Excel ฉบับเต็ม</button>' +
     '<span class="small strong" style="font-weight:500">ไฟล์ Excel ไม่เข้ารหัส เก็บไว้ในพื้นที่ของบริษัทฯ เท่านั้น</span></div>' +
-    '<div class="card stack" style="gap:10px"><b class="strong">ส่งออกสำหรับวิเคราะห์ (ไม่มีข้อมูลส่วนบุคคล)</b><span class="small">สำหรับส่งให้ AI หรือทำรายงาน ตัดชื่อโครงการ ชื่อและเบอร์ผู้ติดต่อ LINE ที่อยู่ พิกัด ข้อความอิสระ และ sheet Contacts ออก เหลือรหัสโครงการ ประเภทต่าง ๆ ขั้นการขาย วันที่ และตัวเลข พร้อม sheet คำอธิบายคอลัมน์</span><span class="small strong">' + esc(exportName().replace(/\.xlsx$/, '_ANALYSIS.xlsx')) + '</span><button class="btn block" data-act="exportanon">ส่งออกสำหรับวิเคราะห์</button><span class="small">ใช้กับ AI ที่บริษัทอนุมัติเท่านั้น เช่น Copilot ของบริษัท</span></div>' +
-    '<div class="card stack" style="gap:10px"><b class="strong">นำเข้าข้อมูลเดิมจาก Excel</b><span class="small">รองรับไฟล์ .xlsx หรือ .csv ที่มีหัวคอลัมน์ตามแบบเดิมของทีม (Date, ช่องทางการติดต่อ, Project Type, ชื่อโครงการ, ชื่อผู้ติดต่อ, เบอร์ติดต่อ, Note, สถานะ ฯลฯ) แถวที่ชื่อโครงการซ้ำกันจะรวมเป็นโครงการเดียว และแต่ละแถวเป็นประวัติการติดตาม 1 ครั้ง ระบบแสดงผลให้ตรวจก่อนนำเข้าจริง</span>' +
+ '<div class="card stack" style="gap:10px"><b class="strong">ส่งออกสำหรับวิเคราะห์ (ไม่มีข้อมูลส่วนบุคคล)</b><span class="small">สำหรับส่งให้ AI หรือทำรายงาน ตัดชื่อ Lead ชื่อและเบอร์ผู้ติดต่อ LINE ที่อยู่ พิกัด ข้อความอิสระ และ sheet Contacts ออก เหลือรหัส Lead ประเภทต่าง ๆ ขั้นการขาย วันที่ และตัวเลข พร้อม sheet คำอธิบายคอลัมน์</span><span class="small strong">' + esc(exportName().replace(/\.xlsx$/, '_ANALYSIS.xlsx')) + '</span><button class="btn block" data-act="exportanon">ส่งออกสำหรับวิเคราะห์</button><span class="small">ใช้กับ AI ที่บริษัทอนุมัติเท่านั้น เช่น Copilot ของบริษัท</span></div>' +
+ '<div class="card stack" style="gap:10px"><b class="strong">นำเข้าข้อมูลเดิมจาก Excel</b><span class="small">รองรับไฟล์ .xlsx หรือ .csv ที่มีหัวคอลัมน์ตามแบบเดิมของทีม (Date, ช่องทางการติดต่อ, Project Type, ชื่อโครงการ, ชื่อผู้ติดต่อ, เบอร์ติดต่อ, Note, สถานะ ฯลฯ) แถวที่ชื่อโครงการซ้ำกันจะรวมเป็น Lead เดียว และแต่ละแถวเป็นประวัติการติดตาม 1 ครั้ง ระบบแสดงผลให้ตรวจก่อนนำเข้าจริง</span>' +
     '<button class="btn" data-act="template">ดาวน์โหลดไฟล์ต้นแบบสำหรับกรอกข้อมูลเดิม</button><label class="btn" style="position:relative">เลือกไฟล์ Excel / CSV<input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-import="1" style="position:absolute;inset:0;opacity:0" aria-label="เลือกไฟล์ข้อมูลเดิม"></label>' + importPreview() +
-    (st.imports || []).map(function (b) { return '<div class="between small" style="border-top:1px solid #f0f0f0;padding-top:8px"><span>' + esc(b.file) + ' · ' + be(b.at) + ' · ' + b.projects + ' โครงการ</span><button class="btn small danger" data-act="undoimport" data-id="' + esc(b.id) + '">ยกเลิกการนำเข้า</button></div>'; }).join('') + '</div>' +
+ (st.imports || []).map(function (b) { return '<div class="between small" style="border-top:1px solid #f0f0f0;padding-top:8px"><span>' + esc(b.file) + ' · ' + be(b.at) + ' · ' + b.projects + ' ราย</span><button class="btn small danger" data-act="undoimport" data-id="' + esc(b.id) + '">ยกเลิกการนำเข้า</button></div>'; }).join('') + '</div>' +
     '<a class="card link between" href="#/months"><span><b class="strong">ประวัติรายเดือน · ปิดงวด · ล้างข้อมูลเก่า</b></span><b aria-hidden="true">›</b></a>' +
     '<details class="fold"><summary>ข้อมูลทางเทคนิค</summary><div class="card stack" style="gap:6px"><b class="strong">ความพร้อมย้ายขึ้นฐานข้อมูลกลาง</b><div class="between small"><span>รูปแบบข้อมูล</span><b class="strong">เวอร์ชัน ' + SCHEMA_VERSION + '</b></div><div class="between small"><span>รายการที่ยังไม่ส่งขึ้น server</span><b class="strong">' + n + ' รายการ</b></div><div class="between small"><span>การเชื่อมต่อ server</span><b>ยังไม่เปิดใช้ (ช่วงทดลอง)</b></div><div class="between small"><span>พื้นที่จัดเก็บถาวร</span><b id="persist">กำลังตรวจสอบ</b></div></div>' + '</details>' +
     '</div>';
@@ -1729,7 +1742,7 @@ function vSettings() {
   var body = '<div class="stack" style="gap:0">' +
     (pend.length ? grp('งานที่ควรทำ (' + pend.length + ')', pend.map(function (x) { return lrow(x[2], 'alert', esc(x[0]), esc(x[1]), '', 'warnrow'); })) : '') +
     grp('งานประจำ', [lrow('#/summary', 'send', 'สรุปส่ง Teams', 'ข้อความสรุปรายวัน รายสัปดาห์ รายเดือน', ''), lrow('#/data', 'db', 'สำรองข้อมูล · ส่งออก Excel · กู้คืน', 'สำรองล่าสุด ' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง'), ''), lrow('#/months', 'cal', 'ประวัติรายเดือน · ปิดงวด', '', !isClosed(addMonths(curMonth(), -1)) && monthHasData(addMonths(curMonth(), -1)) ? '<b class="dangerText">ค้างปิดงวด</b>' : '')]) +
-    grp('คู่มือและข้อมูล', [lrow('#/guide/staff', 'help', 'คู่มือใช้งาน', '', ''), lrow('#/rules', 'list', '<b>กติกาการใช้งาน</b>', 'วิธีเลือกข้อมูล ขั้นการขาย การนับผลงาน อุปกรณ์ที่รองรับ', '', 'hl'), lrow('#/setup', 'sliders', 'ข้อมูลหลัก (Master Data)', 'ประเภทอาคาร รูปแบบโครงการ ช่องทาง ประเภทการติดต่อ ประเภทสินค้า วาระนัด', ''), lrow('#/target', 'target', 'เป้ายอดขาย', 'ตั้งเป้ารายเดือนทั้งปี', tg ? fmt(tg.amount) : 'ยังไม่ตั้ง')]) +
+ grp('คู่มือและข้อมูล', [lrow('#/guide/staff', 'help', 'คู่มือใช้งาน', '', ''), lrow('#/rules', 'list', '<b>กติกาการใช้งาน</b>', 'วิธีเลือกข้อมูล ขั้นการขาย การนับผลงาน อุปกรณ์ที่รองรับ', '', 'hl'), lrow('#/setup', 'sliders', 'ข้อมูลหลัก (Master Data)', 'ประเภทอาคาร ลักษณะงาน ช่องทาง ประเภทการติดต่อ ประเภทสินค้า วาระนัด', ''), lrow('#/target', 'target', 'เป้ายอดขาย', 'ตั้งเป้ารายเดือนทั้งปี', tg ? fmt(tg.amount) : 'ยังไม่ตั้ง')]) +
     grp('บัญชีของฉัน', [lrow('#/profile', 'user', 'ข้อมูลพนักงาน', esc(p.name), esc(p.empId)), lrow('switchacct', 'logout', 'เปลี่ยนผู้ใช้', 'สำหรับเครื่องที่ใช้ร่วมกัน · ผู้ใช้ในเครื่องนี้ ' + (S.users || []).length + ' คน', '')]) +
     grp('ข้อมูล', [lrow('#/data', 'upload', 'นำเข้าข้อมูลเดิมจาก Excel', 'มีไฟล์ต้นแบบให้ดาวน์โหลด', '')]) +
     grp('ความปลอดภัย', [lrow('#/security', 'shield', 'ล็อกอัตโนมัติและเปลี่ยน PIN', '', st.settings.autolock + ' นาที')]) +
@@ -1743,23 +1756,23 @@ function vProfile() {
   var body = '<div class="stack"><div class="card stack" style="gap:10px">' +
     '<div class="grid2"><div class="field"><label for="p-emp">Emp ID</label><input id="p-emp" class="inp" data-pf="empId" value="' + esc(p.empId) + '" maxlength="20"></div><div class="field"><label for="p-name">ชื่อ-นามสกุล</label><input id="p-name" class="inp" data-pf="name" value="' + esc(p.name) + '" maxlength="80"></div></div>' +
     '<div class="grid2"><div class="field"><label for="p-br">สาขา</label><input id="p-br" class="inp" data-pf="branch" value="' + esc(p.branch) + '" maxlength="60"></div><div class="field"><label for="p-tm">ทีม</label><input id="p-tm" class="inp" data-pf="team" value="' + esc(p.team) + '" maxlength="60"></div></div>' +
-    '<span class="hint">เมื่อแก้ไข ระบบจะถามว่าต้องการปรับข้อมูลโครงการ การติดตาม และ SO เดิมให้เป็นข้อมูลใหม่ด้วยหรือไม่</span>' +
+ '<span class="hint">เมื่อแก้ไข ระบบจะถามว่าต้องการปรับข้อมูล Lead การติดตาม และ SO เดิมให้เป็นข้อมูลใหม่ด้วยหรือไม่</span>' +
     '<button class="btn small primary" data-act="saveprofile">บันทึกข้อมูลพนักงาน</button></div>' +
     '<details class="fold"><summary>การจัดการบัญชี</summary><div class="card stack" style="gap:8px"><span class="small">ลบข้อมูลทั้งหมดของผู้ใช้นี้ในเครื่องนี้ ใช้เมื่อคืนเครื่องหรือย้ายเครื่อง ควรสำรองข้อมูลก่อน</span><button class="btn danger block" data-act="wipe">ล้างข้อมูลทั้งหมดของผู้ใช้นี้</button></div></details>' +
-    (function () { var n = codeMismatch().length; return n ? '<div class="card warn stack" style="gap:8px"><b class="strong">มีโครงการ ' + n + ' รายการที่รหัสยังใช้ Emp ID เดิม</b><span class="small">เปลี่ยนเป็น PS-' + esc(p.empId) + '-xxxx ได้ รหัสเดิมยังค้นหาได้</span><button class="btn small" data-act="renamecodes">เปลี่ยนรหัสโครงการ</button></div>' : ''; })() + '</div>';
+ (function () { var n = codeMismatch().length; return n ? '<div class="card warn stack" style="gap:8px"><b class="strong">มี Lead ' + n + ' รายการที่รหัสยังใช้ Emp ID เดิม</b><span class="small">เปลี่ยนเป็น PS-' + esc(p.empId) + '-xxxx ได้ รหัสเดิมยังค้นหาได้</span><button class="btn small" data-act="renamecodes">เปลี่ยนรหัส Lead</button></div>' : ''; })() + '</div>';
   return shell({ title: 'ข้อมูลพนักงาน', back: '#/settings' }, body);
 }
 function codeMismatch() { var pre = 'PS-' + (P().empId || 'X') + '-'; return liveProjects().filter(function (p) { return /^PS-.+-\d+$/.test(p.code || '') && p.code.indexOf(pre) !== 0; }); }
 function askRenameCodes(manual) {
-  var list = codeMismatch(); if (!list.length) { if (manual) toast('รหัสโครงการตรงกับ Emp ID ปัจจุบันแล้ว'); return Promise.resolve(); }
+ var list = codeMismatch(); if (!list.length) { if (manual) toast('รหัส Lead ตรงกับ Emp ID ปัจจุบันแล้ว'); return Promise.resolve(); }
   var pre = 'PS-' + P().empId + '-', ex = list[0];
-  return confirmBox('เปลี่ยนรหัสโครงการด้วยหรือไม่', 'มีโครงการ ' + list.length + ' รายการที่รหัสยังใช้ Emp ID เดิม เช่น ' + ex.code + ' จะเปลี่ยนเป็น ' + pre + ex.code.split('-').pop() + ' รหัสเดิมเก็บไว้ในช่องรหัสโครงการเดิม ค้นหาได้และอยู่ในไฟล์ Excel ส่วนข้อความที่ส่งเข้า Teams ไปแล้วยังแสดงรหัสเดิม', 'เปลี่ยนรหัส').then(function (ok) {
+ return confirmBox('เปลี่ยนรหัส Lead ด้วยหรือไม่', 'มี Lead ' + list.length + ' รายการที่รหัสยังใช้ Emp ID เดิม เช่น ' + ex.code + ' จะเปลี่ยนเป็น ' + pre + ex.code.split('-').pop() + ' รหัสเดิมเก็บไว้ในช่องรหัส Lead เดิม ค้นหาได้และอยู่ในไฟล์ Excel ส่วนข้อความที่ส่งเข้า Teams ไปแล้วยังแสดงรหัสเดิม', 'เปลี่ยนรหัส').then(function (ok) {
     if (!ok) return;
     var used = {}, map = {}; liveProjects().forEach(function (p) { used[p.code] = 1; });
     list.forEach(function (p) { var nc = pre + p.code.split('-').pop(); while (used[nc]) { Store.state.counter++; nc = pre + String(Store.state.counter).padStart(4, '0'); } used[nc] = 1; p.codeOld = (p.codeOld ? p.codeOld + ', ' : '') + p.code; map[p.id] = nc; p.code = nc; });
     var ms = Store.months.filter(function (m) { return !m.deleted && (m.items || []).some(function (i) { return map[i.projectId]; }); });
     ms.forEach(function (m) { m.items.forEach(function (i) { if (map[i.projectId]) i.code = map[i.projectId]; }); });
-    return Promise.all(list.concat(ms).map(function (r) { return Store.save(r); })).then(function () { return Store.saveState(); }).then(function () { toast('เปลี่ยนรหัสโครงการ ' + list.length + ' รายการแล้ว'); rerender(); });
+ return Promise.all(list.concat(ms).map(function (r) { return Store.save(r); })).then(function () { return Store.saveState(); }).then(function () { toast('เปลี่ยนรหัส Lead ' + list.length + ' รายการแล้ว'); rerender(); });
   });
 }
 function vTarget() { return shell({ title: 'เป้ายอดขาย', back: '#/settings' }, '<div class="stack">' + targetCard() + '</div>'); }
@@ -1775,7 +1788,7 @@ function vSetup() {
   var body = '<div class="stack">' +
     (o.version === 'default' ? '<div class="card"><b class="strong">ใช้ชุดตัวเลือกมาตรฐานของแอป</b><br><span class="small">ถ้าได้รับรหัสชุดตัวเลือกจากทีม ให้วางด้านล่างแล้วกดนำเข้า ถ้าไม่มี ใช้ชุดมาตรฐานได้เลย</span></div>' : '<div class="card okc"><b class="okText">ใช้ชุดตัวเลือกของทีม ' + esc(o.team || '') + ' ฉบับ ' + be(o.issuedAt) + '</b></div>') +
     '<div class="card stack" style="gap:10px"><b class="strong">นำเข้ารหัสชุดตัวเลือก (ถ้ามี)</b><div class="field"><label for="imp">วางรหัสที่ขึ้นต้นด้วย PSOPT1.</label><textarea id="imp" class="inp" data-bind-ui="imp" placeholder="PSOPT1.…"></textarea></div><button class="btn small primary" data-act="importopt">นำเข้า</button></div>' +
-    '<div class="card stack" style="gap:12px"><b class="strong">ข้อมูลหลักที่ใช้อยู่</b><span class="small">แบ่งแบบ MECE แต่ละโครงการลงได้ช่องเดียว และมี "อื่น ๆ (ระบุ)" รองรับกรณีที่ไม่อยู่ในรายการ · กลุ่ม คือหน่วยที่นับในรายงาน · รายการย่อย คือสิ่งที่พนักงานกดเลือก</span>' + OPTION_GROUPS.map(function (g) {
+ '<div class="card stack" style="gap:12px"><b class="strong">ข้อมูลหลักที่ใช้อยู่</b><span class="small">แบ่งแบบ MECE แต่ละ Lead ลงได้ช่องเดียว และมี "อื่น ๆ (ระบุ)" รองรับกรณีที่ไม่อยู่ในรายการ · กลุ่ม คือหน่วยที่นับในรายงาน · รายการย่อย คือสิ่งที่พนักงานกดเลือก</span>' + OPTION_GROUPS.map(function (g) {
       var lastH = null;
       return '<div class="stack" style="gap:6px;border-top:1px solid #f0f0f0;padding-top:10px"><span class="strong">' + esc(g[1]) + '</span>' + (OPTION_RULE[g[0]] ? '<span class="ex">' + esc(OPTION_RULE[g[0]]) + '</span>' : '') + o[g[0]].map(function (v) {
         var x = optParts(v), multi = v.indexOf('::') >= 0, h = x.h && x.h !== lastH ? '<span class="small" style="font-weight:700;margin-top:4px">' + esc(x.h) + '</span>' : ''; lastH = x.h;
@@ -1823,11 +1836,11 @@ function vRules() {
   function ex(t) { return '<div class="ex">' + t + '</div>'; }
   function tbl(h, rows) { return '<div class="scroll"><table class="x fx"><thead><tr>' + h.map(function (x) { return '<th scope="col">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
   var body = '<div class="stack"><p style="margin:0">กติกาที่ทุกคนในทีมใช้ร่วมกัน เพื่อให้ตัวเลขผลงานเทียบกันได้</p>' +
-    sec(1, 'การเลือกข้อมูลหลัก', rr('ประเภทอาคาร', 'เลือกตามการใช้งานหลักของพื้นที่ที่จะขายสินค้าให้') + ex('อาคารพาณิชย์ที่เปิดเป็นคลินิก → สถานพยาบาล › คลินิก') + rr('รูปแบบโครงการ', 'อาคารใหม่หรืออาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง') + rr('ช่องทางการติดต่อ', 'เลือกตามจุดแรกที่ได้ Lead มา') + ex('ลูกค้าเห็น Facebook แล้วโทรเข้า Call center → ออนไลน์ / โทรศัพท์ › Facebook') + rr('ประเภทการติดต่อ', 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ') + ex('Interior แนะนำมา แล้วคุยกับเจ้าของบ้าน → ช่องทางการติดต่อ: คู่ค้าแนะนำ › Interior/สถาปนิก · ประเภทการติดต่อ: เจ้าของบ้าน') + rr('ประเภทสินค้า', 'Built-in · Loose Furniture · Home Decoration · Home Service · อื่น ๆ (ระบุ) ค่าส่งและติดตั้งที่ขายพร้อมสินค้า นับรวมในประเภทของสินค้านั้น Home Service ใช้เมื่อขายบริการแยกต่างหาก งานออกแบบเป็นงานของทีม designer support ไม่นับเป็นยอดขาย') + rr('การรับชำระ', 'พนักงานขายมีหน้าที่ติดตามให้ลูกค้าชำระเงิน บันทึกทุกครั้งที่รับเงินพร้อมสถานะใบเสร็จรับเงิน / ใบกำกับภาษี ตัวเลขในแอปใช้ช่วยติดตาม ตัวเลขทางการยึดตามฝ่ายบัญชี') + rr('เลื่อนนัด / เลื่อนจัดส่ง', 'ใช้ปุ่มเลื่อนนัด หรือเลื่อนจัดส่ง / ติดตั้ง แทนการบันทึกการติดตามใหม่ เลือกเหตุผลทุกครั้ง ประวัติจะแสดงเป็นบรรทัดเล็กและไม่นับเป็นการติดตาม') + rr('นัดกับทีม', 'ระบุผู้ร่วมนัด เช่น Designer ช่างวัดพื้นที่ ทีมติดตั้ง แล้วกดส่งนัดให้ทีม เมื่อทีมตอบรับให้กดทีมยืนยันแล้ว ข้อความที่ส่งไม่มีเบอร์ลูกค้า') + rr('แก้ไขประวัติการติดตาม', 'แก้วันที่และรายละเอียดได้ทุกรายการในเดือนที่ยังไม่ปิดงวด นัดครั้งถัดไปและการลบทำได้เฉพาะรายการล่าสุด ถ้าสถานะผิดให้ลบรายการล่าสุดแล้วบันทึกใหม่ ประวัติจะแสดงว่ามีการแก้ไข') + rr('อื่น ๆ (ระบุ)', 'ใช้เมื่อไม่มีตัวเลือกที่ตรงจริง ๆ และพิมพ์ให้ชัด รายการที่พิมพ์ซ้ำบ่อยจะเพิ่มเป็นตัวเลือกจริงทุกเดือน')) +
-    sec(2, 'ขั้นการขาย และข้อมูลที่ต้องมี', tbl(['ขั้น', 'ความหมาย', 'ต้องมีก่อนเข้าขั้น'], [['Lead/Visit', 'เจอโครงการ / เข้าหน้างาน', 'ชื่อโครงการ ช่องทางการติดต่อ เบอร์ผู้ติดต่อ ความยินยอม'], ['Contact', 'ได้คุยกับผู้ติดต่อแล้ว', 'ประเภทอาคาร ชื่อผู้ติดต่อ ประเภทการติดต่อ รูปแบบโครงการ สถานะหน้างาน'], ['Opportunity', 'ความต้องการชัด กำลังเสนอแบบหรือราคา', 'ยอดที่คาดว่าจะได้ วันที่คาดว่าจะปิด ประเภทสินค้า'], ['Close Sale', 'ได้ใบสั่งขาย', 'SO'], ['ไม่ได้งาน', 'ลูกค้าไม่เลือกเรา', 'เหตุผลที่ไม่ได้งาน'], ['เลื่อน/ระงับ', 'พักไว้ กลับมาติดตามได้', '']]) + ex('บันทึก QT แล้ว โครงการที่ยังอยู่ขั้นก่อนหน้าจะเปลี่ยนเป็น Opportunity เอง · บันทึก SO แล้วเปลี่ยนเป็น Close Sale เอง')) +
-    sec(3, 'สถานะหน้างาน', SITE.map(function (v, i) { return rr(String(i + 1), esc(v) + (i === 2 ? ' · จังหวะเหมาะวัดพื้นที่ Built-in' : '')); }).join('') + ex('อัปเดตทุกครั้งที่เห็นหน้างานเปลี่ยน โครงการขั้น 3–4 ที่ยังไม่มีนัดวัดพื้นที่จะขึ้นเป็นโอกาสใหม่ในแผนงาน')) +
-    sec(4, 'SO หลายใบ หรือ ซื้อเพิ่ม', rr('SO หลายใบ', 'ดีลเดิมที่ตกลงครั้งเดียว แต่แบ่งออก SO ตามรอบส่ง → เพิ่ม SO ในโครงการเดิม') + rr('ซื้อเพิ่ม / เฟส', 'คุยและเสนอราคากันใหม่ → กด "ซื้อเพิ่ม / เฟสถัดไป" ในหน้าโครงการเดิม ห้ามสร้างโครงการใหม่') + ex('ส่ง 100 ห้องครบแล้ว ต่อมาตกลงเพิ่มอีก 100 ห้อง → เฟส 2')) +
-    sec(5, 'การนับผลงาน', tbl(['ตัวชี้วัด', 'วิธีนับ'], [['Lead ใหม่', 'โครงการที่สร้างใหม่ในเดือน ไม่นับเฟสซื้อเพิ่ม'], ['Contact / Opportunity', 'ดีล (โครงการหรือเฟส) ที่เข้าขั้นนั้นในเดือน'], ['Close Sale / ยอด SO', 'ตามวันที่ SO ยอดก่อน VAT ไม่นับ SO ที่ยกเลิก'], ['อัตราปิดการขาย', 'Close Sale ÷ (Close Sale + ไม่ได้งาน) แยกลูกค้าใหม่ กับ ซื้อซ้ำ'], ['ยอดจากลูกค้าเดิม', 'ยอด SO ของเฟสซื้อเพิ่ม และดีลช่องทางลูกค้าเดิม'], ['พยากรณ์ยอด', 'SO แล้ว + ยอดคาดการณ์ของดีลที่คาดว่าปิดเดือนนี้ × โอกาส: Lead/Visit 10 · Contact 25 · Opportunity 50 (ร้อยละ)'], ['Pipeline coverage', 'ยอดคาดการณ์ดีลที่เปิดอยู่ ÷ ยอดที่ยังขาดถึงเป้า ควรไม่ต่ำกว่า 3 เท่า'], ['ค้างในขั้น', 'นับวันตั้งแต่เข้าขั้นปัจจุบัน เกิน 60 วันแสดงสีแดง'], ['เลยนัด / เงียบ', 'เลยวันนัดที่ตั้งไว้ หรือไม่มีการติดตามเกิน 30 วัน']])) +
+ sec(1, 'การเลือกข้อมูลหลัก', rr('ประเภทอาคาร', 'เลือกตามการใช้งานหลักของพื้นที่ที่จะขายสินค้าให้') + ex('อาคารพาณิชย์ที่เปิดเป็นคลินิก → สถานพยาบาล › คลินิก') + rr('ลักษณะงาน', 'อาคารใหม่หรืออาคารเดิม แล้วแยกอาคารใหม่ตามผู้สร้าง') + rr('ช่องทางการติดต่อ', 'เลือกตามจุดแรกที่ได้ Lead มา') + ex('ลูกค้าเห็น Facebook แล้วโทรเข้า Call center → ออนไลน์ / โทรศัพท์ › Facebook') + rr('ประเภทการติดต่อ', 'เลือกตามความสัมพันธ์ของผู้ติดต่อกับการซื้อ') + ex('Interior แนะนำมา แล้วคุยกับเจ้าของบ้าน → ช่องทางการติดต่อ: คู่ค้าแนะนำ › Interior/สถาปนิก · ประเภทการติดต่อ: เจ้าของบ้าน') + rr('ประเภทสินค้า', 'Built-in · Loose Furniture · Home Decoration · Home Service · อื่น ๆ (ระบุ) ค่าส่งและติดตั้งที่ขายพร้อมสินค้า นับรวมในประเภทของสินค้านั้น Home Service ใช้เมื่อขายบริการแยกต่างหาก งานออกแบบเป็นงานของทีม designer support ไม่นับเป็นยอดขาย') + rr('การรับชำระ', 'พนักงานขายมีหน้าที่ติดตามให้ลูกค้าชำระเงิน บันทึกทุกครั้งที่รับเงินพร้อมสถานะใบเสร็จรับเงิน / ใบกำกับภาษี ตัวเลขในแอปใช้ช่วยติดตาม ตัวเลขทางการยึดตามฝ่ายบัญชี') + rr('เลื่อนนัด / เลื่อนจัดส่ง', 'ใช้ปุ่มเลื่อนนัด หรือเลื่อนจัดส่ง / ติดตั้ง แทนการบันทึกการติดตามใหม่ เลือกเหตุผลทุกครั้ง ประวัติจะแสดงเป็นบรรทัดเล็กและไม่นับเป็นการติดตาม') + rr('นัดกับทีม', 'ระบุผู้ร่วมนัด เช่น Designer ช่างวัดพื้นที่ ทีมติดตั้ง แล้วกดส่งนัดให้ทีม เมื่อทีมตอบรับให้กดทีมยืนยันแล้ว ข้อความที่ส่งไม่มีเบอร์ลูกค้า') + rr('แก้ไขประวัติการติดตาม', 'แก้วันที่และรายละเอียดได้ทุกรายการในเดือนที่ยังไม่ปิดงวด นัดครั้งถัดไปและการลบทำได้เฉพาะรายการล่าสุด ถ้าสถานะผิดให้ลบรายการล่าสุดแล้วบันทึกใหม่ ประวัติจะแสดงว่ามีการแก้ไข') + rr('อื่น ๆ (ระบุ)', 'ใช้เมื่อไม่มีตัวเลือกที่ตรงจริง ๆ และพิมพ์ให้ชัด รายการที่พิมพ์ซ้ำบ่อยจะเพิ่มเป็นตัวเลือกจริงทุกเดือน')) +
+ sec(2, 'ขั้นการขาย และข้อมูลที่ต้องมี', tbl(['ขั้น', 'ความหมาย', 'ต้องมีก่อนเข้าขั้น'], [['Lead/Visit', 'เจอโครงการ / เข้าหน้างาน', 'ชื่อ Lead ช่องทางการติดต่อ เบอร์ผู้ติดต่อ ความยินยอม'], ['Contact', 'ได้คุยกับผู้ติดต่อแล้ว', 'ประเภทอาคาร ชื่อผู้ติดต่อ ประเภทการติดต่อ ลักษณะงาน สถานะหน้างาน'], ['Opportunity', 'ความต้องการชัด กำลังเสนอแบบหรือราคา', 'ยอดที่คาดว่าจะได้ วันที่คาดว่าจะปิด ประเภทสินค้า'], ['Close Sale', 'ได้ใบสั่งขาย', 'SO'], ['ไม่ได้งาน', 'ลูกค้าไม่เลือกเรา', 'เหตุผลที่ไม่ได้งาน'], ['เลื่อน/ระงับ', 'พักไว้ กลับมาติดตามได้', '']]) + ex('บันทึก QT แล้ว Lead ที่ยังอยู่ขั้นก่อนหน้าจะเปลี่ยนเป็น Opportunity เอง · บันทึก SO แล้วเปลี่ยนเป็น Close Sale เอง')) +
+ sec(3, 'สถานะหน้างาน', SITE.map(function (v, i) { return rr(String(i + 1), esc(v) + (i === 2 ? ' · จังหวะเหมาะวัดพื้นที่ Built-in' : '')); }).join('') + ex('อัปเดตทุกครั้งที่เห็นหน้างานเปลี่ยน Lead ขั้น 3–4 ที่ยังไม่มีนัดวัดพื้นที่จะขึ้นเป็นโอกาสใหม่ในแผนงาน')) +
+ sec(4, 'SO หลายใบ หรือ ซื้อเพิ่ม', rr('SO หลายใบ', 'ดีลเดิมที่ตกลงครั้งเดียว แต่แบ่งออก SO ตามรอบส่ง → เพิ่ม SO ใน Lead เดิม') + rr('ซื้อเพิ่ม / เฟส', 'คุยและเสนอราคากันใหม่ → กด "ซื้อเพิ่ม / เฟสถัดไป" ในหน้า Lead เดิม ห้ามสร้าง Lead ใหม่') + ex('ส่ง 100 ห้องครบแล้ว ต่อมาตกลงเพิ่มอีก 100 ห้อง → เฟส 2')) +
+ sec(5, 'การนับผลงาน', tbl(['ตัวชี้วัด', 'วิธีนับ'], [['Lead ใหม่', 'Lead ที่สร้างใหม่ในเดือน ไม่นับเฟสซื้อเพิ่ม'], ['Contact / Opportunity', 'ดีล (Lead หรือเฟส) ที่เข้าขั้นนั้นในเดือน'], ['Close Sale / ยอด SO', 'ตามวันที่ SO ยอดก่อน VAT ไม่นับ SO ที่ยกเลิก'], ['อัตราปิดการขาย', 'Close Sale ÷ (Close Sale + ไม่ได้งาน) แยกลูกค้าใหม่ กับ ซื้อซ้ำ'], ['ยอดจากลูกค้าเดิม', 'ยอด SO ของเฟสซื้อเพิ่ม และดีลช่องทางลูกค้าเดิม'], ['พยากรณ์ยอด', 'SO แล้ว + ยอดคาดการณ์ของดีลที่คาดว่าปิดเดือนนี้ × โอกาส: Lead/Visit 10 · Contact 25 · Opportunity 50 (ร้อยละ)'], ['Pipeline coverage', 'ยอดคาดการณ์ดีลที่เปิดอยู่ ÷ ยอดที่ยังขาดถึงเป้า ควรไม่ต่ำกว่า 3 เท่า'], ['ค้างในขั้น', 'นับวันตั้งแต่เข้าขั้นปัจจุบัน เกิน 60 วันแสดงสีแดง'], ['เลยนัด / เงียบ', 'เลยวันนัดที่ตั้งไว้ หรือไม่มีการติดตามเกิน 30 วัน']])) +
     sec(6, 'วันที่ และการปิดงวด', rr('วันที่ติดต่อ', 'วันที่คุยหรือเข้าหน้างานจริง บันทึกย้อนหลังได้') + rr('วันที่บันทึก', 'ระบบเก็บให้เอง แก้ไม่ได้ ใช้ดูการบันทึกย้อนหลัง') + rr('ปิดงวด', 'ต้นเดือนปิดงวดเดือนก่อน หลังปิดแล้วบันทึกหรือแก้ข้อมูลของเดือนนั้นไม่ได้ จนกว่าจะเปิดงวดอีกครั้ง')) +
     sec(7, 'อุปกรณ์ที่รองรับ', rr('iPhone / iPad', 'iOS / iPadOS 15 ขึ้นไป ใช้ Safari แล้วกด "เพิ่มไปยังหน้าจอโฮม"') + rr('Android', 'Android 9 ขึ้นไป ใช้ Chrome 100 ขึ้นไป แล้วกด "ติดตั้งแอป"') + rr('คอมพิวเตอร์', 'Chrome หรือ Edge รุ่นล่าสุด (ใช้ดูรายงาน และส่งออก Excel)') + rr('ไม่รองรับ', 'เปิดลิงก์ผ่าน LINE, Facebook หรือโหมดไม่ระบุตัวตน ข้อมูลจะไม่ถูกเก็บไว้ ต้องเปิดใน Safari หรือ Chrome') + '<div class="ex" style="background:#fff8e0;color:var(--text-strong)">iPhone/iPad: ถ้าไม่ได้เพิ่มไว้ที่หน้าจอโฮม และไม่ได้เปิดแอปนานเกิน 7 วัน Safari อาจลบข้อมูลในเครื่องเอง ให้เปิดจากไอคอนบนหน้าจอโฮมเสมอ และสำรองข้อมูลทุกสัปดาห์</div>' + deviceRow()) +
     '<p class="small muted" style="text-align:center;margin:0">เวอร์ชัน ' + APP_VERSION + '</p></div>';
@@ -1836,11 +1849,11 @@ function vRules() {
 function vQuick() {
   var d = S.draft, recent = [], seen = {};
   liveProjects().slice().sort(function (a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); }).forEach(function (p) { if (p.channel && p.channel !== 'ออกหาหน้างาน' && p.channelDetail && p.channelDetail !== OTHER && !seen[p.channelDetail] && recent.length < 2) { seen[p.channelDetail] = 1; recent.push([p.channel, p.channelDetail]); } });
-  var qc = [['ออกหาหน้างาน', 'เข้าหน้างาน'], ['ออกหาหน้างาน', 'ออกโครงการ']].concat(recent);
+ var qc = [['ออกหาหน้างาน', 'เข้าหน้างาน'], ['ออกหาหน้างาน', 'ออกโครงการ']].concat(recent);
   var loc = d.lat != null ? '<div class="card okc" role="status"><b class="okText">บันทึกพิกัดหน้างานแล้ว</b>' + (d.acc ? '<span class="small"> (แม่นยำ ±' + Math.round(d.acc) + ' ม.)</span>' : '') + '</div>' : '<div class="card"><span class="small">' + (d.geoBusy ? 'กำลังหาตำแหน่ง…' : 'ยังไม่มีพิกัด') + '</span> <button type="button" class="chip" style="min-height:36px" data-act="geo">' + icon('pin', 16) + ' ใช้ตำแหน่งปัจจุบัน</button></div>';
   var body = '<div class="stack"><p class="small" style="margin:0">บันทึกได้ใน 30 วินาที รายละเอียดอื่นกรอกต่อได้ภายหลังจากหน้าแรก</p>' +
     '<div class="photos" style="grid-template-columns:1fr 1fr">' + [['รูปหน้างาน', 0], ['นามบัตร', 1]].map(function (x) { var pid = d.photos[x[1]]; return '<label class="photo">' + (pid ? '<img data-photo="' + esc(pid) + '" alt="' + x[0] + '"><button type="button" class="rm" data-act="rmphoto" data-i="' + x[1] + '" aria-label="ลบ' + x[0] + '">×</button>' : icon('cam', 26) + '<span>' + x[0] + '</span>') + '<input type="file" accept="image/*" capture="environment" data-photo-slot="' + Math.min(x[1], d.photos.length) + '" aria-label="ถ่าย' + x[0] + '"></label>'; }).join('') + '</div>' + loc +
-    '<div class="field"><label for="q-name">ชื่อโครงการ <span class="req">*</span></label><input id="q-name" class="inp' + errCls('name') + '" data-bind="name" value="' + esc(d.name) + '" maxlength="150" autocomplete="off">' + err('name') + '</div>' +
+ '<div class="field"><label for="q-name">ชื่อ Lead <span class="req">*</span></label><input id="q-name" class="inp' + errCls('name') + '" data-bind="name" value="' + esc(d.name) + '" maxlength="150" autocomplete="off">' + err('name') + '</div>' +
     '<div class="field"><label for="q-ph">เบอร์ผู้ติดต่อ <span class="req">*</span></label><input id="q-ph" class="inp' + errCls('phone') + '" type="tel" inputmode="numeric" data-bind="phone" value="' + esc(d.phone) + '" maxlength="12" autocomplete="off">' + err('phone') + '</div>' +
     '<fieldset><legend class="lbl">ช่องทางการติดต่อ <span class="req">*</span></legend>' + (d.allCh ? chipsG('channel', O().channel, d, 'ช่องทางการติดต่อ') : '<div class="chips">' + qc.map(function (c) { return '<button type="button" class="chip" data-act="chipg" data-f="channel" data-g="' + esc(c[0]) + '" data-v="' + esc(c[1]) + '" aria-pressed="' + (d.channel === c[0] && d.channelDetail === c[1]) + '">' + esc(c[1]) + '</button>'; }).join('') + '<button type="button" class="chip" data-act="allch">ช่องทางอื่น ▾</button></div>') + err('channel') + '</fieldset>' +
     '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.consent + '" data-act="consent"><span class="box">' + (d.consent ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ผู้ติดต่อยินยอมให้บริษัทฯ บันทึกข้อมูลและติดต่อกลับ <span class="req">*</span></span></button>' + err('consent') +
@@ -1849,7 +1862,7 @@ function vQuick() {
 }
 function saveQuick() {
   var d = S.draft, e = {};
-  if (!clean(d.name)) e.name = 'กรุณาใส่ชื่อโครงการ'; if (!validPhone(d.phone)) e.phone = 'เบอร์ต้องเป็นตัวเลข 9–10 หลัก ขึ้นต้นด้วย 0';
+ if (!clean(d.name)) e.name = 'กรุณาใส่ชื่อ Lead'; if (!validPhone(d.phone)) e.phone = 'เบอร์ต้องเป็นตัวเลข 9–10 หลัก ขึ้นต้นด้วย 0';
   setGrpErr(e, d, 'channel', O().channel); if (e.channelOther) { e.channel = e.channelOther; delete e.channelOther; }
   if (!d.consent) e.consent = 'ต้องได้รับความยินยอมก่อนบันทึก';
   S.ui.errors = e; if (Object.keys(e).length) { S.ui.focusErr = true; rerender(); return; }
@@ -1869,7 +1882,7 @@ function saveQuick() {
 function vContact(pid, cid) {
   var p = projById(pid); if (!p || !S.draft) return vNotFound();
   var d = S.draft, isMain = cid === 'main';
-  var body = '<div class="stack"><div class="card"><span class="small">โครงการ</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div></div>' +
+ var body = '<div class="stack"><div class="card"><span class="small">Lead </span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div></div>' +
     '<div class="field"><label for="c-name">ชื่อผู้ติดต่อ <span class="req">*</span></label><input id="c-name" class="inp' + errCls('name') + '" data-bind="name" value="' + esc(d.name) + '" maxlength="100" autocomplete="off">' + err('name') + '</div>' +
     '<fieldset><legend class="lbl">ประเภทการติดต่อ (ผู้ติดต่อเป็นใคร) <span class="req">*</span></legend>' + chipsG('contactRole', O().role, d, 'ประเภทการติดต่อ') + err('contactRole') + '</fieldset>' +
     '<div class="grid2"><div class="field"><label for="c-ph">เบอร์ผู้ติดต่อ <span class="req">*</span></label><input id="c-ph" class="inp' + errCls('phone') + '" type="tel" inputmode="numeric" data-bind="phone" value="' + esc(d.phone) + '" maxlength="12" autocomplete="off">' + err('phone') + '</div>' +
@@ -1959,8 +1972,8 @@ function vQuote(pid, qid) {
     (prev && diff ? '<span class="small" style="font-weight:600;color:' + (diff < 0 ? 'var(--ok-text)' : 'var(--danger-text)') + '">' + (diff < 0 ? 'ลดลง ' : 'เพิ่มขึ้น ') + fmt(Math.abs(diff)) + ' บาท จากครั้งที่ ' + (prev.rev || 1) + (ldiff.length ? ' (' + esc(ldiff.join(', ')) + ')' : '') + '</span>' : '') +
     '<div class="field"><label for="qt-ex">ยืนราคาถึง <span class="req">*</span></label><input id="qt-ex" class="inp' + errCls('validUntil') + '" type="date" data-bind="validUntil" value="' + esc(d.validUntil) + '">' + err('validUntil') + '</div>' +
     '<div class="field"><label for="qt-n">หมายเหตุ <span class="req">*</span></label><textarea id="qt-n" class="inp' + errCls('note') + '" data-bind="note" maxlength="500">' + esc(d.note) + '</textarea>' + err('note') + '</div>' +
-    (d.mode !== 'edit' ? '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.setEst + '" data-act="ctoggle" data-f="setEst"><span class="box">' + (d.setEst ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ปรับยอดที่คาดว่าจะได้ของโครงการเป็นมูลค่าใบเสนอราคานี้</span></button>' : '') +
-    ((p.status === ST.NEW || p.status === ST.PRES) ? '<span class="small">โครงการยังอยู่ขั้น ' + esc(p.status) + ' บันทึกใบเสนอราคาแล้วสถานะจะเปลี่ยนเป็น Opportunity</span>' : '') +
+ (d.mode !== 'edit' ? '<button type="button" class="check" role="checkbox" aria-checked="' + !!d.setEst + '" data-act="ctoggle" data-f="setEst"><span class="box">' + (d.setEst ? icon('check', 16, '#3a3a3a') : '') + '</span><span>ปรับยอดที่คาดว่าจะได้ของ Lead เป็นมูลค่าใบเสนอราคานี้</span></button>' : '') +
+ ((p.status === ST.NEW || p.status === ST.PRES) ? '<span class="small">Lead ยังอยู่ขั้น ' + esc(p.status) + ' บันทึกใบเสนอราคาแล้วสถานะจะเปลี่ยนเป็น Opportunity</span>' : '') +
     (d.mode === 'edit' ? '<button class="btn small danger" data-act="delquote" data-id="' + esc(d.qid) + '" data-p="' + esc(pid) + '">ลบใบเสนอราคานี้</button>' : '') + '</div>';
   return shell({ title: d.mode === 'edit' ? 'แก้ไขใบเสนอราคา' : 'บันทึกใบเสนอราคา', back: '#/project/' + pid, close: true, nav: false, action: '<button class="btn primary" data-act="savequote" data-p="' + esc(pid) + '">บันทึกใบเสนอราคา</button>' }, body);
 }
@@ -1992,12 +2005,12 @@ function saveQuote(pid) {
 function vPhase(pid) {
   var p = projById(pid); if (!p || p.deleted) return vNotFound();
   var r = rootOf(p), d = S.draft, cs = contactsOf(r).length;
-  var body = '<div class="stack"><h2 class="h2" style="margin:0">ซื้อเพิ่มในโครงการ ' + esc(r.name) + '</h2>' +
+ var body = '<div class="stack"><h2 class="h2" style="margin:0">ซื้อเพิ่มใน Lead ' + esc(r.name) + '</h2>' +
     '<div class="grid2"><div class="field"><label for="ph-n">ชื่อเฟส / ล็อต <span class="req">*</span></label><input id="ph-n" class="inp' + errCls('phaseName') + '" data-bind="phaseName" value="' + esc(d.phaseName) + '" maxlength="40">' + err('phaseName') + '</div>' +
     '<div class="field"><label for="ph-u">จำนวนยูนิต <span class="req">*</span></label><input id="ph-u" class="inp' + errCls('units') + '" inputmode="numeric" data-bind="units" data-num="1" value="' + esc(d.units === '' ? '' : fmt(d.units)) + '">' + err('units') + '</div></div>' +
     '<div class="field"><label for="ph-e">ยอดที่คาดว่าจะได้ (บาท ก่อน VAT) <span class="req">*</span></label><input id="ph-e" class="inp big' + errCls('estimate') + '" inputmode="numeric" data-bind="estimate" data-num="1" value="' + esc(d.estimate === '' ? '' : fmt(d.estimate)) + '">' + err('estimate') + '</div>' +
     '<fieldset><legend class="lbl">เริ่มที่ขั้น <span class="req">*</span></legend>' + chips('start', ACTIVE, d.start) + '</fieldset>' +
-    '<div class="card" style="background:#f7f7f7;border:0;display:flex;flex-direction:column;gap:6px;color:var(--text-strong)"><span>ใช้ข้อมูลเดิม: ประเภทอาคาร รูปแบบโครงการ ที่ตั้ง รูป และผู้ติดต่อ ' + cs + ' คน</span><span>ช่องทางการติดต่อ: บุคคลแนะนำ › ลูกค้าเดิม</span><span class="small">นับเป็นดีลใหม่ แต่ไม่นับเป็น Lead ใหม่</span></div></div>';
+ '<div class="card" style="background:#f7f7f7;border:0;display:flex;flex-direction:column;gap:6px;color:var(--text-strong)"><span>ใช้ข้อมูลเดิม: ประเภทอาคาร ลักษณะงาน ที่ตั้ง รูป และผู้ติดต่อ ' + cs + ' คน</span><span>ช่องทางการติดต่อ: บุคคลแนะนำ › ลูกค้าเดิม</span><span class="small">นับเป็นดีลใหม่ แต่ไม่นับเป็น Lead ใหม่</span></div></div>';
   return shell({ title: 'ซื้อเพิ่ม / เฟสถัดไป', back: '#/project/' + pid, close: true, nav: false, action: '<button class="btn primary" data-act="savephase" data-p="' + esc(pid) + '">สร้าง' + esc(d.phaseName || 'เฟสถัดไป') + '</button>' }, body);
 }
 function savePhase(pid) {
@@ -2025,7 +2038,7 @@ function vDelivery(pid) {
   var p = projById(pid); if (!p || p.deleted) return vNotFound();
   var dl = p.delivery || {}, n = delivStep(p), al = delivAlert(p), d = S.draft || {}, sv = salesOf(pid).filter(validSale)[0];
   var lines = {}; salesOf(pid).filter(validSale).forEach(function (s) { Object.keys(s.lines || {}).forEach(function (k) { lines[k] = (lines[k] || 0) + s.lines[k]; }); });
-  var body = '<div class="stack"><div><span class="small">' + esc(p.code) + ' · ' + esc(p.status) + (sv ? ' · ' + esc(sv.soNo) : '') + '</span><h2 style="font-size:21px">' + esc(p.name) + '</h2><span class="small">' + esc(Object.keys(lines).map(function (k) { return k + ' ' + fmt(lines[k]); }).join(' · ') || (p.products || []).join(', ')) + '</span></div>' +
+  var body = '<div class="stack"><div><span class="small">' + esc(p.code) + ' · ' + esc(p.status) + (sv ? ' · ' + esc(sv.soNo) : '') + '</span><h2 style="font-size:21px">' + esc(p.name) + '</h2><span class="small">' + esc(Object.keys(lines).map(function (k) { return k + ' ' + fmt(lines[k]); }).join(' · ') || prodText(p)) + '</span></div>' +
     (al ? '<div class="card stack ' + (al.red ? 'alert' : 'warn') + '" style="gap:6px"><b class="' + (al.red ? 'dangerText' : 'strong') + '">' + esc(al.text) + '</b><span class="small">' + esc(al.sub) + '</span><div class="row" style="gap:8px"><a class="btn small primary" style="flex:1" href="#/follow/' + esc(p.id) + '">บันทึกการติดตาม</a>' + (p.phone ? '<a class="btn small" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main">' + icon('phone', 18) + ' โทร</a>' : '') + '</div></div>' : '') +
     '<div class="grid2"><div class="field"><span class="lbl">วันติดตั้งที่ตกลง</span>' + (dl.install ? '<b class="strong">' + be(dl.install) + '</b><button class="btn small" style="margin-top:6px" data-act="dmove" data-k="install" data-p="' + esc(pid) + '">เลื่อนวันติดตั้ง' + (moveCount(p.moves, 'install') ? ' (' + moveCount(p.moves, 'install') + ')' : '') + '</button>' : '<label for="dv-in" class="sr">วันติดตั้งที่ตกลง</label><input id="dv-in" class="inp" type="date" value="" data-dv="install">') + '</div><div class="field"><label for="dv-ld">ระยะเวลาผลิต (วัน)</label><input id="dv-ld" class="inp" inputmode="numeric" value="' + esc(dl.lead || '') + '" data-dv="lead"></div></div>' +
     '<section class="card stack" style="gap:12px" aria-labelledby="dv-h"><h2 id="dv-h" class="h2" style="margin:0">ขั้นตอนส่งมอบ</h2><div class="steplist">' + DSTEP.map(function (nm, i) {
@@ -2082,12 +2095,12 @@ function saveAfter() {
 function reviewList() { return liveProjects().filter(function (p) { return reviewKeys(p).length; }).sort(function (a, b) { return (b.estimate || 0) - (a.estimate || 0); }); }
 function vReview(id) {
   var list = reviewList();
-  if (!list.length) return shell({ title: 'เลือกข้อมูลใหม่หลังอัปเดต', back: '#/today' }, '<div class="empty">' + sparkleDone() + '<h2>เลือกข้อมูลครบทุกโครงการแล้ว</h2><a class="btn primary" href="#/today">กลับหน้าแรก</a></div>');
+ if (!list.length) return shell({ title: 'เลือกข้อมูลใหม่หลังอัปเดต', back: '#/today' }, '<div class="empty">' + sparkleDone() + '<h2>เลือกข้อมูลครบทุก Lead แล้ว</h2><a class="btn primary" href="#/today">กลับหน้าแรก</a></div>');
   var p = projById(id); if (!p || !S.draft) return vNotFound();
   var keys = reviewKeys(p), d = S.draft, leg = p.legacy || {}, i = list.indexOf(p);
-  var legs = [leg.ptype ? 'ประเภทโครงการ: ' + leg.ptype : '', leg.channel ? 'ช่องทาง: ' + leg.channel : '', leg.contactRole ? 'ประเภทการติดต่อ: ' + leg.contactRole : '', leg.completion ? 'กำหนดสร้างเสร็จ: ' + beMonth(leg.completion) : ''].filter(Boolean);
-  var body = '<div class="stack"><span class="small strong">โครงการที่ ' + (i + 1) + ' จาก ' + list.length + '</span><div class="card"><span class="small">' + esc(p.code) + '</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">' + esc(p.status) + ' · ' + esc(p.contactName || '-') + '</span>' + (legs.length ? '<div class="ex" style="margin-top:8px">ค่าเดิม · ' + esc(legs.join(' · ')) + '</div>' : '') + '</div>' + fieldsFor(keys, d, 'P') + '</div>';
-  return shell({ title: 'เลือกข้อมูลใหม่หลังอัปเดต', back: '#/today', close: true, nav: false, action: '<a class="btn" href="#/project/' + esc(p.id) + '">ข้ามไปก่อน</a><button class="btn primary" style="flex:2" data-act="savereview" data-id="' + esc(p.id) + '">บันทึก' + (list.length > 1 ? ' และไปโครงการถัดไป' : '') + '</button>' }, body);
+ var legs = [leg.ptype ? 'ประเภทโครงการ: ' + leg.ptype : '', leg.channel ? 'ช่องทาง: ' + leg.channel : '', leg.contactRole ? 'ประเภทการติดต่อ: ' + leg.contactRole : '', leg.completion ? 'กำหนดสร้างเสร็จ: ' + beMonth(leg.completion) : ''].filter(Boolean);
+ var body = '<div class="stack"><span class="small strong">Lead ที่ ' + (i + 1) + ' จาก ' + list.length + '</span><div class="card"><span class="small">' + esc(p.code) + '</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">' + esc(p.status) + ' · ' + esc(p.contactName || '-') + '</span>' + (legs.length ? '<div class="ex" style="margin-top:8px">ค่าเดิม · ' + esc(legs.join(' · ')) + '</div>' : '') + '</div>' + fieldsFor(keys, d, 'P') + '</div>';
+ return shell({ title: 'เลือกข้อมูลใหม่หลังอัปเดต', back: '#/today', close: true, nav: false, action: '<a class="btn" href="#/project/' + esc(p.id) + '">ข้ามไปก่อน</a><button class="btn primary" style="flex:2" data-act="savereview" data-id="' + esc(p.id) + '">บันทึก' + (list.length > 1 ? ' และไป Lead ถัดไป' : '') + '</button>' }, body);
 }
 function saveReview(id) {
   var p = projById(id), d = S.draft, keys = reviewKeys(p), e = {};
@@ -2105,7 +2118,7 @@ function checklist() {
   if (isStandalone() && !o.installed) { o.installed = true; Store.saveState(); }
   return [
     ['install', 'ติดตั้งแอปลงหน้าจอหลัก', !!o.installed, '#/guide/staff'],
-    ['project', 'สร้างโครงการแรก', liveProjects().length > 0, '#/new'],
+ ['project', 'สร้าง Lead แรก', liveProjects().length > 0, '#/new'],
     ['follow', 'บันทึกการติดตามครั้งแรก', liveFollows().some(function (f) { return f.ctype !== FIRST_CTYPE; }), '#/pick'],
     ['teams', 'คัดลอกสรุปส่ง Teams ครั้งแรก', !!o.copied, '#/summary'],
     ['backup', 'สำรองข้อมูลครั้งแรก', !!st.lastBackup, '#/data']
@@ -2126,13 +2139,13 @@ function checklistCard() {
 var GUIDE = [
   ['ติดตั้งแอปลงหน้าจอหลัก', 'iPhone: เปิดลิงก์ด้วย Safari กดปุ่มแชร์ แล้วเลือก "เพิ่มไปยังหน้าจอโฮม" · Android: เปิดด้วย Chrome กดเมนู ⋮ แล้วเลือก "ติดตั้งแอป" จากนั้นเปิดแอปจากไอคอนทุกครั้ง เพื่อป้องกันมือถือลบข้อมูลเอง', ''],
   ['ตั้งเป้ายอดขายทั้งปี', 'หน้าตั้งค่า → เป้ายอดขาย ใส่ค่าเดียวกันทุกเดือน แล้วแก้เฉพาะเดือนที่ต่าง กดบันทึกครั้งเดียว', '#/target'],
-  ['สร้างโครงการใหม่', 'กด + โครงการใหม่ เลือกวันที่ติดต่อ (บันทึกย้อนหลังได้) แล้วกรอก 3 ขั้น: ประเภทอาคาร รูปแบบโครงการ สถานะหน้างาน และช่องทางที่ได้ Lead → ที่ตั้งและรูปหน้างาน → ผู้ติดต่อ ยอดที่คาดว่าจะได้ ประเภทสินค้า และนัดครั้งถัดไป ต้องได้รับความยินยอมจากผู้ติดต่อก่อนบันทึก วิธีเลือกแต่ละช่องดูได้ที่หน้ากติกาการใช้งาน', '#/new'],
-  ['Lead ด่วน เมื่ออยู่หน้างาน', 'หน้าแรก → Lead ด่วน ถ่ายรูปหน้างานหรือนามบัตร ใส่ชื่อโครงการ เบอร์ ช่องทาง และความยินยอม ระบบบันทึกพิกัดให้ แล้วกรอกต่อภายหลังจากการ์ด "Lead ด่วน รอกรอกต่อ" ในหน้าแรก', '#/quick'],
-  ['ดูว่าวันนี้ต้องตามใคร', 'หน้าแผนงานแสดงโครงการที่เลยนัด นัดวันนี้ และโครงการที่เงียบเกิน 30 วัน เรียงตามยอดคาดการณ์ พร้อมวาระนัดและสิ่งที่ต้องเตรียม กดนำทางนัดวันนี้ได้ใน Google Maps', '#/plan'],
+ ['สร้าง Lead ใหม่', 'กด + Lead ใหม่ แล้วกรอก 3 ขั้น: ช่องทางที่ได้ Lead วันที่ได้ Lead (บันทึกย้อนหลังได้) และชื่อ Lead → ประเภทอาคาร ลักษณะงาน สถานะหน้างาน Developer ที่ตั้งและรูปหน้างาน → ผู้ติดต่อ ยอดที่คาดว่าจะได้ ประเภทสินค้า และนัดครั้งถัดไป ต้องได้รับความยินยอมจากผู้ติดต่อก่อนบันทึก วิธีเลือกแต่ละช่องดูได้ที่หน้ากติกาการใช้งาน', '#/new'],
+ ['Lead ด่วน เมื่ออยู่หน้างาน', 'หน้าแรก → Lead ด่วน ถ่ายรูปหน้างานหรือนามบัตร ใส่ชื่อ Lead เบอร์ ช่องทาง และความยินยอม ระบบบันทึกพิกัดให้ แล้วกรอกต่อภายหลังจากการ์ด "Lead ด่วน รอกรอกต่อ" ในหน้าแรก', '#/quick'],
+ ['ดูว่าวันนี้ต้องตามใคร', 'หน้าแผนงานแสดง Lead ที่เลยนัด นัดวันนี้ และ Lead ที่เงียบเกิน 30 วัน เรียงตามยอดคาดการณ์ พร้อมวาระนัดและสิ่งที่ต้องเตรียม กดนำทางนัดวันนี้ได้ใน Google Maps', '#/plan'],
   ['บันทึกการติดตาม', 'เลือกขั้นการขาย Lead/Visit → Contact → Opportunity → Close Sale อัปเดตสถานะหน้างาน เขียนรายละเอียดที่คุย แล้วเลือกวันนัดครั้งถัดไป วาระนัด และสิ่งที่ต้องเตรียม ถ้าข้อมูลที่ขั้นนั้นต้องมียังไม่ครบ ระบบจะให้กรอกเพิ่มในหน้าเดียวกัน', '#/pick'],
   ['เมื่อปิดการขายได้ บันทึก SO และ DP', 'เลือกสถานะ Close Sale ระบบจะเปิดหน้าบันทึกเลขที่ SO มูลค่า SO เงินมัดจำ และวันที่จัดส่งต่อทันที', '#/projects'],
-  ['บันทึกใบเสนอราคาและซื้อเพิ่ม', 'หน้าแรก → ใบเสนอราคา หรือหน้าโครงการ → + ใบเสนอราคา ใส่มูลค่าแยกตามประเภทสินค้า หรือแพ็กเกจรายยูนิต แก้ไขราคาเป็นครั้งที่ 2, 3 ได้ ลูกค้าเดิมซื้อเพิ่มให้กด "+ ซื้อเพิ่ม / เฟสถัดไป" ในหน้าโครงการเดิม ห้ามสร้างโครงการใหม่', '#/pick/so'],
-  ['ดูผลงานและ Pipeline coverage', 'หน้าผลงานแสดงจำนวนโครงการแต่ละขั้นเทียบเดือนก่อน ยอด SO เทียบเป้า พยากรณ์ยอดเดือนนี้ และ coverage ถ้าต่ำกว่า 3 เท่า ควรหาโครงการเพิ่ม', '#/perf'],
+ ['บันทึกใบเสนอราคาและซื้อเพิ่ม', 'หน้าแรก → ใบเสนอราคา หรือหน้า Lead → + ใบเสนอราคา ใส่มูลค่าแยกตามประเภทสินค้า หรือแพ็กเกจรายยูนิต แก้ไขราคาเป็นครั้งที่ 2, 3 ได้ ลูกค้าเดิมซื้อเพิ่มให้กด "+ ซื้อเพิ่ม / เฟสถัดไป" ในหน้า Lead เดิม ห้ามสร้าง Lead ใหม่', '#/pick/so'],
+ ['ดูผลงานและ Pipeline coverage', 'หน้าผลงานแสดงจำนวน Lead แต่ละขั้นเทียบเดือนก่อน ยอด SO เทียบเป้า พยากรณ์ยอดเดือนนี้ และ coverage ถ้าต่ำกว่า 3 เท่า ควรหา Lead เพิ่ม', '#/perf'],
   ['ส่งสรุปเข้า Teams ทุกเย็น', 'หน้าสรุป เลือกรายวัน กดคัดลอกข้อความ แล้ววางในแชทของทีม ข้อความไม่มีชื่อและเบอร์ผู้ติดต่อ', '#/summary'],
   ['สำรองข้อมูลทุกสัปดาห์', 'หน้าข้อมูล/สำรอง ตั้งรหัสผ่านไฟล์สำรอง แล้วกดสำรองตอนนี้ เก็บไฟล์ไว้ใน OneDrive ของบริษัท', '#/data'],
   ['ต้นเดือน: ปิดงวดเดือนก่อน', 'หน้าวันนี้จะแสดงแถบ "ยังไม่ได้ปิดงวด" ตรวจว่าบันทึกครบ แล้วกดปิดงวด', '#/months'],
@@ -2243,11 +2256,11 @@ function archiveMonth(ym, pw) {
 
 function vMonths() {
   var cur = curMonth();
-  var body = '<div class="stack"><p class="muted" style="margin:0">ปิดงวดเมื่อสิ้นเดือน ระบบจะบันทึกสถานะทุกโครงการ ณ วันสุดท้ายของเดือน และล็อกการติดตามและ SO ของเดือนนั้น</p>' +
+ var body = '<div class="stack"><p class="muted" style="margin:0">ปิดงวดเมื่อสิ้นเดือน ระบบจะบันทึกสถานะทุก Lead ณ วันสุดท้ายของเดือน และล็อกการติดตามและ SO ของเดือนนั้น</p>' +
     dataMonths().map(function (ym) {
       var rec = monthRec(ym), st = monthStats(ym);
       var tag = rec && rec.archived ? '<span class="badge b-lost">เก็บเข้าไฟล์แล้ว</span>' : rec && rec.closed ? '<span class="badge b-won">ปิดงวดแล้ว</span>' : ym === cur ? '<span class="badge b-new">เดือนปัจจุบัน</span>' : '<span class="badge b-nego">ยังไม่ปิดงวด</span>';
-      return '<a class="card link" href="#/month/' + ym + '"><div class="between"><b class="strong" style="font-size:16px">' + monthName(ym) + '</b>' + tag + '</div><div class="between small"><span>SO ' + st.soCount + ' รายการ · การติดตาม ' + st.follows + ' ครั้ง · โครงการใหม่ ' + st.newProjects + '</span><b class="strong">' + fmt(st.soSum) + (st.target ? ' / ' + fmt(st.target) : '') + '</b></div></a>';
+ return '<a class="card link" href="#/month/' + ym + '"><div class="between"><b class="strong" style="font-size:16px">' + monthName(ym) + '</b>' + tag + '</div><div class="between small"><span>SO ' + st.soCount + ' รายการ · การติดตาม ' + st.follows + ' ครั้ง · Lead ใหม่ ' + st.newProjects + '</span><b class="strong">' + fmt(st.soSum) + (st.target ? ' / ' + fmt(st.target) : '') + '</b></div></a>';
     }).join('') + '</div>';
   return shell({ title: 'ประวัติรายเดือน', back: '#/perf' }, body);
 }
@@ -2257,7 +2270,7 @@ function vMonth(ym) {
   var pct = st.target ? Math.round(st.soSum / st.target * 1000) / 10 : null;
   var fun = STATUSES.map(function (s) { return [s, st.funnel[s] || 0, s === ST.WON ? 'var(--ok)' : s === ST.NEGO ? 'var(--accent)' : s === ST.LOST || s === ST.HOLD ? '#bdbdbd' : null]; });
   var chs = Object.keys(st.channels || {}).map(function (c) { return [c, st.channels[c]]; }).sort(function (a, b) { return b[1] - a[1]; });
-  var state = rec && rec.archived ? '<div class="card"><b class="strong">เก็บเข้าไฟล์แล้ว ' + be(rec.archivedAt) + '</b><br><span class="small">ไฟล์ ' + esc(rec.archiveFile) + ' · ล้างโครงการที่จบแล้ว ' + rec.archivedCount + ' โครงการออกจากเครื่อง · กู้คืนได้จากหน้าส่งข้อมูลโดยใช้รหัสผ่านไฟล์</span></div>'
+ var state = rec && rec.archived ? '<div class="card"><b class="strong">เก็บเข้าไฟล์แล้ว ' + be(rec.archivedAt) + '</b><br><span class="small">ไฟล์ ' + esc(rec.archiveFile) + ' · ล้าง Lead ที่จบแล้ว ' + rec.archivedCount + ' รายออกจากเครื่อง · กู้คืนได้จากหน้าส่งข้อมูลโดยใช้รหัสผ่านไฟล์</span></div>'
     : rec && rec.closed ? '<div class="card okc"><b class="okText">ปิดงวดแล้ว ' + be(rec.closedAt) + '</b><br><span class="small">การติดตามและ SO ที่ลงวันที่ในเดือนนี้ถูกล็อก แก้ไขไม่ได้</span></div>'
     : '<div class="card warn"><b class="strong">ยังไม่ปิดงวด</b><br><span class="small">' + (canClose(ym) ? 'ปิดงวดได้แล้ว ควรตรวจว่าบันทึกการติดตามและ SO ของเดือนนี้ครบก่อน' : 'ปิดงวดได้ตั้งแต่วันที่ ' + be(end)) + '</span></div>';
   var sales = rec && rec.archived ? [] : liveSales().filter(function (s) { return monthOf(s.soDate) === ym && validSale(s); });
@@ -2269,7 +2282,7 @@ function vMonth(ym) {
     if (ym > addMonths(cur, -2)) arch = '<div class="card"><b class="strong">ล้างข้อมูลเก่าออกจากเครื่อง</b><br><span class="small">ทำได้กับเดือนที่เก่ากว่า 2 เดือนขึ้นไป เพื่อให้ข้อมูลล่าสุดยังอยู่ในเครื่อง</span></div>';
     else {
       var a = archivable(ym);
-      arch = '<div class="card stack" style="gap:10px"><b class="strong">เก็บเข้าไฟล์และล้างออกจากเครื่อง</b><span class="small">ล้างโครงการที่จบแล้ว (ได้งาน / ไม่ได้งาน / เลื่อน / ลบแล้ว) ซึ่งมีกิจกรรมล่าสุดในเดือนนี้ ' + a.projects.length + ' โครงการ พร้อมการติดตาม ' + a.follows.length + ' ครั้งและ SO ' + a.sales.length + ' รายการ โครงการที่ยังติดตามอยู่ไม่ถูกล้าง ยอดสรุปของเดือนยังดูได้ตามเดิม</span>' +
+ arch = '<div class="card stack" style="gap:10px"><b class="strong">เก็บเข้าไฟล์และล้างออกจากเครื่อง</b><span class="small">ล้าง Lead ที่จบแล้ว (ได้งาน / ไม่ได้งาน / เลื่อน / ลบแล้ว) ซึ่งมีกิจกรรมล่าสุดในเดือนนี้ ' + a.projects.length + ' ราย พร้อมการติดตาม ' + a.follows.length + ' ครั้งและ SO ' + a.sales.length + ' รายการ Lead ที่ยังติดตามอยู่ไม่ถูกล้าง ยอดสรุปของเดือนยังดูได้ตามเดิม</span>' +
         (exportedAfterClose(rec) ? '' : '<span class="errmsg">ต้องส่งออก Excel หลังปิดงวดก่อน</span>') +
         '<div class="field"><label for="apw">รหัสผ่านไฟล์เก็บข้อมูล (อย่างน้อย 8 ตัวอักษร)</label><input id="apw" class="inp" type="password" autocomplete="new-password" data-bind-ui="apw"></div>' +
         '<button class="btn danger block" data-act="archivemonth" data-m="' + ym + '"' + (a.projects.length ? '' : ' disabled') + '>เก็บเข้าไฟล์และล้างออกจากเครื่อง</button></div>';
@@ -2277,9 +2290,9 @@ function vMonth(ym) {
   }
   var body = '<div class="stack">' + state +
     '<div class="card stack" style="gap:8px"><div class="between"><b>ยอด SO (ก่อน VAT)</b><span class="small">' + (st.target ? 'เป้า ' + fmt(st.target) : 'ไม่มีเป้า') + '</span></div><div><span style="font-size:28px;font-weight:700;color:var(--text-strong)">' + fmt(st.soSum) + '</span> <b>บาท</b>' + (pct != null ? ' · <b class="strong">ร้อยละ ' + pct + '</b>' : '') + '</div>' +
-    (st.target ? '<div class="progress' + (pct >= 100 ? ' over' : '') + '"><div style="width:' + Math.min(100, pct) + '%"></div></div>' + (pct >= 100 ? '<b class="okText small">เกินเป้า ' + fmt(st.soSum - st.target) + ' บาท</b>' : '') : '') + '<div class="grid3"><div class="stat"><b>' + st.newProjects + '</b><span>โครงการใหม่</span></div><div class="stat"><b>' + st.follows + '</b><span>การติดตาม</span></div><div class="stat"><b>' + st.soCount + '</b><span>SO · DP ' + fmt(st.dpSum) + '</span></div></div></div>' +
-    '<div class="wide2"><div class="card stack" style="gap:8px"><b class="strong">สถานะโครงการ ณ ' + be(end) + '</b>' + bar(fun, Math.max.apply(null, fun.map(function (r) { return r[1]; }).concat(1))) + '</div>' +
-    '<div class="card stack" style="gap:8px"><b class="strong">ช่องทางการติดต่อ (โครงการใหม่)</b>' + (chs.length ? bar(chs, chs[0][1]) : '<span class="small muted">ไม่มีโครงการใหม่</span>') + '</div></div>' +
+ (st.target ? '<div class="progress' + (pct >= 100 ? ' over' : '') + '"><div style="width:' + Math.min(100, pct) + '%"></div></div>' + (pct >= 100 ? '<b class="okText small">เกินเป้า ' + fmt(st.soSum - st.target) + ' บาท</b>' : '') : '') + '<div class="grid3"><div class="stat"><b>' + st.newProjects + '</b><span>Lead ใหม่</span></div><div class="stat"><b>' + st.follows + '</b><span>การติดตาม</span></div><div class="stat"><b>' + st.soCount + '</b><span>SO · DP ' + fmt(st.dpSum) + '</span></div></div></div>' +
+ '<div class="wide2"><div class="card stack" style="gap:8px"><b class="strong">สถานะ Lead ณ ' + be(end) + '</b>' + bar(fun, Math.max.apply(null, fun.map(function (r) { return r[1]; }).concat(1))) + '</div>' +
+ '<div class="card stack" style="gap:8px"><b class="strong">ช่องทางการติดต่อ (Lead ใหม่)</b>' + (chs.length ? bar(chs, chs[0][1]) : '<span class="small muted">ไม่มี Lead ใหม่</span>') + '</div></div>' +
     (sales.length ? '<h2 class="h2">SO เดือนนี้</h2>' + sales.map(function (s) { var p = projById(s.projectId) || {}; return '<a class="card link between" style="display:flex;gap:12px;align-items:center" href="#/sale/' + esc(s.projectId) + '/' + esc(s.id) + '"><span><b class="strong">' + esc(p.name || '-') + '</b><br><span class="small">' + be(s.soDate) + ' · ' + esc(s.soNo) + ' · DP ' + fmt(s.dp) + '</span></span><b class="strong">' + (s.needsValue && !s.soValue ? '<span class="errmsg">ยังไม่มีมูลค่า</span>' : fmt(s.soValue)) + '</b></a>'; }).join('') : '') +
     actions + arch + '</div>';
   return shell({ title: monthName(ym), back: '#/months' }, body);
@@ -2488,15 +2501,15 @@ function importPreview() {
   var pc = r.plan.length, fc = r.plan.reduce(function (a, x) { return a + x.follows.length; }, 0), sc = r.plan.reduce(function (a, x) { return a + x.sales.length; }, 0);
   var dups = Object.keys(r.rep.dup), unk = Object.keys(r.rep.unknown);
   return '<div class="card stack" style="gap:8px;border:1.5px solid var(--accent)"><b class="strong">ตรวจสอบก่อนนำเข้า · ' + esc(r.fileName) + '</b>' +
-    '<span>อ่านได้ ' + r.rep.rows + ' แถว → โครงการ <b class="strong">' + pc + '</b> · การติดตาม <b class="strong">' + fc + '</b> · SO <b class="strong">' + sc + '</b></span>' +
+ '<span>อ่านได้ ' + r.rep.rows + ' แถว → Lead <b class="strong">' + pc + '</b> · การติดตาม <b class="strong">' + fc + '</b> · SO <b class="strong">' + sc + '</b></span>' +
     (r.rep.other ? '<span class="small">ข้ามแถวของพนักงานคนอื่น ' + r.rep.other + ' แถว (Emp ID ไม่ตรงกับ ' + esc(P().empId) + ')</span>' : '') +
-    (r.rep.empty ? '<span class="small">ข้ามแถวที่ไม่มีชื่อโครงการ ' + r.rep.empty + ' แถว</span>' : '') +
-    (dups.length ? '<span class="small">ข้ามโครงการที่มีอยู่แล้วในแอป ' + dups.length + ' โครงการ: ' + esc(dups.slice(0, 5).join(', ')) + (dups.length > 5 ? ' …' : '') + '</span>' : '') +
+ (r.rep.empty ? '<span class="small">ข้ามแถวที่ไม่มีชื่อโครงการ ' + r.rep.empty + ' แถว</span>' : '') +
+ (dups.length ? '<span class="small">ข้าม Lead ที่มีอยู่แล้วในแอป ' + dups.length + ' ราย: ' + esc(dups.slice(0, 5).join(', ')) + (dups.length > 5 ? ' …' : '') + '</span>' : '') +
     (r.rep.closed ? '<span class="small">ข้ามรายการที่ลงวันที่ในเดือนที่ปิดงวดแล้ว ' + r.rep.closed + ' รายการ</span>' : '') +
     (unk.length ? '<span class="small">สถานะที่ไม่รู้จัก (บันทึกไว้ใน Note และใช้สถานะก่อนหน้า): ' + esc(unk.slice(0, 6).join(', ')) + '</span>' : '') +
     (r.rep.soNoValue ? '<span class="errmsg">SO ' + r.rep.soNoValue + ' รายการไม่มีมูลค่า SO ในไฟล์เดิม ต้องเปิดแก้และกรอกมูลค่าภายหลัง</span>' : '') +
-    '<span class="small strong" style="font-weight:500">ผู้ติดต่อจากไฟล์เดิมยังไม่มีหลักฐานความยินยอม แอปจะแสดงเตือนในหน้าโครงการให้ยืนยันเมื่อติดต่อครั้งถัดไป</span>' +
-    '<div class="grid2"><button class="btn" data-act="cancelimport">ยกเลิก</button><button class="btn primary" data-act="commitimport"' + (pc ? '' : ' disabled') + '>นำเข้า ' + pc + ' โครงการ</button></div></div>';
+ '<span class="small strong" style="font-weight:500">ผู้ติดต่อจากไฟล์เดิมยังไม่มีหลักฐานความยินยอม แอปจะแสดงเตือนในหน้า Lead ให้ยืนยันเมื่อติดต่อครั้งถัดไป</span>' +
+ '<div class="grid2"><button class="btn" data-act="cancelimport">ยกเลิก</button><button class="btn primary" data-act="commitimport"' + (pc ? '' : ' disabled') + '>นำเข้า ' + pc + ' ราย</button></div></div>';
 }
 function commitImport() {
   var r = S.importPlan; if (!r) return;
@@ -2509,7 +2522,7 @@ function commitImport() {
     Store.state.counter = Math.max(Store.state.counter, r.seq);
     Store.state.imports = (Store.state.imports || []).concat([{ id: batch, file: r.fileName, at: nowISO(), projects: r.plan.length, records: n }]);
     return Store.saveState();
-  }).then(function () { S.importPlan = null; toast('นำเข้าแล้ว ' + r.plan.length + ' โครงการ'); rerender(); }).catch(function () { toast('นำเข้าไม่สำเร็จบางส่วน ใช้ปุ่มยกเลิกการนำเข้าเพื่อล้างแล้วลองใหม่'); rerender(); });
+ }).then(function () { S.importPlan = null; toast('นำเข้าแล้ว ' + r.plan.length + ' ราย'); rerender(); }).catch(function () { toast('นำเข้าไม่สำเร็จบางส่วน ใช้ปุ่มยกเลิกการนำเข้าเพื่อล้างแล้วลองใหม่'); rerender(); });
 }
 function undoImport(id) {
   var recs = Store.projects.concat(Store.follows, Store.sales).filter(function (r) { return r.importBatch === id; });
@@ -2630,8 +2643,8 @@ function fNextEditable(f, p) { return isLastFollow(f) && !f.ctype && ACTIVE.inde
 function vFEdit(fid) {
   var f = followById(fid), p = f && projById(f.projectId); if (!f || !p) return vNotFound();
   var d = S.draft, t = todayISO(), last = isLastFollow(f), nx = fNextEditable(f, p), call = f.ctype === 'โทร';
-  if (!canEditFollow(f)) return shell({ title: 'แก้ไขประวัติการติดตาม', back: '#/project/' + p.id, nav: false }, '<div class="card warn">' + (f.ctype === FIRST_CTYPE ? 'รายการสร้างโครงการแก้ไขที่นี่ไม่ได้ ให้ใช้ "แก้ไขโครงการ"' : 'รายการนี้อยู่ในเดือนที่ปิดงวดแล้ว ดูได้อย่างเดียว') + '</div>');
-  var body = '<div class="stack"><div class="card"><span class="small">โครงการ</span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">บันทึกเดิม ' + be(f.date) + ' · ' + (call ? 'โทร' : f.ctype === 'หลังส่งมอบ' ? 'ติดตามหลังส่งมอบ' : esc(f.statusBefore) + ' → ' + esc(f.statusAfter)) + '</span></div>' +
+ if (!canEditFollow(f)) return shell({ title: 'แก้ไขประวัติการติดตาม', back: '#/project/' + p.id, nav: false }, '<div class="card warn">' + (f.ctype === FIRST_CTYPE ? 'รายการสร้าง Lead แก้ไขที่นี่ไม่ได้ ให้ใช้ "แก้ไข Lead "' : 'รายการนี้อยู่ในเดือนที่ปิดงวดแล้ว ดูได้อย่างเดียว') + '</div>');
+ var body = '<div class="stack"><div class="card"><span class="small">Lead </span><div class="strong" style="font-size:16px">' + esc(p.name) + '</div><span class="small">บันทึกเดิม ' + be(f.date) + ' · ' + (call ? 'โทร' : f.ctype === 'หลังส่งมอบ' ? 'ติดตามหลังส่งมอบ' : esc(f.statusBefore) + ' → ' + esc(f.statusAfter)) + '</span></div>' +
     '<div class="field"><label for="e-date">วันที่คุยกับลูกค้า <span class="req">*</span></label><input id="e-date" class="inp' + errCls('date') + '" type="date" data-bind="date" value="' + esc(d.date) + '" max="' + t + '">' + err('date') + '</div>' +
     (call ? '<fieldset><legend class="lbl">ผลการโทร <span class="req">*</span></legend>' + chips('callResult', CALL_RES, d.callResult) + err('callResult') + '</fieldset>' : '') +
     '<div class="field"><label for="e-note">รายละเอียดที่คุย' + (call && d.callResult !== 'คุยแล้ว' ? '' : ' <span class="req">*</span>') + '</label><textarea id="e-note" class="inp' + errCls('note') + '" data-bind="note" maxlength="1000">' + esc(d.note) + '</textarea>' + err('note') + '</div>' +
@@ -2644,7 +2657,7 @@ function saveFEdit(fid) {
   var f = followById(fid), p = f && projById(f.projectId), d = S.draft, e = {}, t = todayISO(); if (!f || !p || !d || !canEditFollow(f)) return;
   var nx = fNextEditable(f, p), call = f.ctype === 'โทร';
   var fs0 = followsDesc(f.projectId), ix0 = fs0.indexOf(f), older = fs0[ix0 + 1], newer = ix0 > 0 ? fs0[ix0 - 1] : null;
-  if (!d.date) e.date = 'กรุณาเลือกวันที่'; else if (d.date > t) e.date = 'วันที่ต้องไม่เกินวันนี้'; else if (older && d.date < older.date) e.date = 'ต้องไม่ก่อนรายการก่อนหน้า (' + be(older.date) + ')'; else if (!older && p.recordDate && d.date < p.recordDate) e.date = 'ต้องไม่ก่อนวันที่สร้างโครงการ (' + be(p.recordDate) + ')'; else if (newer && d.date > newer.date) e.date = 'ต้องไม่หลังรายการถัดไป (' + be(newer.date) + ')'; else if (isLockedDate(d.date)) e.date = 'เดือน ' + monthName(monthOf(d.date)) + ' ปิดงวดแล้ว';
+ if (!d.date) e.date = 'กรุณาเลือกวันที่'; else if (d.date > t) e.date = 'วันที่ต้องไม่เกินวันนี้'; else if (older && d.date < older.date) e.date = 'ต้องไม่ก่อนรายการก่อนหน้า (' + be(older.date) + ')'; else if (!older && p.recordDate && d.date < p.recordDate) e.date = 'ต้องไม่ก่อนวันที่สร้าง Lead (' + be(p.recordDate) + ')'; else if (newer && d.date > newer.date) e.date = 'ต้องไม่หลังรายการถัดไป (' + be(newer.date) + ')'; else if (isLockedDate(d.date)) e.date = 'เดือน ' + monthName(monthOf(d.date)) + ' ปิดงวดแล้ว';
   if (call) { if (!d.callResult) e.callResult = 'กรุณาเลือกผลการโทร'; if (d.callResult === 'คุยแล้ว' && !clean(d.note)) e.note = 'กรุณากรอกข้อมูล'; }
   else if (!clean(d.note)) e.note = 'กรุณากรอกข้อมูล';
   if (nx) { if (!d.nextDate && !d.nextDateNA) e.nextDate = 'กรุณาเลือกวันนัด'; else if (d.nextDate && d.nextDate < t) e.nextDate = 'วันนัดต้องไม่ก่อนวันนี้'; else if (d.nextDate) agendaErr(e, d); }
@@ -2662,9 +2675,9 @@ function saveFEdit(fid) {
 }
 function delFollow(fid) {
   var f = followById(fid), p = f && projById(f.projectId); if (!f || !p || !isLastFollow(f) || !canEditFollow(f) || f.ctype === 'หลังส่งมอบ') return;
-  if (f.statusAfter === ST.WON && f.statusBefore !== ST.WON && liveSales().some(function (s) { return s.projectId === p.id && validSale(s); })) { toast('โครงการนี้มี SO แล้ว ให้ลบหรือยกเลิก SO ก่อน'); return; }
+ if (f.statusAfter === ST.WON && f.statusBefore !== ST.WON && liveSales().some(function (s) { return s.projectId === p.id && validSale(s); })) { toast('Lead นี้มี SO แล้ว ให้ลบหรือยกเลิก SO ก่อน'); return; }
   var back = f.statusBefore !== f.statusAfter && p.status === f.statusAfter;
-  confirmBox('ลบประวัติการติดตาม', 'ลบรายการล่าสุดนี้' + (back ? ' และคืนสถานะโครงการเป็น "' + f.statusBefore + '"' : '') + ' ใช่หรือไม่', 'ลบ', true).then(function (ok) {
+ confirmBox('ลบประวัติการติดตาม', 'ลบรายการล่าสุดนี้' + (back ? ' และคืนสถานะ Lead เป็น "' + f.statusBefore + '"' : '') + ' ใช่หรือไม่', 'ลบ', true).then(function (ok) {
     if (!ok) return;
     var rest = followsDesc(p.id).filter(function (x) { return x.id !== f.id; }), prev = rest[0] || {};
     if (back) { p.status = f.statusBefore; var ch = rest.find(function (x) { return x.statusAfter === p.status && x.statusBefore !== x.statusAfter; }); p.stageAt = ch ? ch.date : p.recordDate; if (p.status !== ST.LOST) p.lostReason = ''; }
@@ -2756,7 +2769,7 @@ function softRerender() {
     var ae = document.activeElement, id = ae && ae.id, bind = ae && ae.dataset && ae.dataset.bind;
     rerender();
     var el = (id && document.getElementById(id)) || (bind && document.querySelector('[data-bind="' + bind + '"]'));
-    if (el && el.focus) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }
+    if (el && el.focus && el.type !== 'date' && el.type !== 'time') { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } }
   }, 0);
 }
 window.addEventListener('hashchange', render);
@@ -2771,6 +2784,7 @@ document.addEventListener('input', function (e) {
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
+  if (t.type === 'date' && t.dataset.bind) { var nb = document.querySelector('[data-act=na][data-f="' + t.dataset.bind + '"]'); if (nb) nb.setAttribute('aria-pressed', !!(S.draft && S.draft[t.dataset.bind + 'NA'])); var em = document.getElementById('e-' + t.dataset.bind); if (em && t.value) { em.parentNode.removeChild(em); t.classList.remove('err'); } }
   if (t.dataset.num && t.value) { var n = parseAmt(t.value); if (n == null || isNaN(n)) { toast('ใส่จำนวนเงินเป็นบาทเต็ม ไม่ติดลบ ไม่มีทศนิยม'); t.value = ''; if (S.draft && t.dataset.bind) S.draft[t.dataset.bind] = ''; } else t.value = fmt(n); }
   if (t.dataset.live === 'pt') { S.ui.pt = t.value; S.ui.limit = 20; renderPList(); }
   if (t.dataset.live === 'psel') { S.ui.sort = t.value; renderPList(); }
@@ -2780,7 +2794,7 @@ document.addEventListener('change', function (e) {
   if (t.dataset.live === 'month' && t.value) { S.ui.month = t.value; rerender(); }
   if (t.dataset.live === 'anchor' && t.value) { S.ui.anchor = t.value; rerender(); }
   if (t.dataset.live === 'tm' && t.value) { S.ui.tm = t.value; rerender(); }
-  if (t.dataset.bind === 'soValue' || t.dataset.bind === 'dp' || t.dataset.bind === 'soDate' || (t.type === 'date' && t.dataset.bind) || /^(L_|pk_\d+_(price|units))/.test(t.dataset.bind || '')) softRerender();
+  if (t.dataset.bind === 'soValue' || t.dataset.bind === 'dp' || t.dataset.bind === 'soDate' || (t.type === 'date' && t.dataset.bind && !/^P?(closingDate|recordDate)$/.test(t.dataset.bind)) || /^(L_|pk_\d+_(price|units))/.test(t.dataset.bind || '')) softRerender();
   if (t.dataset.actChange === 'maplink') { var ll = parseLatLng(t.value); if (ll) { S.draft.lat = ll.lat; S.draft.lng = ll.lng; S.draft.acc = null; rerender(); toast('บันทึกพิกัดจากลิงก์แล้ว'); } else if (t.value) toast('อ่านพิกัดจากข้อความนี้ไม่ได้'); }
   if (t.dataset.dv) { var dvp = projById(location.hash.split('/')[2]); if (dvp) { dvp.delivery = dvp.delivery || {}; dvp.delivery[t.dataset.dv] = t.dataset.dv === 'lead' ? (parseNum(t.value) || '') : t.value; Store.save(dvp).then(function () { toast('บันทึกแล้ว'); rerender(); }); } }
   if (t.dataset.due) { var dsx = saleById(t.dataset.due); if (dsx) { dsx.dueDate = t.value; Store.save(dsx).then(function () { toast('บันทึกกำหนดชำระแล้ว'); rerender(); }); } }
@@ -2814,6 +2828,7 @@ var H = {
     rerender();
     if (t.dataset.v === OTHER) setTimeout(function () { var el = document.getElementById('o-' + f); if (el) el.focus(); }, 30);
   },
+  tna: function (t) { var f = t.dataset.f, d = S.draft; if (!d) return; d[f] = d[f] === '-' ? '' : '-'; if (S.ui.errors) delete S.ui.errors[f]; rerender(); if (!d[f]) { var el = $('[data-bind="' + f + '"]'); if (el) el.focus(); } },
   na: function (t) { var f = t.dataset.f, d = S.draft; if (!d) return; d[f + 'NA'] = !d[f + 'NA']; if (d[f + 'NA']) d[f] = ''; if (S.ui.errors) delete S.ui.errors[f]; rerender(); },
   savereview: function (t) { saveReview(t.dataset.id); },
   tf: function (t) { S.ui.tf = t.dataset.v; rerender(); setTimeout(function () { var el = $('#tlist'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); },
@@ -2864,7 +2879,7 @@ var H = {
   ics: function (t) { var p = projById(t.dataset.id); if (p && p.nextDate) downloadIcs(p); },
   ctoggle: function (t) { S.draft[t.dataset.f] = !S.draft[t.dataset.f]; rerender(); },
   savecontact: function (t) { saveContact(t.dataset.p, t.dataset.id); },
-  delcontact: function (t) { confirmBox('ลบผู้ติดต่อ', 'ต้องการลบผู้ติดต่อนี้ออกจากโครงการใช่หรือไม่', 'ลบ', true).then(function (ok) { if (!ok) return; var p = projById(t.dataset.p), c = (p.contacts || []).find(function (x) { return x.id === t.dataset.id; }); if (c) { c.deleted = true; c.name = ''; c.phone = ''; c.line = ''; } Store.save(p).then(function () { toast('ลบผู้ติดต่อแล้ว'); S.draft = null; location.hash = '#/project/' + p.id; }); }); },
+ delcontact: function (t) { confirmBox('ลบผู้ติดต่อ', 'ต้องการลบผู้ติดต่อนี้ออกจาก Lead ใช่หรือไม่', 'ลบ', true).then(function (ok) { if (!ok) return; var p = projById(t.dataset.p), c = (p.contacts || []).find(function (x) { return x.id === t.dataset.id; }); if (c) { c.deleted = true; c.name = ''; c.phone = ''; c.line = ''; } Store.save(p).then(function () { toast('ลบผู้ติดต่อแล้ว'); S.draft = null; location.hash = '#/project/' + p.id; }); }); },
   clearloc: function () { S.draft.lat = S.draft.lng = S.draft.acc = null; rerender(); },
   geo: function (t) {
     t.disabled = true; t.textContent = 'กำลังหาตำแหน่ง…';
@@ -2874,24 +2889,23 @@ var H = {
   stepback: function () { if (S.ui.step > 1) { S.ui.step--; S.ui.errors = {}; rerender(); setY(0); } },
   stepnext: function () {
     var d = S.draft, st = S.ui.step, e = {};
-    if (st === 1) { if (!clean(d.name)) e.name = 'กรุณาใส่ชื่อโครงการ'; setGrpErr(e, d, 'ptype', O().ptype); setGrpErr(e, d, 'channel', O().channel);
-      if (!d.pform) e.pform = 'กรุณาเลือกรูปแบบโครงการ'; if (!d.site) e.site = 'กรุณาเลือกสถานะหน้างาน';
-      if (!clean(d.developer)) e.developer = 'กรุณากรอกข้อมูล'; if (!clean(d.info)) e.info = 'กรุณากรอกข้อมูล';
+    if (st === 1) { if (!clean(d.name)) e.name = 'กรุณาใส่ชื่อ Lead'; setGrpErr(e, d, 'channel', O().channel);
       var op = d.id ? projById(d.id) : null;
       if (!d.recordDate) e.recordDate = 'กรุณาเลือกวันที่ติดต่อ';
       else if (d.recordDate > todayISO()) e.recordDate = 'วันที่ติดต่อต้องไม่เกินวันนี้';
-      else if (op && op.recordDate !== d.recordDate && isLockedDate(op.recordDate)) e.recordDate = 'โครงการนี้บันทึกในเดือนที่ปิดงวดแล้ว เปลี่ยนวันที่ไม่ได้';
+ else if (op && op.recordDate !== d.recordDate && isLockedDate(op.recordDate)) e.recordDate = 'Lead นี้บันทึกในเดือนที่ปิดงวดแล้ว เปลี่ยนวันที่ไม่ได้';
       else if ((!op || op.recordDate !== d.recordDate) && isLockedDate(d.recordDate)) e.recordDate = 'เดือน ' + monthName(monthOf(d.recordDate)) + ' ปิดงวดแล้ว เลือกวันที่ในเดือนที่ยังไม่ปิด'; }
-    if (st === 2) { if (!d.province) e.province = 'กรุณาเลือกจังหวัด'; if (!clean(d.address)) e.address = 'กรุณากรอกข้อมูล'; }
+    if (st === 2) { setGrpErr(e, d, 'ptype', O().ptype); if (!d.pform) e.pform = 'กรุณาเลือกลักษณะงาน'; if (!d.site) e.site = 'กรุณาเลือกสถานะหน้างาน';
+      if (!clean(d.developer)) e.developer = 'กรุณากรอกข้อมูล หรือกดปุ่ม - ถ้าไม่มี'; if (!d.province) e.province = 'กรุณาเลือกจังหวัด'; if (!clean(d.address)) e.address = 'กรุณากรอกข้อมูล'; if (!clean(d.info)) e.info = 'กรุณากรอกข้อมูล หรือกดปุ่ม - ถ้าไม่มี'; }
     if (st === 3) {
       if (!clean(d.contactName)) e.contactName = 'กรุณาใส่ชื่อผู้ติดต่อ';
       setGrpErr(e, d, 'contactRole', O().role);
       if (!validPhone(d.phone)) e.phone = 'เบอร์ต้องเป็นตัวเลข 9–10 หลัก ขึ้นต้นด้วย 0';
-      if (!clean(d.line)) e.line = 'กรุณากรอกข้อมูล';
+      if (!clean(d.line)) e.line = 'กรุณากรอก LINE หรือกดปุ่ม - ถ้าไม่มี';
       if (!d.consent) e.consent = 'ต้องได้รับความยินยอมก่อนบันทึก';
       if (d.estimate === '' || d.estimate == null) e.estimate = 'กรุณาใส่ยอดที่คาดว่าจะได้ (ใส่ 0 ได้ถ้ายังไม่ทราบ)';
       if (!d.closingDate && !d.closingDateNA) e.closingDate = 'กรุณาเลือกวันที่';
-      if (!(d.products || []).length) e.products = 'กรุณาเลือกประเภทสินค้าที่เสนอ';
+      prodErr(e, d, 'products');
       if (!d.id) { if (!d.nextDate && !d.nextDateNA) e.nextDate = 'กรุณาเลือกวันที่'; else if (d.nextDate && d.nextDate < todayISO()) e.nextDate = 'วันนัดต้องไม่ก่อนวันนี้'; else if (d.nextDate) agendaErr(e, d); }
     }
     S.ui.errors = e;
@@ -2904,12 +2918,12 @@ var H = {
   savesale: function (t) { saveSale(t.dataset.p); },
   delsale: function (t) { var sx = Store.sales.find(function (x) { return x.id === t.dataset.id; }); if (sx && isLockedDate(sx.soDate)) { toast('SO นี้อยู่ในเดือนที่ปิดงวดแล้ว ลบไม่ได้'); return; } confirmBox('ลบรายการ SO', 'ต้องการลบรายการ SO นี้ใช่หรือไม่', 'ลบ', true).then(function (ok) { if (!ok) return; var s = Store.sales.find(function (x) { return x.id === t.dataset.id; }); if (!s) return; s.deleted = true; Store.save(s).then(function () { return revertIfNoSale(projById(t.dataset.p)); }).then(function () { toast('ลบแล้ว'); location.hash = '#/project/' + t.dataset.p; }); }); },
   delproj: function (t) {
-    if (followsOf(t.dataset.id).some(function (f) { return isLockedDate(f.date); }) || salesOf(t.dataset.id).some(function (s) { return isLockedDate(s.soDate); })) { toast('โครงการนี้มีข้อมูลในเดือนที่ปิดงวดแล้ว ลบไม่ได้ ให้เปลี่ยนสถานะเป็นไม่ได้งานหรือเลื่อน/ระงับแทน'); return; }
-    confirmBox('ลบโครงการ', 'โครงการ ประวัติการติดตาม และ SO ของโครงการนี้จะถูกลบออกจากรายการ ต้องการลบใช่หรือไม่', 'ลบโครงการ', true).then(function (ok) {
+ if (followsOf(t.dataset.id).some(function (f) { return isLockedDate(f.date); }) || salesOf(t.dataset.id).some(function (s) { return isLockedDate(s.soDate); })) { toast('Lead นี้มีข้อมูลในเดือนที่ปิดงวดแล้ว ลบไม่ได้ ให้เปลี่ยนสถานะเป็นไม่ได้งานหรือเลื่อน/ระงับแทน'); return; }
+ confirmBox('ลบ Lead', 'Lead นี้ รวมถึงประวัติการติดตามและ SO จะถูกลบออกจากรายการ ต้องการลบใช่หรือไม่', 'ลบ Lead', true).then(function (ok) {
       if (!ok) return; var p = projById(t.dataset.id); p.deleted = true;
       var used = {}; liveProjects().forEach(function (x) { if (x.id !== p.id) (x.photos || []).forEach(function (ph) { used[ph] = 1; }); });
       var jobs = [Store.save(p)].concat(followsOf(p.id).map(function (f) { f.deleted = true; return Store.save(f); }), salesOf(p.id).map(function (s) { s.deleted = true; return Store.save(s); }), quotesOf(p.id).map(function (q) { q.deleted = true; return Store.save(q); }), (p.photos || []).filter(function (ph) { return !used[ph]; }).map(function (ph) { return Store.delPhoto(ph); }));
-      Promise.all(jobs).then(function () { toast('ลบโครงการแล้ว'); location.hash = '#/projects'; });
+ Promise.all(jobs).then(function () { toast('ลบ Lead แล้ว'); location.hash = '#/projects'; });
     });
   },
   copy: function () { var txt = $('#sumtext').textContent; copyText(txt).then(function (ok) { if (ok && !Store.state.onb.copied) { Store.state.onb.copied = true; Store.saveState(); } toast(ok ? 'คัดลอกแล้ว วางในแชท Teams ได้ทันที' : 'คัดลอกไม่สำเร็จ กดค้างที่ข้อความเพื่อคัดลอก'); }); },
@@ -2917,7 +2931,7 @@ var H = {
   exportanon: function () { exportExcel(null, true); },
   backup: function () { makeBackup(); },
   wipe: function () {
-    confirmBox('ล้างข้อมูลทั้งหมด', 'ข้อมูลโครงการ การติดตาม SO และรูปทั้งหมดของผู้ใช้นี้ในเครื่องนี้จะถูกลบถาวร (ข้อมูลของผู้ใช้อื่นในเครื่องไม่ถูกลบ) ควรสำรองข้อมูลก่อน ต้องการล้างใช่หรือไม่', 'ล้างข้อมูล', true).then(function (ok) { if (!ok) return; wipeAll(); });
+ confirmBox('ล้างข้อมูลทั้งหมด', 'ข้อมูล Lead การติดตาม SO และรูปทั้งหมดของผู้ใช้นี้ในเครื่องนี้จะถูกลบถาวร (ข้อมูลของผู้ใช้อื่นในเครื่องไม่ถูกลบ) ควรสำรองข้อมูลก่อน ต้องการล้างใช่หรือไม่', 'ล้างข้อมูล', true).then(function (ok) { if (!ok) return; wipeAll(); });
   },
   saveprofile: function () {
     var p = P(), old = { empId: p.empId, name: p.name, branch: p.branch, team: p.team }, nv = {};
@@ -2929,7 +2943,7 @@ var H = {
     Store.saveState().then(syncUserEntry).then(function () {
       var recs = [].concat(Store.projects, Store.follows, Store.sales, Store.months).filter(function (r) { return r && !r.deleted && (r.empId !== p.empId || r.empName !== p.name || (r.branch || '') !== (p.branch || '') || (r.team || '') !== (p.team || '')); });
       if (!changed || !recs.length) { toast('บันทึกข้อมูลพนักงานแล้ว'); return askRenameCodes(); }
-      return confirmBox('ปรับข้อมูลเดิมให้ตรงกันหรือไม่', 'มีข้อมูลเดิม ' + recs.length + ' รายการ (โครงการ การติดตาม SO และงวดที่ปิดแล้ว) ที่ยังใช้ Emp ID ชื่อ สาขา หรือทีมเดิม ต้องการเปลี่ยนเป็นข้อมูลใหม่ทั้งหมดหรือไม่', 'ปรับทั้งหมด').then(function (ok) {
+ return confirmBox('ปรับข้อมูลเดิมให้ตรงกันหรือไม่', 'มีข้อมูลเดิม ' + recs.length + ' รายการ (Lead การติดตาม SO และงวดที่ปิดแล้ว) ที่ยังใช้ Emp ID ชื่อ สาขา หรือทีมเดิม ต้องการเปลี่ยนเป็นข้อมูลใหม่ทั้งหมดหรือไม่', 'ปรับทั้งหมด').then(function (ok) {
         if (!ok) { toast('บันทึกแล้ว ข้อมูลเดิมคงไว้ตามเดิม'); return askRenameCodes(); }
         recs.forEach(function (r) { r.empId = p.empId; r.empName = p.name; r.branch = p.branch; r.team = p.team; });
         return Promise.all(recs.map(function (r) { return Store.save(r); })).then(function () { toast('ปรับข้อมูลเดิม ' + recs.length + ' รายการแล้ว'); rerender(); return askRenameCodes(); });
@@ -2959,13 +2973,13 @@ var H = {
   showstale: function () { S.ui.pf = 'active'; S.ui.sort = 'age'; S.ui.limit = 20; location.hash = '#/projects'; },
   showcheck: function () { Store.state.onb.hidden = false; Store.state.onb.doneAt = null; Store.saveState().then(function () { location.hash = '#/today'; }); },
   copyprompt: function () { copyText(COPILOT_PROMPT).then(function (ok) { toast(ok ? 'คัดลอก prompt แล้ว' : 'คัดลอกไม่สำเร็จ'); }); },
-  closemonth: function (t) { var ym = t.dataset.m; confirmBox('ปิดงวด ' + monthName(ym), 'ระบบจะบันทึกสถานะทุกโครงการ ณ วันที่ ' + be(monthEnd(ym)) + ' และล็อกการติดตามและ SO ที่ลงวันที่ในเดือนนี้ ควรตรวจว่าบันทึกครบแล้ว ต้องการปิดงวดใช่หรือไม่', 'ปิดงวด').then(function (ok) { if (!ok) return; closeMonth(ym).then(function () { toast('ปิดงวดแล้ว'); rerender(); }); }); },
+ closemonth: function (t) { var ym = t.dataset.m; confirmBox('ปิดงวด ' + monthName(ym), 'ระบบจะบันทึกสถานะทุก Lead ณ วันที่ ' + be(monthEnd(ym)) + ' และล็อกการติดตามและ SO ที่ลงวันที่ในเดือนนี้ ควรตรวจว่าบันทึกครบแล้ว ต้องการปิดงวดใช่หรือไม่', 'ปิดงวด').then(function (ok) { if (!ok) return; closeMonth(ym).then(function () { toast('ปิดงวดแล้ว'); rerender(); }); }); },
   reopenmonth: function (t) { var ym = t.dataset.m; confirmBox('เปิดงวดใหม่', 'ข้อมูลเดือนนี้จะแก้ไขได้อีกครั้ง หลังแก้เสร็จต้องปิดงวดและส่งออก Excel ใหม่ ต้องการเปิดงวดใช่หรือไม่', 'เปิดงวด').then(function (ok) { if (!ok) return; reopenMonth(ym).then(function () { toast('เปิดงวดแล้ว'); rerender(); }); }); },
   exportmonth: function (t) { exportExcel(t.dataset.m); },
-  archivemonth: function (t) { var ym = t.dataset.m; confirmBox('เก็บเข้าไฟล์และล้างออกจากเครื่อง', 'ระบบจะดาวน์โหลดไฟล์เก็บข้อมูลที่เข้ารหัส แล้วลบโครงการที่จบแล้วของเดือนนี้ออกจากเครื่อง เก็บไฟล์ไว้ใน OneDrive ของบริษัท หากต้องการดูภายหลังให้กู้คืนจากไฟล์นี้ ต้องการดำเนินการใช่หรือไม่', 'เก็บและล้าง', true).then(function (ok) { if (!ok) return; archiveMonth(ym, S.ui.apw || '').then(function (n) { S.ui.apw = ''; toast('เก็บเข้าไฟล์และล้างแล้ว ' + n + ' โครงการ'); rerender(); }, function (m) { toast(typeof m === 'string' ? m : 'ดำเนินการไม่สำเร็จ'); }); }); },
+ archivemonth: function (t) { var ym = t.dataset.m; confirmBox('เก็บเข้าไฟล์และล้างออกจากเครื่อง', 'ระบบจะดาวน์โหลดไฟล์เก็บข้อมูลที่เข้ารหัส แล้วลบ Lead ที่จบแล้วของเดือนนี้ออกจากเครื่อง เก็บไฟล์ไว้ใน OneDrive ของบริษัท หากต้องการดูภายหลังให้กู้คืนจากไฟล์นี้ ต้องการดำเนินการใช่หรือไม่', 'เก็บและล้าง', true).then(function (ok) { if (!ok) return; archiveMonth(ym, S.ui.apw || '').then(function (n) { S.ui.apw = ''; toast('เก็บเข้าไฟล์และล้างแล้ว ' + n + ' ราย'); rerender(); }, function (m) { toast(typeof m === 'string' ? m : 'ดำเนินการไม่สำเร็จ'); }); }); },
   cancelimport: function () { S.importPlan = null; rerender(); },
   commitimport: function () { commitImport(); },
-  undoimport: function (t) { confirmBox('ยกเลิกการนำเข้า', 'ข้อมูลทั้งหมดที่นำเข้าจากไฟล์นี้จะถูกลบออก รวมถึงการติดตามที่บันทึกเพิ่มกับโครงการเหล่านั้นหลังนำเข้า ต้องการยกเลิกใช่หรือไม่', 'ลบข้อมูลที่นำเข้า', true).then(function (ok) { if (!ok) return; var ps = Store.projects.filter(function (p) { return p.importBatch === t.dataset.id; }).map(function (p) { return p.id; }); Store.follows.concat(Store.sales).forEach(function (r) { if (ps.indexOf(r.projectId) >= 0) r.importBatch = t.dataset.id; }); undoImport(t.dataset.id).then(function (n) { toast('ลบข้อมูลที่นำเข้าแล้ว ' + n + ' รายการ'); rerender(); }); }); },
+ undoimport: function (t) { confirmBox('ยกเลิกการนำเข้า', 'ข้อมูลทั้งหมดที่นำเข้าจากไฟล์นี้จะถูกลบออก รวมถึงการติดตามที่บันทึกเพิ่มกับ Lead เหล่านั้นหลังนำเข้า ต้องการยกเลิกใช่หรือไม่', 'ลบข้อมูลที่นำเข้า', true).then(function (ok) { if (!ok) return; var ps = Store.projects.filter(function (p) { return p.importBatch === t.dataset.id; }).map(function (p) { return p.id; }); Store.follows.concat(Store.sales).forEach(function (r) { if (ps.indexOf(r.projectId) >= 0) r.importBatch = t.dataset.id; }); undoImport(t.dataset.id).then(function (n) { toast('ลบข้อมูลที่นำเข้าแล้ว ' + n + ' รายการ'); rerender(); }); }); },
   confirmconsent: function (t) { var p = projById(t.dataset.id); confirmBox('ยืนยันความยินยอม', 'ยืนยันว่าผู้ติดต่อ ' + (p.contactName || '') + ' ยินยอมให้บริษัทฯ ติดต่อกลับเพื่อนำเสนอสินค้าและบริการแล้ว', 'ยืนยัน').then(function (ok) { if (!ok) return; p.consent = true; p.consentAt = nowISO(); p.consentSource = 'ยืนยันภายหลัง'; Store.save(p).then(function () { toast('บันทึกความยินยอมแล้ว'); rerender(); }); }); }
 };
 function touch() { S.lastActive = Date.now(); }
@@ -3007,7 +3021,7 @@ function saveProject() {
   var ns = Number(d.site) || 0; if (isNew || ns !== r.site) r.siteAt = isNew ? rd : t; r.site = ns; r.siteGuess = false;
   r.closingDate = d.closingDateNA ? '' : (d.closingDate || ''); r.closingDateNA = !!d.closingDateNA;
   if (isNew) { r.stageAt = rd; r.v17 = true; }
-  r.phone = digits(d.phone); r.estimate = Number(d.estimate) || 0; r.products = (d.products || []).slice(); r.photos = (d.photos || []).slice(0, 6); if (!isNew && r.quick) r.quick = false;
+  r.phone = digits(d.phone); r.estimate = Number(d.estimate) || 0; r.products = (d.products || []).slice(); r.productsOther = r.products.indexOf(OTHER) >= 0 ? clean(d.productsOther, 80) : ''; r.photos = (d.photos || []).slice(0, 6); if (!isNew && r.quick) r.quick = false;
   r.lat = d.lat; r.lng = d.lng; r.locAcc = d.acc || null;
   if (!r.consent && d.consent) r.consentAt = nowISO(); r.consent = !!d.consent;
   if (isNew) { r.nextTeam = !d.nextDateNA && d.nextDate ? (d.team || []).slice() : []; r.nextTeamOk = r.nextTeam.length ? (d.teamOk || 'รอทีมยืนยัน') : ''; r.nextDate = d.nextDateNA ? '' : (d.nextDate || ''); r.nextDateNA = !!d.nextDateNA; r.nextAgenda = r.nextDate ? (d.agenda || []).slice() : []; r.nextAgendaOther = r.nextDate && r.nextAgenda.indexOf(OTHER) >= 0 ? clean(d.agendaOther, 80) : ''; r.nextPrep = r.nextDate ? clean(d.prep, 300) : ''; r.nextTime = r.nextDate && /^\d{2}:\d{2}$/.test(d.nextTime || '') ? d.nextTime : ''; }
@@ -3018,8 +3032,8 @@ function saveProject() {
   jobs.push(Store.saveState()); jobs0.forEach(function (x) { jobs.push(Store.save(x)); });
   Promise.all(jobs).then(function () { return Store.save(r); }).then(function () {
     if (!isNew) return;
-    return Store.save(stamp({ id: uid(), kind: 'follow', projectId: r.id, createdAt: nowISO(), date: rd, channel: d.channel, ctype: FIRST_CTYPE, statusBefore: '', statusAfter: ST.NEW, lostReason: '', note: 'สร้างโครงการ', nextDate: r.nextDate, site: r.site, agenda: r.nextAgenda, agendaOther: r.nextAgendaOther, prep: r.nextPrep, lat: null, lng: null }));
-  }).then(function () { toast(isNew ? 'บันทึกโครงการแล้ว' : 'บันทึกการแก้ไขแล้ว'); S.draft = null; location.hash = '#/project/' + r.id; }).catch(function () { toast('บันทึกไม่สำเร็จ ข้อมูลยังอยู่ในฟอร์ม ลองอีกครั้ง'); });
+ return Store.save(stamp({ id: uid(), kind: 'follow', projectId: r.id, createdAt: nowISO(), date: rd, channel: d.channel, ctype: FIRST_CTYPE, statusBefore: '', statusAfter: ST.NEW, lostReason: '', note: 'สร้าง Lead', nextDate: r.nextDate, site: r.site, agenda: r.nextAgenda, agendaOther: r.nextAgendaOther, prep: r.nextPrep, lat: null, lng: null }));
+ }).then(function () { toast(isNew ? 'บันทึก Lead แล้ว' : 'บันทึกการแก้ไขแล้ว'); S.draft = null; location.hash = '#/project/' + r.id; }).catch(function () { toast('บันทึกไม่สำเร็จ ข้อมูลยังอยู่ในฟอร์ม ลองอีกครั้ง'); });
 }
 function saveFollow(pid) {
   var d = S.draft, p = projById(pid), e = {};
@@ -3034,7 +3048,7 @@ function saveFollow(pid) {
   if (!d.date) e.date = 'กรุณาเลือกวันที่';
   else if (d.date > todayISO()) e.date = 'วันที่คุยต้องไม่เกินวันนี้';
   else if (isLockedDate(d.date)) e.date = 'เดือน ' + monthName(monthOf(d.date)) + ' ปิดงวดแล้ว เลือกวันที่ในเดือนที่ยังไม่ปิด';
-  else if (p.recordDate && d.date < p.recordDate) e.date = 'ต้องไม่ก่อนวันที่สร้างโครงการ (' + be(p.recordDate) + ')';
+ else if (p.recordDate && d.date < p.recordDate) e.date = 'ต้องไม่ก่อนวันที่สร้าง Lead (' + be(p.recordDate) + ')';
   else if (lastF && d.date < lastF.date) e.date = 'ต้องไม่ก่อนวันที่บันทึกล่าสุด (' + be(lastF.date) + ')';
   S.ui.errors = e; if (Object.keys(e).length) { S.ui.focusErr = true; rerender(); return; }
   var btn = $('[data-act="savefollow"]'); if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก…'; }
@@ -3065,7 +3079,7 @@ function saveSale(pid) {
   var dup = liveSales().find(function (s) { return s.id !== d.id && s.soNo.toLowerCase() === clean(d.soNo).toLowerCase(); });
   if (dup) e.soNo = 'เลขที่ SO นี้บันทึกไว้แล้ว';
   var sl = linesOf(d), pp = projById(pid);
-  if (!Object.keys(sl).length && (pp.products || []).length === 1 && Number(d.soValue) > 0) { sl = {}; sl[pp.products[0]] = Number(d.soValue); }
+  if (!Object.keys(sl).length && (pp.products || []).length === 1 && pp.products[0] !== OTHER && Number(d.soValue) > 0) { sl = {}; sl[pp.products[0]] = Number(d.soValue); }
   linesOtherErr(d, e);
   if (!Object.keys(sl).length) e.lines = 'กรุณาใส่มูลค่าอย่างน้อย 1 ประเภทสินค้า';
   else if (linesSum(sl) !== Number(d.soValue)) e.lines = 'ยอดรวมทุกประเภทสินค้า (' + fmt(linesSum(sl)) + ') ต้องเท่ากับมูลค่า SO (' + fmt(d.soValue) + ')';
@@ -3079,7 +3093,7 @@ function revertIfNoSale(p) {
   if (!p || p.status !== ST.WON || liveSales().some(function (x) { return x.projectId === p.id && validSale(x); })) return Promise.resolve();
   var w = followsDesc(p.id).find(function (x) { return x.statusAfter === ST.WON && x.statusBefore && x.statusBefore !== ST.WON; }), prev = w ? w.statusBefore : ST.QUOTE;
   if (ACTIVE.indexOf(prev) < 0) prev = ST.QUOTE;
-  return confirmBox('ไม่เหลือ SO ที่ใช้ได้', 'โครงการนี้ไม่มี SO ที่ใช้ได้แล้ว ต้องการคืนสถานะโครงการเป็น "' + prev + '" หรือไม่', 'คืนสถานะ').then(function (ok) {
+ return confirmBox('ไม่เหลือ SO ที่ใช้ได้', 'Lead นี้ไม่มี SO ที่ใช้ได้แล้ว ต้องการคืนสถานะ Lead เป็น "' + prev + '" หรือไม่', 'คืนสถานะ').then(function (ok) {
     if (!ok) return;
     var t = todayISO(), f = stamp({ id: uid(), kind: 'follow', projectId: p.id, createdAt: nowISO(), date: t, channel: p.channel || '', ctype: '', statusBefore: ST.WON, statusAfter: prev, lostReason: '', note: 'คืนสถานะ: ยกเลิกหรือลบ SO', nextDate: '', site: p.site || 0, agenda: [], agendaOther: '', prep: '', lat: null, lng: null });
     p.status = prev; p.stageAt = t;
@@ -3262,7 +3276,7 @@ function exportExcel(ym, anon) {
     var f = lastF[p.id] || {}, s = lastS[p.id] || {};
     var lg = p.legacy || {};
     return [p.empId, p.empName, p.recordDate, p.channel || f.channel || '', p.ptype, p.contactRole || '', p.name, p.contactName, fmtPhone(p.phone), p.address, p.lat != null ? p.lat.toFixed(6) + ',' + p.lng.toFixed(6) : '', p.photos && p.photos[0] ? 'มี' : '', p.photos && p.photos[1] ? 'มี' : '', p.info, lastN[p.id] || '', p.status, p.site ? siteLabel(p.site) : '', p.estimate || 0, p.closingDateNA ? '-' : p.closingDate, s.soNo || '', s.dp != null ? s.dp : '', s.deliveryDate || '',
-      p.id, p.code, p.codeOld || '', p.branch, p.team, p.province, p.developer, dv(p, 'channel') === p.channel ? '' : dvx(p, 'channel'), dv(p, 'ptype') === p.ptype ? '' : dvx(p, 'ptype'), dv(p, 'contactRole') === p.contactRole ? '' : dvx(p, 'contactRole'), p.line, p.consent ? 'ยินยอม' : 'ไม่ยินยอม', p.consentAt ? p.consentAt.slice(0, 10) : '', (p.products || []).join(', '), p.lostReason || '', p.nextDateNA ? '-' : (p.nextDate || ''), s.soValue != null ? s.soValue : '', s.soDate || '', s.soStatus || '', cntF[p.id] || 0, p.recordDate || '', localTs(p.createdAt), lagDays(p.recordDate, p.createdAt, p.importFile), (p.updatedAt || '').slice(0, 19), exp.slice(0, 19),
+      p.id, p.code, p.codeOld || '', p.branch, p.team, p.province, p.developer, dv(p, 'channel') === p.channel ? '' : dvx(p, 'channel'), dv(p, 'ptype') === p.ptype ? '' : dvx(p, 'ptype'), dv(p, 'contactRole') === p.contactRole ? '' : dvx(p, 'contactRole'), p.line, p.consent ? 'ยินยอม' : 'ไม่ยินยอม', p.consentAt ? p.consentAt.slice(0, 10) : '', prodText(p), p.lostReason || '', p.nextDateNA ? '-' : (p.nextDate || ''), s.soValue != null ? s.soValue : '', s.soDate || '', s.soStatus || '', cntF[p.id] || 0, p.recordDate || '', localTs(p.createdAt), lagDays(p.recordDate, p.createdAt, p.importFile), (p.updatedAt || '').slice(0, 19), exp.slice(0, 19),
       p.pform || '', p.siteAt || '', p.stageAt || '', stageDays(p) == null ? '' : stageDays(p), p.nextDate ? agendaText(p.nextAgenda, anon ? '' : p.nextAgendaOther) : '', p.nextDate ? (p.nextPrep || '') : '', [lg.ptype ? 'ประเภทโครงการ: ' + lg.ptype : '', lg.channel ? 'ช่องทาง: ' + lg.channel : '', lg.contactRole ? 'ประเภทการติดต่อ: ' + lg.contactRole : '', lg.completion ? 'กำหนดสร้างเสร็จ: ' + lg.completion : '', lg.products ? 'หมวดสินค้า: ' + lg.products : ''].filter(Boolean).join(' · '), p.nextDate ? (p.nextTime || '') : '', contactsOf(p).length, p.quick ? 'Lead ด่วน' : 'ครบ', (p.photos || []).length, p.parentId ? ((projById(p.parentId) || {}).code || '') : '', p.phaseName || '', p.units || '', quotesOf(p.id)[0] ? quotesOf(p.id)[0].qtNo + ' ครั้งที่ ' + (quotesOf(p.id)[0].rev || 1) : '', quotesOf(p.id)[0] ? quotesOf(p.id)[0].value : '', p.status === ST.WON && hasBuiltin(p) ? (delivStep(p) > 6 ? 'ส่งมอบครบ' : DSTEP[delivStep(p) - 1]) : '', handoverOf(p), p.after && p.after[6] ? p.after[6] : '', p.after && p.after[12] ? p.after[12] : '', moveCount(p.moves, 'appt'), p.nextDate ? (p.nextTeam || []).join(', ') : '', p.nextDate ? (p.nextTeamOk || '') : ''];
   });
   var H2 = ['Follow ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'วันที่ติดต่อ', 'ชื่อโครงการ', 'ประเภทอาคาร', 'สถานะก่อน', 'สถานะหลัง', 'เหตุผลที่ไม่ได้งาน', 'Note รายละเอียดที่คุย', 'นัดครั้งถัดไป', 'ละติจูด', 'ลองจิจูด', 'ระยะห่างจากโครงการ (เมตร)', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด', 'วาระนัด', 'สิ่งที่ต้องเตรียม', 'สถานะหน้างาน', 'ประเภทการบันทึก', 'ผลการโทร', 'เวลานัด', 'แก้ไขหลังบันทึก'];
