@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Mp9dvtQln9JcH33L22yNjicOqV1G/kAtPLnBBWUmH7A='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KJL2qvsbvFD0rxg+5o8FloAflO5WUi48D+q17SpkMFg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#ffbf0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -149,8 +149,8 @@ input[type=date].inp,input[type=time].inp,input[type=month].inp{-webkit-appearan
 .h4 .ring{width:62px;height:62px}.h4 .ring svg{width:62px;height:62px}.h4 .ring b{font-size:17px}.h4 .ring small{font-size:10px}
 .menu.mw{gap:6px}.menu.mw a{min-height:76px;font-size:12.5px;font-weight:600}.menu.mw a .mi{width:52px;height:52px;border-radius:14px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}.menu.mw a .mi.q{background:#2b2b2b}
 a.hsearch{text-decoration:none;margin-top:0;border-radius:12px;min-height:48px}a.hsearch span{color:#6b6b6b;font-size:15px}
-.trow2{display:grid;grid-template-columns:54px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}.trow2 .tm{text-align:right;font-weight:700;color:var(--info);font-size:15px;line-height:1.2}.trow2 .tm small{display:block;font-size:11px;font-weight:500;color:var(--text)}
-.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.acts .chip{min-height:40px;font-size:13px;padding:0 12px}
+.trow2{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;padding:12px 0;border-top:1px solid var(--line)}.trow2 .tm{font-weight:700;color:var(--info);font-size:16px;line-height:1.25;white-space:nowrap}.trow2 .tm small{display:block;font-size:12px;font-weight:500;color:var(--text)}
+.acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}.acts .chip{display:flex;align-items:center;justify-content:center;gap:5px;min-height:40px;border-radius:10px;font-size:13px;font-weight:700;padding:0 6px;color:var(--text-strong);background:#fff;border:1px solid var(--line-2);white-space:nowrap;text-decoration:none}.acts .chip:first-child{background:var(--accent);border-color:var(--accent)}.acts .chip svg{flex:none}
 .arow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit;min-height:44px}.arow i{width:32px;height:32px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;background:#fff3cf;color:#2b2b2b}.arow.rd i{background:#ffe5e5;color:var(--danger-text)}.arow.rd b{color:var(--danger-text)}
 .okline{display:flex;align-items:center;gap:8px;color:var(--ok-text);font-weight:700}
 .wstrip{display:flex;justify-content:space-between;gap:8px;text-decoration:none;color:inherit;font-size:13px;padding:12px 14px}
@@ -312,7 +312,7 @@ table.fx{table-layout:fixed;font-size:13px}table.fx th,table.fx td{padding:8px 4
    Replace Store.* persistence to add server sync later.
    ========================================================= */
 
-var APP_VERSION = '1.12.0';
+var APP_VERSION = '1.12.1';
 var SCHEMA_VERSION = 2;
 var DB_NAME = 'ps-tracker';
 var KDF_ITER = 250000;
@@ -771,7 +771,7 @@ function pendingTasks() {
   return out;
 }
 function shell(opt, body) {
-  var pend = opt.nav === false ? 0 : pendingTasks().length, due = opt.nav === false ? 0 : followList().length;
+  var pend = opt.nav === false ? 0 : pendingTasks().length, due = opt.nav === false ? 0 : followList().filter(function (x) { return x.kind !== 'silent'; }).length;
   var nav = [['#/today', 'หน้าแรก', 'home', 0], ['#/plan', 'แผนงาน', 'plan', due], ['#/projects', 'Leads', 'proj', 0], ['#/perf', 'ผลงาน', 'chart', 0], ['#/settings', 'เมนู', 'menu', pend]];
   var cur = '#/' + S.route.split('/')[1], setGroup = ['#/profile', '#/target', '#/security', '#/setup', '#/rules'];
   var top = opt.noTop ? '' : '<header class="topbar' + (opt.yellow ? ' yellow' : '') + '">' +
@@ -810,14 +810,20 @@ function monthShort(ym) { var p = ym.split('-'); return TH_MON_S[+p[1] - 1] + '.
 function doneToday() { var t = todayISO(); return liveFollows().filter(function (f) { return f.createdAt && isoOf(new Date(f.createdAt)) === t; }).sort(function (a, b) { return b.createdAt.localeCompare(a.createdAt); }); }
 function stageLine(p) { var n = stageDays(p); if (n == null) return ''; return '<span class="small' + (n > 60 ? ' dangerText' : '') + '" style="' + (n > 60 ? 'font-weight:700' : '') + '">อยู่ขั้น ' + esc(p.status) + ' มา ' + n + ' วัน' + (n > 60 ? ' · เกิน 60 วัน' : '') + '</span>'; }
 function agendaBox(p) { if (!p.nextDate || !((p.nextAgenda || []).length || p.nextPrep || (p.nextTeam || []).length)) return ''; var tmr = (p.nextTeam || []).length ? '<div class="kv" style="grid-template-columns:52px minmax(0,1fr);font-size:13px"><b>ทีม</b><span>' + esc(p.nextTeam.join(', ')) + ' ' + (p.nextTeamOk === 'ทีมยืนยันแล้ว' ? '<span class="tag">ทีมยืนยันแล้ว</span>' : '<span class="tag wait">รอทีมยืนยัน</span>') + '</span></div>' : ''; return '<div class="agenda">' + ((p.nextAgenda || []).length ? '<div class="kv" style="grid-template-columns:52px minmax(0,1fr);font-size:13px"><b>วาระ</b><span>' + esc(agendaText(p.nextAgenda, p.nextAgendaOther).replace(/ · /g, ', ')) + '</span></div>' : '') + (p.nextPrep && p.nextPrep !== '-' ? '<div class="kv" style="grid-template-columns:52px minmax(0,1fr);font-size:13px"><b>เตรียม</b><span>' + esc(p.nextPrep) + '</span></div>' : '') + tmr + '</div>'; }
+function pCard(p, head, col, opts) {
+  opts = opts || {};
+  return '<div class="card' + (opts.red ? ' alert' : '') + '" style="display:flex;flex-direction:column;gap:6px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px"><span class="small" style="font-weight:700;color:' + col + '">' + head + '</span><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span>' + stageLine(p) + '<span class="small">' + esc(p.contactName || '-') + ' · ' + esc(dv(p, 'contactRole') || '-') + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (p.site ? ' <span class="tag">หน้างาน ' + esc(siteLabel(p.site)) + '</span>' : '') + '</span></a>' + (opts.noAgenda ? '' : agendaBox(p)) +
+    '<div class="acts"><a class="chip" href="#/follow/' + esc(p.id) + '">' + icon('note', 16) + 'บันทึก</a><button type="button" class="chip" data-act="resched" data-id="' + esc(p.id) + '">' + icon('cal', 16) + (p.nextDate ? 'เลื่อนนัด' : 'ตั้งนัด') + '</button>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main" aria-label="โทรหา ' + esc(p.contactName || '') + '">' + icon('phone', 16) + 'โทร</a>' : '') + '</div></div>';
+}
 function planItem(x) {
   var p = x.p, col = x.kind === 'late' ? 'var(--danger-text)' : x.kind === 'today' ? 'var(--info)' : '#8a6d00';
-  return '<div class="card' + (x.kind === 'late' ? ' alert' : '') + '" style="display:flex;flex-direction:column;gap:6px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px"><span class="small" style="font-weight:700;color:' + col + '">' + esc(x.text) + (p.nextDate && x.kind !== 'today' ? ' · นัด ' + be(p.nextDate) : '') + '</span><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span>' + stageLine(p) + '<span class="small">' + esc(p.contactName) + ' · ' + esc(dv(p, 'contactRole')) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท' + (p.site ? ' <span class="tag">หน้างาน ' + esc(siteLabel(p.site)) + '</span>' : '') + '</span></a>' + agendaBox(p) +
-    '<div class="row" style="gap:8px"><a class="btn small primary" style="flex:1" href="#/follow/' + esc(p.id) + '">บันทึกการติดตาม</a><button class="btn small" data-act="resched" data-id="' + esc(p.id) + '">' + (p.nextDate ? 'เลื่อนนัด' : 'ตั้งนัด') + '</button>' + (p.phone ? '<a class="btn small" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main" aria-label="โทรหา ' + esc(p.contactName) + '">' + icon('phone', 18) + ' โทร</a>' : '') + '</div></div>';
+  return pCard(p, esc(x.text) + (p.nextDate && x.kind !== 'today' ? ' · นัด ' + be(p.nextDate) : ''), col, { red: x.kind === 'late' });
 }
 function planRow(p) {
-  return '<a class="card link' + ((p.nextTeam || []).length && p.nextTeamOk !== 'ทีมยืนยันแล้ว' ? ' warn' : '') + '" href="#/project/' + esc(p.id) + '" style="display:flex;flex-direction:column;gap:2px"><span class="between"><span class="small" style="font-weight:700;color:var(--info)">นัดวัน' + TH_DAY[parseISO(p.nextDate).getDay()] + ' ' + be(p.nextDate) + '</span>' + badge(p.status) + '</span><b class="strong">' + esc(p.name) + '</b><span class="small">' + esc(p.contactName) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span>' + agendaBox(p) + '</a>';
+  var w = (p.nextTeam || []).length && p.nextTeamOk !== 'ทีมยืนยันแล้ว';
+  return pCard(p, 'นัดวัน' + TH_DAY[parseISO(p.nextDate).getDay()] + ' ' + be(p.nextDate) + (p.nextTime ? ' · ' + esc(p.nextTime) + ' น.' : '') + (w ? ' · <span class="tag wait">รอทีมยืนยัน</span>' : ''), 'var(--info)');
 }
+function sugCard(x) { return pCard(x.p, esc(x.why), '#8a6d00', { noAgenda: true }); }
 function doneRow(f) {
   var p = projById(f.projectId) || {}, t = todayISO();
   return '<a class="card link" href="#/project/' + esc(f.projectId) + '" style="display:flex;flex-direction:column;gap:2px"><span class="between"><b class="strong">' + esc(p.name || '-') + '</b>' + badge(f.statusAfter) + '</span><span class="small">' + (f.ctype === FIRST_CTYPE ? 'สร้างโครงการใหม่' : (f.statusBefore && f.statusBefore !== f.statusAfter ? esc(f.statusBefore) + ' → ' + esc(f.statusAfter) : 'ติดตาม · สถานะ ' + esc(f.statusAfter))) + (f.date !== t ? ' · <b class="strong">ย้อนหลัง</b> วันที่ติดต่อ ' + be(f.date) : '') + ' · บันทึก ' + localTs(f.createdAt).slice(11) + ' น.</span>' + (f.note && f.ctype !== FIRST_CTYPE ? '<span class="small" style="color:var(--text-strong)">' + esc(f.note.slice(0, 120)) + '</span>' : '') + '</a>';
@@ -841,7 +847,7 @@ function planData() {
   var t = todayISO(), act = liveProjects().filter(function (p) { return ACTIVE.indexOf(p.status) >= 0; });
   var todo = followList(), wEnd = weekRange(t)[1], mEnd = monthEnd(monthOf(t));
   var ahead = act.filter(function (p) { return p.nextDate && p.nextDate > t; }).sort(function (a, b) { return a.nextDate.localeCompare(b.nextDate) || (b.estimate || 0) - (a.estimate || 0); });
-  return { t: t, ahead: ahead, todo: todo, now: todo.filter(function (x) { return x.kind !== 'late'; }).sort(function (a, b) { var ra = a.kind === 'today' ? 0 : 1, rb = b.kind === 'today' ? 0 : 1; if (ra !== rb) return ra - rb; if (!ra) return (a.p.nextTime || '99').localeCompare(b.p.nextTime || '99') || (b.p.estimate || 0) - (a.p.estimate || 0); return (b.p.estimate || 0) - (a.p.estimate || 0); }), late: todo.filter(function (x) { return x.kind === 'late'; }), done: doneToday(), wEnd: wEnd, mEnd: mEnd,
+  return { t: t, ahead: ahead, todo: todo, now: todo.filter(function (x) { return x.kind === 'today'; }).sort(function (a, b) { var ra = a.kind === 'today' ? 0 : 1, rb = b.kind === 'today' ? 0 : 1; if (ra !== rb) return ra - rb; if (!ra) return (a.p.nextTime || '99').localeCompare(b.p.nextTime || '99') || (b.p.estimate || 0) - (a.p.estimate || 0); return (b.p.estimate || 0) - (a.p.estimate || 0); }), late: todo.filter(function (x) { return x.kind === 'late'; }), done: doneToday(), wEnd: wEnd, mEnd: mEnd,
     week: ahead.filter(function (p) { return p.nextDate <= wEnd; }), month: ahead.filter(function (p) { return p.nextDate <= mEnd; }),
     near: measureReady(act), route: act.filter(function (p) { return p.nextDate === t && p.lat != null; }), after: afterList(), deliv: liveProjects().filter(function (p) { return p.status === ST.WON && hasBuiltin(p) && delivAlert(p); }), pay: payData(), dv: dvAhead(t) };
 }
@@ -862,8 +868,13 @@ function vPlan(tab) {
   var nav = '<nav class="ptiles" aria-label="กลุ่มแผนงาน">' + tiles.map(function (x) { return '<a class="ptile' + (x[3] ? ' rd' : '') + '" href="#/plan/' + x[0] + '"' + (tab === x[0] ? ' aria-current="page"' : '') + '><b>' + x[2] + '</b><span>' + x[1] + '</span></a>'; }).join('') + '</nav>';
   var c = '';
   var route = tab === 'todo' && D.route.length ? '<a class="btn block" style="border-color:var(--info);color:var(--info)" href="' + esc(routeUrl(D.route)) + '" target="_blank" rel="noopener noreferrer">' + icon('pin', 20) + ' นำทางนัดวันนี้ ' + D.route.length + ' จุด (Google Maps)</a>' : '';
-  if (tab === 'todo') c = D.now.length ? route + '<span class="small">นัดวันนี้เรียงตามเวลา ตามด้วยโครงการที่เงียบเกิน 30 วัน</span>' + D.now.slice(0, lim).map(planItem).join('') + planMore(tab, Math.min(lim, D.now.length), D.now.length)
-    : '<div class="empty">' + sparkleDone() + '<h2>ไม่มีนัดวันนี้</h2><p class="muted" style="margin:0">' + (D.late.length ? 'ยังมีงานเลยนัด ' + D.late.length + ' โครงการ' : 'ลองหา Lead ใหม่ หรือเตรียมนัดล่วงหน้า') + '</p><div class="grid2" style="width:100%;margin-top:8px"><a class="btn primary" href="#/new">+ Lead ใหม่</a><a class="btn" href="#/plan/' + (D.late.length ? 'late">ดูงานเลยนัด' : 'ahead">ดูนัดล่วงหน้า') + '</a></div></div>';
+  if (tab === 'todo') {
+    var SG = suggestList(), sec = function (title, sub, html) { return '<h2 class="h2" style="margin-bottom:0">' + title + '</h2>' + (sub ? '<span class="small" style="margin-top:-6px">' + sub + '</span>' : '') + html; };
+    if (D.now.length) c += sec('นัดวันนี้ (' + D.now.length + ')', 'เรียงตามเวลา', route + D.now.slice(0, lim).map(planItem).join('') + planMore(tab, Math.min(lim, D.now.length), D.now.length));
+    if (SG.length) c += sec('ควรติดต่อ (' + SG.length + ')', 'ใกล้วันปิด · หน้างานพร้อมวัดพื้นที่ · ไม่ได้ติดต่อเกิน 14 วัน · ยังไม่มีนัด', SG.slice(0, (S.ui.plimT || {}).sug || 10).map(sugCard).join('') + (SG.length > ((S.ui.plimT || {}).sug || 10) ? '<button class="btn block" data-act="plmore" data-t="sug">ดูเพิ่มอีก ' + Math.min(20, SG.length - ((S.ui.plimT || {}).sug || 10)) + ' รายการ</button>' : ''));
+    if (D.deliv.length) c += sec('งานส่งมอบที่ต้องตาม (' + D.deliv.length + ')', 'งาน Built-in ที่ใกล้วันติดตั้งหรือรอลูกค้าอนุมัติแบบ', D.deliv.map(function (p) { var al = delivAlert(p); return '<div class="card' + (al.red ? ' alert' : '') + '" style="display:flex;flex-direction:column;gap:6px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:2px"><span class="small" style="font-weight:700;color:' + (al.red ? 'var(--danger-text)' : '#8a6d00') + '">' + esc(al.text) + '</span><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + esc(al.sub || '') + '</span></a><div class="acts"><a class="chip" href="#/delivery/' + esc(p.id) + '">' + icon('list', 16) + 'งานส่งมอบ</a><button type="button" class="chip" data-act="dmove" data-k="install" data-p="' + esc(p.id) + '">' + icon('cal', 16) + 'เลื่อนติดตั้ง</button>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main">' + icon('phone', 16) + 'โทร</a>' : '') + '</div></div>'; }).join(''));
+    if (!c) c = '<div class="empty">' + sparkleDone() + '<h2>ไม่มีนัดวันนี้</h2><p class="muted" style="margin:0">' + (D.late.length ? 'ยังมีงานเลยนัด ' + D.late.length + ' โครงการ' : 'ลองหา Lead ใหม่ หรือเตรียมนัดล่วงหน้า') + '</p><div class="grid2" style="width:100%;margin-top:8px"><a class="btn primary" href="#/new">+ Lead ใหม่</a><a class="btn" href="#/plan/' + (D.late.length ? 'late">ดูงานเลยนัด' : 'ahead">ดูนัดล่วงหน้า') + '</a></div></div>';
+  }
   else if (tab === 'late') {
     if (!D.late.length) c = '<div class="empty">' + sparkleDone() + '<h2>ไม่มีโครงการที่เลยนัด</h2></div>';
     else {
@@ -890,9 +901,9 @@ function vPlan(tab) {
   else if (tab === 'pay') c = payTab(D.pay);
   else if (tab === 'after') c = '<span class="small">ลูกค้าที่ส่งมอบครบ 6 และ 12 เดือน · โทรถามความพึงพอใจ และเสนอสินค้าเพิ่ม</span>' + (D.after.length ? D.after.map(afterCard).join('') : '<div class="card muted">ยังไม่มีลูกค้าที่ครบกำหนด</div>');
   else c = '<h2 class="h2">บันทึกแล้ววันนี้ (' + D.done.length + ')</h2>' + (D.done.length ? D.done.map(doneRow).join('') : '<div class="card muted">วันนี้ยังไม่มีการบันทึก</div>');
-  var dvs = tab === 'todo' && D.deliv.length ? '<h2 class="h2">งานส่งมอบ Built-in ที่ต้องตาม</h2>' + D.deliv.map(function (p) { var al = delivAlert(p); return '<a class="card link' + (al.red ? ' alert' : ' warn') + '" href="#/delivery/' + esc(p.id) + '"><b class="strong">' + esc(p.name) + '</b><br><span class="small' + (al.red ? ' dangerText' : '') + '" style="font-weight:700">' + esc(al.text) + '</span></a>'; }).join('') : '';
-  var near = tab === 'todo' && D.near.length ? '<h2 class="h2">โอกาสใหม่: หน้างานพร้อมวัดพื้นที่</h2><span class="small" style="margin-top:-8px">โครงการที่สถานะหน้างานเป็น 3 หรือ 4 และยังไม่มีนัดวัดพื้นที่</span>' + D.near.map(function (p) { return '<a class="card warn link" href="#/project/' + esc(p.id) + '"><span class="between"><b class="strong">' + esc(p.name) + '</b><span class="tag">หน้างาน ' + p.site + '</span></span><span class="small">เปลี่ยนเป็นขั้น ' + p.site + ' เมื่อ ' + be(p.siteAt) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span></a>'; }).join('') : '';
-  return shell({ title: 'แผนงาน', right: '<a class="btn primary small" href="#/pick">+ บันทึกการติดตาม</a>' }, '<div class="stack">' + nav + '<div id="tlist" class="stack">' + c + '</div>' + dvs + near + '</div>');
+  var dvs = false && D.deliv.length ? '<h2 class="h2">งานส่งมอบ Built-in ที่ต้องตาม</h2>' + D.deliv.map(function (p) { var al = delivAlert(p); return '<a class="card link' + (al.red ? ' alert' : ' warn') + '" href="#/delivery/' + esc(p.id) + '"><b class="strong">' + esc(p.name) + '</b><br><span class="small' + (al.red ? ' dangerText' : '') + '" style="font-weight:700">' + esc(al.text) + '</span></a>'; }).join('') : '';
+  var near = false && D.near.length ? '<h2 class="h2">โอกาสใหม่: หน้างานพร้อมวัดพื้นที่</h2><span class="small" style="margin-top:-8px">โครงการที่สถานะหน้างานเป็น 3 หรือ 4 และยังไม่มีนัดวัดพื้นที่</span>' + D.near.map(function (p) { return '<a class="card warn link" href="#/project/' + esc(p.id) + '"><span class="between"><b class="strong">' + esc(p.name) + '</b><span class="tag">หน้างาน ' + p.site + '</span></span><span class="small">เปลี่ยนเป็นขั้น ' + p.site + ' เมื่อ ' + be(p.siteAt) + ' · ยอดคาดการณ์ ' + fmt(p.estimate) + ' บาท</span></a>'; }).join('') : '';
+  return shell({ title: 'แผนงาน', right: '<a class="btn primary small" href="#/pick">+ บันทึกการติดตาม</a>' }, '<div class="stack">' + nav + '<div id="tlist" class="stack">' + c + '</div></div>');
 }
 function vHold() {
   var L = holdList(), m = S.ui.holdSel = S.ui.holdSel || {}, n = L.filter(function (x) { return m[x.p.id]; }).length, t = todayISO();
@@ -935,7 +946,7 @@ function vToday() {
 function todayRow(p, tm, sub, col, opts) {
   opts = opts || {};
   return '<div class="trow2"><div class="tm" style="color:' + (col || 'var(--info)') + '">' + tm + '</div><div style="min-width:0"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:block"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + sub + '</span></a>' +
-    '<div class="acts"><a class="chip" href="#/follow/' + esc(p.id) + '">บันทึก</a><button type="button" class="chip" data-act="resched" data-id="' + esc(p.id) + '">' + (opts.set ? 'ตั้งนัด' : 'เลื่อนนัด') + '</button>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main" aria-label="โทรหา ' + esc(p.contactName || '') + '">โทร</a>' : '') + '</div></div></div>';
+    '<div class="acts"><a class="chip" href="#/follow/' + esc(p.id) + '">' + icon('note', 16) + 'บันทึก</a><button type="button" class="chip" data-act="resched" data-id="' + esc(p.id) + '">' + icon('cal', 16) + (opts.set ? 'ตั้งนัด' : 'เลื่อนนัด') + '</button>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main" aria-label="โทรหา ' + esc(p.contactName || '') + '">' + icon('phone', 16) + 'โทร</a>' : '') + '</div></div></div>';
 }
 function apptSub(p) { return esc(p.contactName || '-') + ((p.nextAgenda || []).length ? ' · วาระ ' + esc(agendaText(p.nextAgenda, p.nextAgendaOther)) : '') + ((p.nextTeam || []).length ? ' · ทีม ' + esc(p.nextTeam.join(', ')) + (p.nextTeamOk === 'ทีมยืนยันแล้ว' ? ' ✓' : ' <span class="tag wait">รอทีมยืนยัน</span>') : ''); }
 function suggestList() {
@@ -955,7 +966,7 @@ function todayCard(D) {
   var nTom = D.ahead.filter(function (p) { return p.nextDate === tm1; }).length, nWeek = D.ahead.filter(function (p) { return p.nextDate <= wEnd; }).length;
   var foot = '<span class="small" style="border-top:1px solid var(--line);padding-top:8px">' + [today.length > 3 ? 'วันนี้อีก ' + (today.length - 3) + ' นัด' : '', 'พรุ่งนี้ ' + nTom + ' นัด', 'สัปดาห์นี้ ' + nWeek + ' นัด'].filter(Boolean).join(' · ') + '</span>';
   var title = 'วันนี้', rows = '';
-  if (today.length) rows = today.slice(0, 3).map(function (x) { return todayRow(x.p, x.p.nextTime ? x.p.nextTime + '<small>น.</small>' : 'วันนี้', apptSub(x.p)); }).join('');
+  if (today.length) rows = today.slice(0, 3).map(function (x) { return todayRow(x.p, x.p.nextTime ? x.p.nextTime + '<small>น.</small>' : 'วันนี้<small>ไม่ระบุเวลา</small>', apptSub(x.p)); }).join('');
   else if (D.ahead.length) { title = 'วันนี้ไม่มีนัด · นัดถัดไป'; rows = D.ahead.slice(0, 3).map(function (p) { var dd = parseISO(p.nextDate); return todayRow(p, (p.nextDate === tm1 ? 'พรุ่งนี้' : TH_DAY[dd.getDay()]) + '<small>' + be(p.nextDate).slice(0, 5) + (p.nextTime ? ' · ' + p.nextTime : '') + '</small>', apptSub(p)); }).join(''); }
   else if (liveProjects().some(function (p) { return ACTIVE.indexOf(p.status) >= 0; })) { title = 'ควรติดต่อ'; var sg = suggestList().slice(0, 3); rows = sg.length ? sg.map(function (x) { return todayRow(x.p, '•', esc(x.why) + ' · ยอดคาดการณ์ ' + fmt(x.p.estimate), 'var(--text-strong)', { set: true }); }).join('') : '<span class="small muted">ทุกโครงการมีนัดหรือติดตามล่าสุดแล้ว ลองหา Lead ใหม่</span>'; foot = '<span class="small" style="border-top:1px solid var(--line);padding-top:8px">ระบบแนะนำจากวันที่คาดว่าจะปิด สถานะหน้างาน และวันที่ติดต่อล่าสุด</span>'; }
   else return '<section class="card stack" style="gap:10px;padding:16px;align-items:flex-start"><b class="strong" style="font-size:16px">เริ่มต้นวันแรก</b><span class="small">ยังไม่มี Lead ในเครื่องนี้ บันทึก Lead แรกได้ใน 30 วินาที</span><a class="btn primary" href="#/quick">+ Lead แรก</a><a href="#/guide/staff" class="small" style="font-weight:700">อ่านคู่มือใช้งาน</a></section>';
@@ -1019,7 +1030,7 @@ function hsFind(q) {
   out.sort(function (a, b) { return a.why[0] - b.why[0] || (ACTIVE.indexOf(b.p.status) >= 0) - (ACTIVE.indexOf(a.p.status) >= 0) || (b.p.updatedAt || '').localeCompare(a.p.updatedAt || ''); });
   return out;
 }
-function hsCard(p, sub, acts) { if (acts) return '<div class="card" style="display:flex;flex-direction:column;gap:2px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:block"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + sub + '</span></a><div class="acts"><a class="chip" href="#/follow/' + esc(p.id) + '">บันทึกติดตาม</a>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main">โทร</a>' : '') + '</div></div>'; return hsCard0(p, sub); }
+function hsCard(p, sub, acts) { if (acts) return '<div class="card" style="display:flex;flex-direction:column;gap:2px"><a href="#/project/' + esc(p.id) + '" style="text-decoration:none;color:inherit;display:block"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + sub + '</span></a><div class="acts"><a class="chip" href="#/follow/' + esc(p.id) + '">' + icon('note', 16) + 'บันทึกติดตาม</a>' + (p.phone ? '<a class="chip" href="tel:' + esc(digits(p.phone)) + '" data-call="' + esc(p.id) + '|main">' + icon('phone', 16) + 'โทร</a>' : '') + '</div></div>'; return hsCard0(p, sub); }
 function hsCard0(p, sub) { return '<a class="card link" href="#/project/' + esc(p.id) + '" style="display:flex;flex-direction:column;gap:2px"><span class="between"><b class="strong">' + esc(p.name) + '</b>' + badge(p.status) + '</span><span class="small">' + sub + '</span></a>'; }
 function renderHS() {
   var el = $('#hsres'); if (!el) return; var q = (S.ui.hs || '').trim();
