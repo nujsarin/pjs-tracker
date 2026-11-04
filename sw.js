@@ -1,6 +1,6 @@
 /* Project Sales Tracker · service worker
    เมื่ออัปเดตแอป ให้เปลี่ยนเลข CACHE ทุกครั้ง (เช่น v1.0.1) */
-var CACHE = 'ps-tracker-v1.13.0';
+var CACHE = 'ps-tracker-v1.16.0';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
@@ -26,6 +26,8 @@ self.addEventListener('fetch', function (e) {
     e.respondWith(fetch(req, { cache: 'no-cache' }).then(function (res) {
       var root = new URL(self.registration.scope).pathname;
       if (res && res.ok && res.type === 'basic' && (url.pathname === root || url.pathname === root + 'index.html')) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put('./index.html', copy); }); }
+      // เว็บต้นทางตอบผิดพลาด (เช่น 404 / 5xx ระหว่างอัปเดต GitHub Pages) ใช้ฉบับในเครื่องแทน
+      if (!res || (!res.ok && res.type !== 'opaqueredirect')) return caches.match('./index.html').then(function (hit) { return hit || res; });
       return res;
     }).catch(function () { return caches.match('./index.html'); }));
     return;

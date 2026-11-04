@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zU4yq8+4U9/rsb6eWxDzrRURCDDsl7Dqe1z9UVhb30A='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-jk/Sk6q0pJmxDyL5PIFGMQzdz9ifxPtPJNbYlW9Y0Kg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#ffbf0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -230,6 +230,11 @@ legend{padding:0;margin-bottom:8px}
 .segl{min-height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--text);font-size:15px}
 .segl[aria-current="page"]{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:700;color:var(--text-strong)}
 .seg button[aria-pressed="true"]{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:700;color:var(--text-strong)}
+.meter{height:12px;background:#f1f1f1;border-radius:6px;overflow:hidden}.meter>div{height:100%;background:var(--accent);border-radius:6px}.meter.full>div{background:var(--danger-text)}
+.sttile{background:#f6f6f6;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}.sttile b{font-size:18px;color:var(--text-strong)}
+.pgset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pgopt{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border:1.5px solid var(--line-2);border-radius:12px;cursor:pointer;background:#fff}.pgopt.on{border-color:var(--accent);background:#fffaf0}.pgopt input{width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;margin:0}.pgopt .lt{flex:1;min-width:0;display:flex;flex-direction:column}.pgopt small{font-size:13px;color:var(--text)}
+.tblwrap{border:1px solid var(--line);border-radius:12px;overflow-x:auto}.rstbl{width:100%;border-collapse:collapse;font-size:14px}.rstbl th,.rstbl td{padding:8px 10px;text-align:right;border-top:1px solid #f0f0f0;color:var(--text-strong)}.rstbl thead th{background:#f6f6f6;border-top:0;font-weight:600;white-space:nowrap;font-size:13px}.rstbl th[scope=row],.rstbl thead th:first-child{text-align:left;font-weight:400}
 .switch{width:52px;height:32px;border:0;border-radius:16px;background:#9e9e9e;position:relative;flex-shrink:0;cursor:pointer;padding:0}
 .switch::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
 .switch[aria-checked="true"]{background:var(--accent)}
@@ -316,7 +321,7 @@ table.fx{table-layout:fixed;font-size:13px}table.fx th,table.fx td{padding:8px 4
    Replace Store.* persistence to add server sync later.
    ========================================================= */
 
-var APP_VERSION = '1.13.0';
+var APP_VERSION = '1.16.0';
 var SCHEMA_VERSION = 2;
 var DB_NAME = 'ps-tracker';
 var KDF_ITER = 250000;
@@ -432,11 +437,12 @@ var DB = {
   },
   tx: function (store, mode, fn) {
     return new Promise(function (res, rej) {
-      var t = DB.db.transaction(store, mode), s = t.objectStore(store), out, req = fn(s);
+      var t = DB.db.transaction(store, mode), s = t.objectStore(store), out, req;
+      try { req = fn(s); } catch (e) { qCheck(e); try { t.abort(); } catch (x) { } rej(e); return; }
       if (req) req.onsuccess = function () { out = req.result; };
       t.oncomplete = function () { res(out); };
-      t.onerror = function () { rej(t.error); };
-      t.onabort = function () { rej(t.error || new Error('abort')); };
+      t.onerror = function () { qCheck(t.error); rej(t.error); };
+      t.onabort = function () { qCheck(t.error); rej(t.error || new Error('abort')); };
     });
   },
   get: function (st, k) { return DB.tx(st, 'readonly', function (s) { return s.get(k); }); },
@@ -499,7 +505,7 @@ var Cx = {
 var Store = {
   projects: [], follows: [], sales: [], months: [], quotes: [], state: null, photoURL: {},
   ver: 0,
-  reset: function () { Store.ver++; Store.projects = []; Store.follows = []; Store.sales = []; Store.months = []; Store.quotes = []; Store.state = null; Object.keys(Store.photoURL).forEach(function (k) { URL.revokeObjectURL(Store.photoURL[k]); }); Store.photoURL = {}; },
+  reset: function () { Store.ver++; Store.undec = 0; Store.projects = []; Store.follows = []; Store.sales = []; Store.months = []; Store.quotes = []; Store.state = null; Object.keys(Store.photoURL).forEach(function (k) { URL.revokeObjectURL(Store.photoURL[k]); }); Store.photoURL = {}; },
   load: function () {
     return DB.get('meta', 'vault').then(function (v) { return Cx.decJSON(Cx.key, v.iv, v.ct); }).then(function (state) {
       Store.state = migrateState(state);
@@ -507,7 +513,7 @@ var Store = {
     }).then(function (rows) {
       return Promise.all(rows.map(function (r) { return Cx.decJSON(Cx.key, r.iv, r.ct).catch(function () { return null; }); }));
     }).then(function (recs) {
-      recs.forEach(function (r) { if (r) Store.mem(r); });
+      Store.undec = 0; recs.forEach(function (r) { if (r) Store.mem(r); else Store.undec++; });
       return migrateRecords();
     });
   },
@@ -719,6 +725,7 @@ function confirmBox(title, text, ok, danger) {
 }
 var IC = {
   home: '<path d="M3 10.5 12 3l9 7.5V21H3z"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
   proj: '<path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/>',
   chart: '<path d="M5 20V11M12 20V5M19 20v-6"/>',
   send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
@@ -771,6 +778,7 @@ function pendingTasks() {
   var lastExp = st.lastExport ? diffDays(tsDay(st.lastExport), t) : null, lastBak = st.lastBackup ? diffDays(tsDay(st.lastBackup), t) : null;
   if (lastBak === null || lastBak >= 7) out.push(['ควรสำรองข้อมูล', 'สำรองล่าสุด ' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง'), '#/data']);
   var pmc = addMonths(curMonth(), -1); if (!isClosed(pmc) && monthHasData(pmc)) out.push(['ปิดงวด ' + monthName(pmc), 'ยังไม่ปิดงวดเดือนที่แล้ว', '#/months']);
+  if (Store.undec) out.push(['มีข้อมูลที่เปิดไม่ได้ ' + Store.undec + ' รายการ', 'ดูรายละเอียดและวิธีกู้คืนในหน้าสำรองข้อมูล', '#/data']);
   if (!isStandalone()) out.push(['ติดตั้งแอปลงหน้าจอหลัก', 'iPhone: ปุ่มแชร์ → เพิ่มไปยังหน้าจอโฮม · Android: เมนู ⋮ → ติดตั้งแอป ป้องกันมือถือลบข้อมูลเอง', '#/guide/staff']);
   return out;
 }
@@ -945,6 +953,7 @@ function vToday() {
     '<nav class="menu mw" aria-label="เมนูลัด">' + menu.map(function (m) { return '<a href="' + m[0] + '"><span class="mi' + (m[3] ? ' q' : '') + '">' + icon(m[1], 24, m[3] ? '#fff' : '#2b2b2b') + '</span>' + m[2] + '</a>'; }).join('') + '</nav>' +
     '<a class="hsearch" href="#/search" role="search">' + icon('search', 20) + '<span>ค้นหา Lead ชื่อ เบอร์ เลข QT / SO</span></a></div>';
   var body = '<div class="stack">' + head + top + todayCard(D) + actionCard(D, lastBak) + weekStrip(t) + checklistCard() + '</div>';
+  if (!S.bakAsked && bakDue()) { S.bakAsked = true; setTimeout(function () { var h = location.hash || '#/today'; if (Cx.key && h === '#/today' && !$('#modal .modalbg')) openBakAsk(); }, 900); }
   return shell({ title: 'หน้าแรก', noTop: true }, body);
 }
 function todayRow(p, tm, sub, col, opts) {
@@ -973,7 +982,7 @@ function todayCard(D) {
   if (today.length) rows = today.slice(0, 3).map(function (x) { return todayRow(x.p, x.p.nextTime ? x.p.nextTime + '<small>น.</small>' : 'วันนี้<small>ไม่ระบุเวลา</small>', apptSub(x.p)); }).join('');
   else if (D.ahead.length) { title = 'วันนี้ไม่มีนัด · นัดถัดไป'; rows = D.ahead.slice(0, 3).map(function (p) { var dd = parseISO(p.nextDate); return todayRow(p, (p.nextDate === tm1 ? 'พรุ่งนี้' : TH_DAY[dd.getDay()]) + '<small>' + be(p.nextDate).slice(0, 5) + (p.nextTime ? ' · ' + p.nextTime : '') + '</small>', apptSub(p)); }).join(''); }
  else if (liveProjects().some(function (p) { return ACTIVE.indexOf(p.status) >= 0; })) { title = 'ควรติดต่อ'; var sg = suggestList().slice(0, 3); rows = sg.length ? sg.map(function (x) { return todayRow(x.p, '•', esc(x.why) + ' · ยอดคาดการณ์ ' + fmt(x.p.estimate), 'var(--text-strong)', { set: true }); }).join('') : '<span class="small muted">ทุก Lead มีนัดหรือติดตามล่าสุดแล้ว ลองหา Lead ใหม่</span>'; foot = '<span class="small" style="border-top:1px solid var(--line);padding-top:8px">ระบบแนะนำจากวันที่คาดว่าจะปิด สถานะหน้างาน และวันที่ติดต่อล่าสุด</span>'; }
-  else return '<section class="card stack" style="gap:10px;padding:16px;align-items:flex-start"><b class="strong" style="font-size:16px">เริ่มต้นวันแรก</b><span class="small">ยังไม่มี Lead ในเครื่องนี้ บันทึก Lead แรกได้ใน 30 วินาที</span><a class="btn primary" href="#/quick">+ Lead แรก</a><a href="#/guide/staff" class="small" style="font-weight:700">อ่านคู่มือใช้งาน</a></section>';
+  else return '<section class="card stack" style="gap:10px;padding:16px;align-items:flex-start"><b class="strong" style="font-size:16px">เริ่มต้นวันแรก</b><span class="small">ยังไม่มี Lead ในเครื่องนี้ บันทึก Lead แรกได้ใน 30 วินาที</span><a class="btn primary" href="#/quick">+ Lead แรก</a><a href="#/data" class="small" style="font-weight:700">ย้ายมาจากเครื่องเดิม? กู้คืนจากไฟล์สำรอง</a><a href="#/guide/staff" class="small" style="font-weight:700">อ่านคู่มือใช้งาน</a></section>';
   return '<section class="card stack" style="gap:0;padding:14px" aria-labelledby="td-h"><div class="between" style="padding-bottom:4px"><b id="td-h" class="strong" style="font-size:16px">' + title + '</b><a href="#/plan" style="font-weight:700;font-size:14px">ดูแผนงาน ›</a></div>' + rows + foot + '</section>';
 }
 function actionCard(D, lastBak) {
@@ -1421,7 +1430,7 @@ function projExtras(p) {
 function vProject(id) {
   var p = projById(id); if (!p || p.deleted) return vNotFound();
   var fs = followsOf(id), ss = salesOf(id), idx = PIPE.indexOf(p.status);
-  var hero = (p.photos || []).length ? '<div class="hero n' + Math.min(3, p.photos.length) + '">' + p.photos.map(function (ph, i) { return '<div><img data-photo="' + esc(ph) + '" alt="รูปหน้างาน ' + (i + 1) + '"></div>'; }).join('') + '</div>' : '';
+  var hero = (p.photos || []).length ? '<div class="hero n' + Math.min(3, p.photos.length) + '">' + p.photos.map(function (ph, i) { return '<div><img data-photo="' + esc(ph) + '" alt="รูปหน้างาน ' + (i + 1) + '"></div>'; }).join('') + '</div>' : p.photosPurged ? '<div class="ex">ลบรูป ' + p.photosPurged + ' รูปเพื่อคืนพื้นที่เมื่อ ' + be(p.photosPurgedAt) + ' กู้คืนได้จากไฟล์สำรองแบบรวมรูป</div>' : '';
   var pipe = '<div class="pipe" aria-label="ขั้นการขาย: ' + esc(p.status) + '">' + PIPE.map(function (s, i) { return '<div class="' + (i < idx ? 'done' : i === idx ? 'cur' : '') + '"><span></span><small' + (i === idx ? ' class="strong"' : '') + '>' + esc(s.replace('แล้ว', '')) + '</small></div>'; }).join('') + '</div>';
  var info = [['ยอดที่คาดว่าจะได้', fmt(p.estimate) + ' บาท'], ['วันที่คาดว่าจะปิด', p.closingDateNA ? '-' : be(p.closingDate)], ['สถานะหน้างาน', siteLabel(p.site) + (p.siteAt && p.site ? ' (ตั้งแต่ ' + be(p.siteAt) + ')' : '')], ['ประเภทสินค้าที่เสนอ', prodText(p) || '-'], ['ช่องทางการติดต่อ', dvFull(p, 'channel') || '-'], ['ลักษณะงาน', p.pform || '-']];
   var rk = reviewKeys(p), leg = p.legacy || {};
@@ -1694,25 +1703,22 @@ function vSummary() {
   return shell({ title: 'สรุปส่ง Teams', action: '<button class="btn primary" data-act="copy">คัดลอกข้อความ (Power Automate)</button>' }, body);
 }
 
-function vData() {
+function vData(sub) {
   var st = Store.state, n = Store.unsynced();
-  var body = '<div class="stack">' +
-    '<div class="card stack" style="gap:10px;border:1.5px solid var(--accent)"><b class="strong">สำรองข้อมูลเข้ารหัส</b><div class="between small"><span>สำรองล่าสุด</span><b class="strong">' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง') + '</b></div>' +
-    '<div class="field"><label for="bp">รหัสผ่านไฟล์สำรอง (อย่างน้อย 8 ตัวอักษร)</label><input id="bp" class="inp" type="password" autocomplete="new-password" data-bind-ui="bpass"></div>' +
-    '<div class="grid2"><button class="btn" data-act="backup">สำรองตอนนี้</button><label class="btn" style="position:relative">กู้คืน<input type="file" accept=".json,application/json" data-restore="1" style="position:absolute;inset:0;opacity:0" aria-label="เลือกไฟล์สำรองเพื่อกู้คืน"></label></div>' +
- '<div class="between"><span id="bap" class="small">รวมรูปของ Lead ที่จบแล้ว (ไฟล์ใหญ่ขึ้น)</span><button type="button" class="switch" role="switch" aria-labelledby="bap" aria-checked="' + !!S.ui.bAllPhotos + '" data-act="bphotos"></button></div>' +
- '<span class="hint">ไฟล์สำรองมีข้อมูลทั้งหมด และรูปของ Lead ที่ยังติดตามอยู่ ใช้รหัสผ่านเดียวกันตอนกู้คืน หากลืมรหัสผ่านจะเปิดไฟล์ไม่ได้</span></div>' +
+  if (sub === 'export') return shell({ title: 'ส่งออก Excel', back: '#/data' }, '<div class="stack">' +
     '<div class="card stack" style="gap:10px"><div class="between"><b class="strong">ส่งออก Excel (ฉบับเต็ม)</b></div><span class="small">สำหรับหัวหน้าหรือใช้งานภายใน มีชื่อ เบอร์ LINE ที่อยู่ พิกัด และ sheet Contacts</span>' +
     '<div class="between small"><span>ส่งออกล่าสุด</span><b class="strong">' + (st.lastExport ? be(st.lastExport) : 'ยังไม่เคยส่งออก') + '</b></div>' +
  '<div class="card" style="background:#f6f6f6;border:0"><b class="strong">' + esc(exportName()) + '</b><br><span class="small">Sheet โครงการ ' + liveProjects().length + ' แถว · การติดตาม ' + liveFollows().length + ' แถว · SO ' + liveSales().length + ' แถว</span></div>' +
     '<button class="btn primary block" data-act="export">ส่งออก Excel ฉบับเต็ม</button>' +
     '<span class="small strong" style="font-weight:500">ไฟล์ Excel ไม่เข้ารหัส เก็บไว้ในพื้นที่ของบริษัทฯ เท่านั้น</span></div>' +
- '<div class="card stack" style="gap:10px"><b class="strong">ส่งออกสำหรับวิเคราะห์ (ไม่มีข้อมูลส่วนบุคคล)</b><span class="small">สำหรับส่งให้ AI หรือทำรายงาน ตัดชื่อ Lead ชื่อและเบอร์ผู้ติดต่อ LINE ที่อยู่ พิกัด ข้อความอิสระ และ sheet Contacts ออก เหลือรหัส Lead ประเภทต่าง ๆ ขั้นการขาย วันที่ และตัวเลข พร้อม sheet คำอธิบายคอลัมน์</span><span class="small strong">' + esc(exportName().replace(/\.xlsx$/, '_ANALYSIS.xlsx')) + '</span><button class="btn block" data-act="exportanon">ส่งออกสำหรับวิเคราะห์</button><span class="small">ใช้กับ AI ที่บริษัทอนุมัติเท่านั้น เช่น Copilot ของบริษัท</span></div>' +
+ '<div class="card stack" style="gap:10px"><b class="strong">ส่งออกสำหรับวิเคราะห์ (ไม่มีข้อมูลส่วนบุคคล)</b><span class="small">สำหรับส่งให้ AI หรือทำรายงาน ตัดชื่อ Lead ชื่อและเบอร์ผู้ติดต่อ LINE ที่อยู่ พิกัด ข้อความอิสระ และ sheet Contacts ออก เหลือรหัส Lead ประเภทต่าง ๆ ขั้นการขาย วันที่ และตัวเลข พร้อม sheet คำอธิบายคอลัมน์</span><span class="small strong">' + esc(exportName().replace(/\.xlsx$/, '_ANALYSIS.xlsx')) + '</span><button class="btn block" data-act="exportanon">ส่งออกสำหรับวิเคราะห์</button><span class="small">ใช้กับ AI ที่บริษัทอนุมัติเท่านั้น เช่น Copilot ของบริษัท</span></div>' + '</div>');
+  if (sub === 'import') return shell({ title: 'นำเข้าข้อมูลเดิม', back: '#/data' }, '<div class="stack">' +
  '<div class="card stack" style="gap:10px"><b class="strong">นำเข้าข้อมูลเดิมจาก Excel</b><span class="small">รองรับไฟล์ .xlsx หรือ .csv ที่มีหัวคอลัมน์ตามแบบเดิมของทีม (Date, ช่องทางการติดต่อ, Project Type, ชื่อโครงการ, ชื่อผู้ติดต่อ, เบอร์ติดต่อ, Note, สถานะ ฯลฯ) แถวที่ชื่อโครงการซ้ำกันจะรวมเป็น Lead เดียว และแต่ละแถวเป็นประวัติการติดตาม 1 ครั้ง ระบบแสดงผลให้ตรวจก่อนนำเข้าจริง</span>' +
     '<button class="btn" data-act="template">ดาวน์โหลดไฟล์ต้นแบบสำหรับกรอกข้อมูลเดิม</button><label class="btn" style="position:relative">เลือกไฟล์ Excel / CSV<input type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-import="1" style="position:absolute;inset:0;opacity:0" aria-label="เลือกไฟล์ข้อมูลเดิม"></label>' + importPreview() +
- (st.imports || []).map(function (b) { return '<div class="between small" style="border-top:1px solid #f0f0f0;padding-top:8px"><span>' + esc(b.file) + ' · ' + be(b.at) + ' · ' + b.projects + ' ราย</span><button class="btn small danger" data-act="undoimport" data-id="' + esc(b.id) + '">ยกเลิกการนำเข้า</button></div>'; }).join('') + '</div>' +
-    '<a class="card link between" href="#/months"><span><b class="strong">ประวัติรายเดือน · ปิดงวด · ล้างข้อมูลเก่า</b></span><b aria-hidden="true">›</b></a>' +
-    '<details class="fold"><summary>ข้อมูลทางเทคนิค</summary><div class="card stack" style="gap:6px"><b class="strong">ความพร้อมย้ายขึ้นฐานข้อมูลกลาง</b><div class="between small"><span>รูปแบบข้อมูล</span><b class="strong">เวอร์ชัน ' + SCHEMA_VERSION + '</b></div><div class="between small"><span>รายการที่ยังไม่ส่งขึ้น server</span><b class="strong">' + n + ' รายการ</b></div><div class="between small"><span>การเชื่อมต่อ server</span><b>ยังไม่เปิดใช้ (ช่วงทดลอง)</b></div><div class="between small"><span>พื้นที่จัดเก็บถาวร</span><b id="persist">กำลังตรวจสอบ</b></div></div>' + '</details>' +
+ (st.imports || []).map(function (b) { return '<div class="between small" style="border-top:1px solid #f0f0f0;padding-top:8px"><span>' + esc(b.file) + ' · ' + be(b.at) + ' · ' + b.projects + ' ราย</span><button class="btn small danger" data-act="undoimport" data-id="' + esc(b.id) + '">ยกเลิกการนำเข้า</button></div>'; }).join('') + '</div>' + '</div>');
+  var body = '<div class="stack">' + iosCard() + stCard() + bakCard() + rsCard() +
+    '<h2 class="lhead" style="margin-bottom:0">จัดการและส่งออก</h2><div class="lgroup">' + lrow('#/manage', 'trash', 'จัดการพื้นที่และลบข้อมูล', 'ลบรูปเก่า · ล้างข้อมูลรายเดือน · ล้างทั้งหมด', '', 'hl') + lrow('#/data/export', 'list', 'ส่งออก Excel', 'ฉบับเต็ม · ฉบับวิเคราะห์ไม่มีข้อมูลส่วนบุคคล', '') + lrow('#/data/import', 'upload', 'นำเข้าข้อมูลเดิมจาก Excel', 'มีไฟล์ต้นแบบให้ดาวน์โหลด', '') + '</div>' +
+    '<details class="fold"><summary>ข้อมูลทางเทคนิค</summary><div class="card stack" style="gap:6px"><b class="strong">ความพร้อมย้ายขึ้นฐานข้อมูลกลาง</b><div class="between small"><span>รูปแบบข้อมูล</span><b class="strong">เวอร์ชัน ' + SCHEMA_VERSION + '</b></div><div class="between small"><span>รายการที่ยังไม่ส่งขึ้น server</span><b class="strong">' + n + ' รายการ</b></div><div class="between small"><span>การเชื่อมต่อ server</span><b>ยังไม่เปิดใช้ (ช่วงทดลอง)</b></div></div>' + '</details>' +
     '</div>';
   return shell({ title: 'ข้อมูลและสำรองข้อมูล', back: '#/today' }, body);
 }
@@ -1744,7 +1750,7 @@ function vSettings() {
     grp('งานประจำ', [lrow('#/summary', 'send', 'สรุปส่ง Teams', 'ข้อความสรุปรายวัน รายสัปดาห์ รายเดือน', ''), lrow('#/data', 'db', 'สำรองข้อมูล · ส่งออก Excel · กู้คืน', 'สำรองล่าสุด ' + (st.lastBackup ? be(st.lastBackup) : 'ยังไม่เคยสำรอง'), ''), lrow('#/months', 'cal', 'ประวัติรายเดือน · ปิดงวด', '', !isClosed(addMonths(curMonth(), -1)) && monthHasData(addMonths(curMonth(), -1)) ? '<b class="dangerText">ค้างปิดงวด</b>' : '')]) +
  grp('คู่มือและข้อมูล', [lrow('#/guide/staff', 'help', 'คู่มือใช้งาน', '', ''), lrow('#/rules', 'list', '<b>กติกาการใช้งาน</b>', 'วิธีเลือกข้อมูล ขั้นการขาย การนับผลงาน อุปกรณ์ที่รองรับ', '', 'hl'), lrow('#/setup', 'sliders', 'ข้อมูลหลัก (Master Data)', 'ประเภทอาคาร ลักษณะงาน ช่องทาง ประเภทการติดต่อ ประเภทสินค้า วาระนัด', ''), lrow('#/target', 'target', 'เป้ายอดขาย', 'ตั้งเป้ารายเดือนทั้งปี', tg ? fmt(tg.amount) : 'ยังไม่ตั้ง')]) +
     grp('บัญชีของฉัน', [lrow('#/profile', 'user', 'ข้อมูลพนักงาน', esc(p.name), esc(p.empId)), lrow('switchacct', 'logout', 'เปลี่ยนผู้ใช้', 'สำหรับเครื่องที่ใช้ร่วมกัน · ผู้ใช้ในเครื่องนี้ ' + (S.users || []).length + ' คน', '')]) +
-    grp('ข้อมูล', [lrow('#/data', 'upload', 'นำเข้าข้อมูลเดิมจาก Excel', 'มีไฟล์ต้นแบบให้ดาวน์โหลด', '')]) +
+    grp('ข้อมูล', [lrow('#/manage', 'trash', 'จัดการพื้นที่และลบข้อมูล', 'ลบรูปเก่า · ล้างข้อมูลรายเดือน · ล้างทั้งหมด', ''), lrow('#/data/import', 'upload', 'นำเข้าข้อมูลเดิมจาก Excel', 'มีไฟล์ต้นแบบให้ดาวน์โหลด', '')]) +
     grp('ความปลอดภัย', [lrow('#/security', 'shield', 'ล็อกอัตโนมัติและเปลี่ยน PIN', '', st.settings.autolock + ' นาที')]) +
     (st.onb.hidden || st.onb.doneAt ? grp('ช่วยเหลือ', [lrow('showcheck', 'list', 'แสดงเช็กลิสต์เริ่มต้นใช้งาน', '', '')]) : '') +
     '<div class="lgroup" style="margin-top:16px">' + lrow('lock', 'logout', 'ล็อกแอปตอนนี้', '', '', 'danger') + '</div>' +
@@ -1758,7 +1764,7 @@ function vProfile() {
     '<div class="grid2"><div class="field"><label for="p-br">สาขา</label><input id="p-br" class="inp" data-pf="branch" value="' + esc(p.branch) + '" maxlength="60"></div><div class="field"><label for="p-tm">ทีม</label><input id="p-tm" class="inp" data-pf="team" value="' + esc(p.team) + '" maxlength="60"></div></div>' +
  '<span class="hint">เมื่อแก้ไข ระบบจะถามว่าต้องการปรับข้อมูล Lead การติดตาม และ SO เดิมให้เป็นข้อมูลใหม่ด้วยหรือไม่</span>' +
     '<button class="btn small primary" data-act="saveprofile">บันทึกข้อมูลพนักงาน</button></div>' +
-    '<details class="fold"><summary>การจัดการบัญชี</summary><div class="card stack" style="gap:8px"><span class="small">ลบข้อมูลทั้งหมดของผู้ใช้นี้ในเครื่องนี้ ใช้เมื่อคืนเครื่องหรือย้ายเครื่อง ควรสำรองข้อมูลก่อน</span><button class="btn danger block" data-act="wipe">ล้างข้อมูลทั้งหมดของผู้ใช้นี้</button></div></details>' +
+    '<a class="card link between" href="#/manage"><span class="small">ล้างข้อมูลทั้งหมดของผู้ใช้นี้ ย้ายไปอยู่ที่หน้า <b class="strong">จัดการพื้นที่และลบข้อมูล</b></span><b aria-hidden="true">›</b></a>' +
  (function () { var n = codeMismatch().length; return n ? '<div class="card warn stack" style="gap:8px"><b class="strong">มี Lead ' + n + ' รายการที่รหัสยังใช้ Emp ID เดิม</b><span class="small">เปลี่ยนเป็น PS-' + esc(p.empId) + '-xxxx ได้ รหัสเดิมยังค้นหาได้</span><button class="btn small" data-act="renamecodes">เปลี่ยนรหัส Lead</button></div>' : ''; })() + '</div>';
   return shell({ title: 'ข้อมูลพนักงาน', back: '#/settings' }, body);
 }
@@ -2731,7 +2737,8 @@ function render() {
     case 'security': html = vSecurity(); break;
     case 'perf': html = vPerf(); break;
     case 'summary': html = vSummary(); break;
-    case 'data': html = vData(); break;
+    case 'data': html = vData(parts[1]); break;
+    case 'manage': html = vManage(); break;
     case 'settings': html = vSettings(); break;
     case 'setup': html = vSetup(); break;
     case 'rules': html = vRules(); break;
@@ -2747,7 +2754,7 @@ function render() {
   document.documentElement.classList.toggle('appshell', !!app.querySelector('.shell'));
   a11yPass(app);
   if (parts[0] === 'projects') renderPList();
-  if (parts[0] === 'data') checkPersist();
+  if (parts[0] === 'data' || parts[0] === 'manage') refreshStorage();
   if (parts[0] === 'search') { renderHS(); var hs0 = $('#hs'); if (hs0) setTimeout(function () { try { hs0.focus(); } catch (e) { } }, 30); }
   if (parts[0] === 'project' && parts[1] && projById(parts[1])) noteRecent(parts[1]);
   $all('img[data-photo]').forEach(function (img) { Store.photo(img.dataset.photo).then(function (u) { if (u) img.src = u; }); });
@@ -2779,6 +2786,7 @@ document.addEventListener('input', function (e) {
   var t = e.target; touch();
   if (t.dataset.bind && S.draft) { var pa = t.dataset.num ? parseAmt(t.value) : null; S.draft[t.dataset.bind] = t.dataset.num ? (pa == null || isNaN(pa) ? '' : pa) : t.value; if (t.value && S.draft[t.dataset.bind + 'NA']) S.draft[t.dataset.bind + 'NA'] = false; if (S.ui.errors && S.ui.errors[t.dataset.bind]) { delete S.ui.errors[t.dataset.bind]; } }
   if (t.dataset.bindUi) S.ui[t.dataset.bindUi] = t.value;
+  if (t.id === 'bp') { var pm = $('#bp-m'); if (pm) pm.innerHTML = pwMeter(t.value); }
   if (t.dataset.live === 'q') { S.ui.q = t.value; renderPList(); }
   if (t.dataset.live === 'hs') { S.ui.hs = t.value; renderHS(); }
 });
@@ -2800,10 +2808,11 @@ document.addEventListener('change', function (e) {
   if (t.dataset.due) { var dsx = saleById(t.dataset.due); if (dsx) { dsx.dueDate = t.value; Store.save(dsx).then(function () { toast('บันทึกกำหนดชำระแล้ว'); rerender(); }); } }
   if (t.dataset.actChange === 'autolock') { Store.state.settings.autolock = +t.value; Store.saveState(); toast('บันทึกแล้ว'); }
   if (t.dataset.photoSlot != null && t.files && t.files[0]) { addPhoto(+t.dataset.photoSlot, t.files[0]); t.value = ''; }
-  if (t.dataset.restore && t.files && t.files[0]) { restoreBackup(t.files[0]); t.value = ''; }
+  if (t.dataset.restore && t.files && t.files[0]) { openRestoreAsk(t.files[0]); t.value = ''; }
+  if (t.dataset.pg) { S.ui.pg = S.ui.pg || { lost: true, won: true, hold: false }; S.ui.pg[t.dataset.pg] = t.checked; rerender(); }
   if (t.dataset.import && t.files && t.files[0]) { readImportFile(t.files[0]); t.value = ''; }
 });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('#pfh')) { H.pfdone(); return; } if (e.key === 'Enter' && e.target.id === 'pin') H.unlock(); if ((e.key === ' ' || e.key === 'Enter') && e.target.getAttribute && e.target.getAttribute('role') === 'checkbox') { e.preventDefault(); e.target.click(); } if (e.key === 'Enter' && e.target.id === 'hs') { var r = hsFind(S.ui.hs); if (r.length === 1) location.hash = '#/project/' + r[0].p.id; else if (r.length) H.hsall(); } });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('#pfh')) { H.pfdone(); return; } if (e.key === 'Enter' && e.target.id === 'pin') H.unlock(); if (e.key === 'Enter' && e.target.id === 'rs-p') { e.preventDefault(); H.rscheck(); } if ((e.key === ' ' || e.key === 'Enter') && e.target.getAttribute && e.target.getAttribute('role') === 'checkbox') { e.preventDefault(); e.target.click(); } if (e.key === 'Enter' && e.target.id === 'hs') { var r = hsFind(S.ui.hs); if (r.length === 1) location.hash = '#/project/' + r[0].p.id; else if (r.length) H.hsall(); } });
 document.addEventListener('click', function (e) {
   touch();
   var cl = e.target.closest('a[data-call]');
@@ -2840,6 +2849,16 @@ var H = {
   geotoggle: function () { S.draft.geo = !S.draft.geo; rerender(); },
   detail: function () { S.ui.detail = !S.ui.detail; rerender(); },
   bphotos: function () { S.ui.bAllPhotos = !S.ui.bAllPhotos; rerender(); },
+  pgage: function (t) { S.ui.pgAge = +t.dataset.v; rerender(); },
+  pgdel: function () { openPurge(); },
+  pgclose: function () { if (!S.pgBusy) $('#modal').innerHTML = ''; },
+  pgrun: function () { runPurge(); },
+  pgbak: function () { S.ui.bAllPhotos = true; $('#modal').innerHTML = ''; location.hash = '#/data'; setTimeout(function () { var f = $('#bp'); if (f) { f.focus(); f.scrollIntoView({ block: 'center' }); } }, 80); },
+  rsclose: function () { if (S.rBusy) return; S.rfile = null; S.rpkg = null; S.rplan = null; $('#modal').innerHTML = ''; },
+  rscheck: function () { checkRestore(); },
+  rsapply: function () { applyRestore(); },
+  qclose: function () { $('#modal').innerHTML = ''; },
+  qgo: function () { $('#modal').innerHTML = ''; location.hash = '#/manage'; },
   period: function (t) { S.ui.period = t.dataset.v; rerender(); },
   mstep: function (t) { var m = addMonths(S.ui.month || monthOf(todayISO()), +t.dataset.v); if (m > monthOf(todayISO())) return; S.ui.month = m; rerender(); },
   pf: function (t) { S.ui.pf = t.dataset.v; S.ui.limit = 20; S.ui.pst = ''; $all('[data-act="pf"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.ui.pf); }); renderPList(); },
@@ -2930,8 +2949,14 @@ var H = {
   export: function () { exportExcel(); },
   exportanon: function () { exportExcel(null, true); },
   backup: function () { makeBackup(); },
+  bakshare: function () { var b = S.bak; if (!b) return; var f = new File([b.blob], b.name, { type: 'application/json' });
+    navigator.share({ files: [f], title: 'ไฟล์สำรอง PS Tracker' }).then(function () { return markBackup().then(function () { closeBak(); toast('บันทึกไฟล์สำรองแล้ว'); rerender(); }); })
+      .catch(function (e) { toast(e && e.name === 'AbortError' ? 'ยังไม่ได้บันทึกไฟล์ กดบันทึกอีกครั้งได้' : 'เปิดหน้าแชร์ไม่ได้ ใช้ปุ่มดาวน์โหลดแทน'); }); },
+  bakdl: function () { var b = S.bak; if (!b) return; download(b.blob, b.name); markBackup().then(function () { closeBak(); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); rerender(); }); },
+  bakclose: function () { closeBak(); },
+  baklater: function () { Store.state.bakSnooze = addDays(todayISO(), 3); Store.saveState().then(function () { closeBak(); }); },
   wipe: function () {
- confirmBox('ล้างข้อมูลทั้งหมด', 'ข้อมูล Lead การติดตาม SO และรูปทั้งหมดของผู้ใช้นี้ในเครื่องนี้จะถูกลบถาวร (ข้อมูลของผู้ใช้อื่นในเครื่องไม่ถูกลบ) ควรสำรองข้อมูลก่อน ต้องการล้างใช่หรือไม่', 'ล้างข้อมูล', true).then(function (ok) { if (!ok) return; wipeAll(); });
+ confirmBox('ล้างข้อมูลทั้งหมด', 'ข้อมูล Lead การติดตาม SO และรูปทั้งหมดของผู้ใช้นี้ในเครื่องนี้จะถูกลบถาวร (ข้อมูลของผู้ใช้อื่นในเครื่องไม่ถูกลบ) ควรสำรองข้อมูลแบบรวมรูปก่อน ต้องการล้างใช่หรือไม่', 'ล้างข้อมูล', true).then(function (ok) { if (!ok) return false; return typeConfirm('ยืนยันการล้างข้อมูล', 'พิมพ์ Emp ID ของบัญชีนี้เพื่อยืนยัน ข้อมูลที่ล้างแล้วกู้คืนได้จากไฟล์สำรองเท่านั้น', (S.user && S.user.empId) || P().empId || ''); }).then(function (ok) { if (ok) wipeAll(); });
   },
   saveprofile: function () {
     var p = P(), old = { empId: p.empId, name: p.name, branch: p.branch, team: p.team }, nv = {};
@@ -3106,7 +3131,7 @@ function copyText(txt) {
 }
 function fallbackCopy(txt) { var ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) { } ta.remove(); return ok; }
 function download(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
-function checkPersist() { var el = $('#persist'); if (!el) return; if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(function (v) { el.textContent = v ? 'เปิดใช้แล้ว' : 'ยังไม่เปิดใช้ (ควรติดตั้งแอป)'; el.className = v ? 'okText' : 'dangerText'; }); else el.textContent = 'ไม่รองรับ'; }
+function checkPersist() { var el = $('#persist'); if (!el) return; if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then(function (v) { el.textContent = v ? 'เปิดใช้แล้ว' : 'ยังไม่เปิดใช้'; el.className = v ? 'okText' : 'dangerText'; }); else el.textContent = 'ไม่รองรับ'; }
 function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
 
 /* ---------------- options code ---------------- */
@@ -3164,31 +3189,42 @@ function zipStore(files) {
 }
 function xesc(s) { return String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+var MONEY_COL = /^(ยอดที่คาดว่าจะได้|มูลค่า|DP \(|รับชำระแล้ว$|คงเหลือ$|ยอดรับชำระ$|SO \S|ใบเสนอราคา \S)/;
 function sheetXml(sh) {
-  var header = sh.header, rows = sh.rows, all = [header].concat(rows);
-  var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' +
+  var header = sh.header, rows = sh.rows, all = [header].concat(rows), money = header.map(function (h) { return MONEY_COL.test(String(h)); });
+  var x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' + (sh.fitPage ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '') + '<sheetViews>' + (sh.noFreeze ? '<sheetView workbookViewId="0"' + (sh.active ? ' tabSelected="1"' : '') + '/>' : '<sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView>') + '</sheetViews><cols>' +
     header.map(function (h, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (sh.widths && sh.widths[i] ? sh.widths[i] : Math.min(40, Math.max(12, String(h).length + 4))) + '" customWidth="1"/>'; }).join('') + '</cols><sheetData>';
   all.forEach(function (r, ri) {
     x += '<row r="' + (ri + 1) + '">';
     r.forEach(function (v, ci) {
       var ref = colName(ci) + (ri + 1);
       if (v === null || v === undefined || v === '') return;
-      if (typeof v === 'number' && isFinite(v)) x += '<c r="' + ref + '"' + (ri === 0 ? ' s="1"' : '') + '><v>' + v + '</v></c>';
+      if (typeof v === 'object') {
+        var st = v.s != null ? ' s="' + v.s + '"' : '', cv = v.v;
+        if (v.f) x += '<c r="' + ref + '"' + st + (typeof cv === 'number' ? '' : ' t="str"') + '><f>' + xesc(v.f) + '</f><v>' + (typeof cv === 'number' && isFinite(cv) ? cv : xesc(cv == null ? '' : cv)) + '</v></c>';
+        else if (typeof cv === 'number' && isFinite(cv)) x += '<c r="' + ref + '"' + st + '><v>' + cv + '</v></c>';
+        else if (cv === '' || cv == null) x += '<c r="' + ref + '"' + st + '/>';
+        else x += '<c r="' + ref + '" t="inlineStr"' + st + '><is><t xml:space="preserve">' + xesc(cv) + '</t></is></c>';
+        return;
+      }
+      if (typeof v === 'number' && isFinite(v)) x += '<c r="' + ref + '"' + (ri === 0 ? ' s="1"' : money[ci] ? ' s="2"' : '') + '><v>' + v + '</v></c>';
       else x += '<c r="' + ref + '" t="inlineStr"' + (ri === 0 ? ' s="1"' : '') + '><is><t xml:space="preserve">' + xesc(v) + '</t></is></c>';
     });
     x += '</row>';
   });
   x += '</sheetData>' + (sh.noFilter ? '' : '<autoFilter ref="A1:' + colName(header.length - 1) + Math.max(1, all.length) + '"/>');
+  if (sh.dataBars && sh.dataBars.length) x += sh.dataBars.map(function (q, i) { return '<conditionalFormatting sqref="' + q + '"><cfRule type="dataBar" priority="' + (i + 1) + '"><dataBar><cfvo type="min"/><cfvo type="max"/><color rgb="FFFFBF0F"/></dataBar></cfRule></conditionalFormatting>'; }).join('');
   if (sh.validations && sh.validations.length) x += '<dataValidations count="' + sh.validations.length + '">' + sh.validations.map(function (v) { return '<dataValidation type="list" allowBlank="1" showErrorMessage="1" errorStyle="warning" errorTitle="ไม่อยู่ในรายการ" error="ค่านี้ไม่อยู่ในรายการตัวเลือก ระบบจะนำเข้าตามที่พิมพ์" sqref="' + v.sqref + '"><formula1>' + xesc(v.list) + '</formula1></dataValidation>'; }).join('') + '</dataValidations>';
+  if (sh.fitPage) x += '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/>';
   return x + '</worksheet>';
 }
 function buildXlsx(sheets, filesOnly) {
   var files = [
     { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>' },
     { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
-    { name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map(function (s, i) { return '<sheet name="' + xesc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets>' + '<definedNames>' + sheets.map(function (s, i) { return '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">\'' + xesc(s.name) + '\'!$A$1:$' + colName(s.header.length - 1) + '$' + (s.rows.length + 1) + '</definedName>'; }).join('') + '</definedNames></workbook>' },
+    { name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' + (function () { var a = sheets.map(function (s) { return !!s.active; }).indexOf(true); return a > 0 ? '<bookViews><workbookView activeTab="' + a + '"/></bookViews>' : ''; })() + '<sheets>' + sheets.map(function (s, i) { return '<sheet name="' + xesc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets>' + '<definedNames>' + sheets.map(function (s, i) { return '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">\'' + xesc(s.name) + '\'!$A$1:$' + colName(s.header.length - 1) + '$' + (s.rows.length + 1) + '</definedName>'; }).join('') + '</definedNames><calcPr calcId="0" fullCalcOnLoad="1"/></workbook>' },
     { name: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
-    { name: 'xl/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Tahoma"/></font><font><b/><sz val="11"/><name val="Tahoma"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFBF0F"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>' }
+    { name: 'xl/styles.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0"/></numFmts><fonts count="4"><font><sz val="11"/><name val="Tahoma"/></font><font><b/><sz val="11"/><name val="Tahoma"/></font><font><b/><sz val="14"/><name val="Tahoma"/></font><font><sz val="10"/><color rgb="FF6B6B6B"/><name val="Tahoma"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFBF0F"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF0EFEC"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>' }
   ];
   sheets.forEach(function (s, i) { files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: sheetXml(s) }); });
   return filesOnly ? files : zipStore(files);
@@ -3261,6 +3297,94 @@ function anonSheets(sheets) {
   out.push({ name: 'คำอธิบายคอลัมน์', header: ['Sheet', 'คอลัมน์', 'ความหมาย'], rows: desc, widths: [18, 36, 90], noFilter: true });
   return out;
 }
+/* ---------- หน้าวิเคราะห์ในไฟล์ Excel: สูตรจริง + ค่าที่คำนวณไว้ (ให้แอปดูไฟล์บนมือถือที่ไม่คำนวณสูตรยังเห็นตัวเลข) ---------- */
+function xcmp(a, b) {
+  var ta = a === '' || a == null ? 'b' : typeof a === 'number' ? 'n' : 's', tb = typeof b === 'number' ? 'n' : 's';
+  if (ta === 'b') { a = tb === 'n' ? 0 : ''; ta = tb; }
+  if (ta !== tb) return ta === 'n' ? -1 : 1;
+  if (ta === 's') { a = String(a).toLowerCase(); b = String(b).toLowerCase(); }
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function anaSheet(sheets, ym, anon) {
+  var by = {}; sheets.forEach(function (x) { by[x.name] = x; });
+  var col = function (sn, h) { var x = by[sn]; if (!x) return null; var i = x.header.indexOf(h); return i < 0 ? null : i; };
+  var rng = function (sn, ci) { var n = Math.max(2, by[sn].rows.length + 1), c = colName(ci); return "'" + sn + "'!$" + c + '$2:$' + c + '$' + n; };
+  var lit = function (x) { return typeof x === 'number' ? String(x) : '"' + String(x).replace(/"/g, '""') + '"'; };
+  function term(sn, cd) {
+    var ci = col(sn, cd[0]); if (ci == null) return null;
+    var r = rng(sn, ci), op = cd[1], v = cd[2], R = cd[3] || (op === 'in' ? '' : lit(v));
+    var f = op === 'pre' ? '(LEFT(' + r + ',LEN(' + R + '))=' + R + ')' : op === 'eq' ? '(' + r + '=' + R + ')' : op === 'ne' ? '(' + r + '<>' + R + ')' : op === 'blank' ? '(' + r + '="")' : op === 'ge' ? '(' + r + '>=' + R + ')' : op === 'le' ? '(' + r + '<=' + R + ')' : op === 'gt' ? '(' + r + '>' + R + ')' : op === 'tlt' ? '(' + r + '>="2000")*(' + r + '<' + R + ')' : '(' + v.map(function (y) { return '(' + r + '=' + lit(y) + ')'; }).join('+') + ')';
+    var t = function (x) { return op === 'pre' ? typeof x === 'string' && x.slice(0, String(v).length) === String(v) : op === 'eq' ? xcmp(x, v) === 0 : op === 'ne' ? xcmp(x, v) !== 0 : op === 'blank' ? (x === '' || x == null) : op === 'ge' ? xcmp(x, v) >= 0 : op === 'le' ? xcmp(x, v) <= 0 : op === 'gt' ? xcmp(x, v) > 0 : op === 'tlt' ? xcmp(x, '2000') >= 0 && xcmp(x, v) < 0 : v.some(function (y) { return xcmp(x, y) === 0; }); };
+    return { f: f, test: function (row) { return t(row[ci]); } };
+  }
+  function F(sn, conds, sumH, st) {
+    var z = { f: '0', v: 0, s: st }; if (!by[sn]) return z;
+    var ts = conds.map(function (c) { return term(sn, c); }); if (!ts.length || ts.some(function (t) { return !t; })) return z;
+    var sci = sumH ? col(sn, sumH) : null; if (sumH && sci == null) return z;
+    var v = 0; by[sn].rows.forEach(function (r) { if (ts.every(function (t) { return t.test(r); })) v += sumH ? (typeof r[sci] === 'number' ? r[sci] : 0) : 1; });
+    return { f: 'SUMPRODUCT(1*' + ts.map(function (t) { return t.f; }).join('*') + (sumH ? '*' + rng(sn, sci) : '') + ')', v: v, s: st };
+  }
+  var pct = function (f, v) { return { f: f, v: v, s: 5 }; };
+  var M = ym || curMonth(), T = todayISO(), tg = targetFor(M), ACT = [ST.NEW, ST.PRES, ST.QUOTE], pf = P();
+  var STc = 'สถานะที่ติดตามโครงการ', EST = 'ยอดที่คาดว่าจะได้ Estimate Sale', SOV = 'มูลค่า SO (ก่อน VAT)', SOK = ['สถานะ SO', 'ne', 'ยกเลิก SO'];
+  var rows = [], bars = [], rn = function () { return rows.length + 2; };
+  var sec = function (t) { rows.push([]); rows.push([{ v: t, s: 4 }, { v: '', s: 4 }, { v: '', s: 4 }, { v: '', s: 4 }, { v: '', s: 4 }, { v: '', s: 4 }]); };
+  var hd = function (a) { rows.push(a.map(function (x) { return { v: x, s: 6 }; })); };
+  var note = function (t) { rows.push([{ v: t, s: 7 }]); };
+  note('สรุปจากข้อมูลใน sheet อื่นของไฟล์นี้ด้วยสูตร Excel แก้หรือเพิ่มข้อมูลในช่วงเดิมแล้วตัวเลขคำนวณใหม่ · ยอดเงินก่อน VAT · ร้อยละแสดงเป็นเลข 0–100');
+  rows.push(['เดือนที่วิเคราะห์', { v: M, s: 6 }, { v: 'แก้เป็นเดือนอื่นได้ รูปแบบ ปปปป-ดด (ค.ศ.)', s: 7 }]);
+  rows.push(['วันที่ข้อมูล', { v: T, s: 6 }, { v: 'ใช้คำนวณนัดที่เลยกำหนดและการชำระที่เลยกำหนด', s: 7 }]);
+  rows.push(['เป้ายอด SO ของเดือน (บาท)', tg && tg.amount ? { v: tg.amount, s: 2 } : '', { v: tg && tg.amount ? '' : 'ยังไม่ได้ตั้งเป้าในแอป', s: 7 }]);
+  // ก
+  sec('ก. ตัวเลขหลัก');
+  var newL = F('Projects', [['Date', 'pre', M, '$B$3'], ['รหัสโครงการหลัก', 'blank']]);
+  rows.push(['Lead ใหม่ในเดือน', newL, { v: 'ราย ไม่นับเฟสซื้อเพิ่ม', s: 7 }]);
+  var pipe = F('Projects', [[STc, 'in', ACT]], EST, 2); rows.push(['ยอดคาดการณ์ที่กำลังติดตาม', pipe, { v: 'บาท ขั้น Lead/Visit, Contact, Opportunity', s: 7 }]);
+  var soR = rn(), soM = F('Sales', [['วันที่ SO', 'pre', M, '$B$3'], SOK], SOV, 2); rows.push(['ยอด SO ในเดือน', soM, { v: 'บาท ไม่นับ SO ที่ยกเลิก', s: 7 }]);
+  rows.push(['ยอด SO เทียบเป้า', pct('IF(N($B$5)>0,B' + soR + '/$B$5*100,"")', tg && tg.amount ? soM.v / tg.amount * 100 : ''), { v: 'ร้อยละ', s: 7 }]);
+  var won = F('Projects', [[STc, 'eq', ST.WON]]), lost = F('Projects', [[STc, 'eq', ST.LOST]]);
+  rows.push(['อัตราปิดการขาย', pct('IF((' + won.f + '+' + lost.f + ')=0,"",' + won.f + '/(' + won.f + '+' + lost.f + ')*100)', won.v + lost.v ? won.v / (won.v + lost.v) * 100 : ''), { v: 'ร้อยละ Close Sale ÷ (Close Sale + ไม่ได้งาน) ของ Lead ในไฟล์', s: 7 }]);
+  rows.push(['ยอดค้างชำระ', F('Sales', [SOK], 'คงเหลือ', 2), { v: 'บาท', s: 7 }]);
+  // ข
+  sec('ข. สถานะการขาย (Funnel)'); hd(['สถานะ', 'จำนวน (ราย)', 'ร้อยละของทั้งหมด', 'ยอดคาดการณ์ (บาท)']);
+  var r0 = rn(), tot = r0 + STATUSES.length, cnts = STATUSES.map(function (x) { return F('Projects', [[STc, 'eq', x]]); }), all = cnts.reduce(function (a, c) { return a + c.v; }, 0);
+  STATUSES.forEach(function (x, i) { var r = r0 + i; rows.push([x, cnts[i], pct('IF($B$' + tot + '=0,"",B' + r + '/$B$' + tot + '*100)', all ? cnts[i].v / all * 100 : ''), F('Projects', [[STc, 'eq', x]], EST, 2)]); });
+  rows.push([{ v: 'รวม', s: 6 }, { f: 'SUM(B' + r0 + ':B' + (tot - 1) + ')', v: all, s: 6 }]); bars.push('B' + r0 + ':B' + (tot - 1));
+  // ค
+  sec('ค. ช่องทางการติดต่อ'); hd(['ช่องทาง', 'Lead (ราย)', 'Close Sale (ราย)', 'ไม่ได้งาน (ราย)', 'อัตราปิดการขาย (ร้อยละ)', 'ยอด SO (บาท)']);
+  var c0 = rn();
+  groupNames(O().channel).forEach(function (g) { var r = rn(), w = F('Projects', [['ช่องทางการติดต่อ', 'eq', g], [STc, 'eq', ST.WON]]), l = F('Projects', [['ช่องทางการติดต่อ', 'eq', g], [STc, 'eq', ST.LOST]]);
+    rows.push([g, F('Projects', [['ช่องทางการติดต่อ', 'eq', g]]), w, l, pct('IF((C' + r + '+D' + r + ')=0,"",C' + r + '/(C' + r + '+D' + r + ')*100)', w.v + l.v ? w.v / (w.v + l.v) * 100 : ''), F('Sales', [['ช่องทางการติดต่อ', 'eq', g], SOK], SOV, 2)]); });
+  bars.push('B' + c0 + ':B' + (rn() - 1));
+  // ง
+  sec('ง. ประเภทอาคาร'); hd(['ประเภทอาคาร', 'Lead (ราย)', 'กำลังติดตาม (ราย)', 'ยอดคาดการณ์กำลังติดตาม (บาท)', 'Close Sale (ราย)', 'ยอด SO (บาท)']);
+  var p0 = rn(), PT = 'Project Type ประเภทอาคาร';
+  groupNames(O().ptype).forEach(function (g) { rows.push([g, F('Projects', [[PT, 'eq', g]]), F('Projects', [[PT, 'eq', g], [STc, 'in', ACT]]), F('Projects', [[PT, 'eq', g], [STc, 'in', ACT]], EST, 2), F('Projects', [[PT, 'eq', g], [STc, 'eq', ST.WON]]), F('Sales', [['ประเภทอาคาร', 'eq', g], SOK], SOV, 2)]); });
+  bars.push('D' + p0 + ':D' + (rn() - 1));
+  // จ
+  sec('จ. อายุ Lead ที่กำลังติดตาม'); hd(['ช่วง', 'จำนวน (ราย)']);
+  var a0 = rn(), DY = 'จำนวนวันในขั้นปัจจุบัน', ac = [STc, 'in', ACT];
+  rows.push(['อยู่ขั้นเดิม 0–30 วัน', F('Projects', [ac, [DY, 'ge', 0], [DY, 'le', 30]])]);
+  rows.push(['อยู่ขั้นเดิม 31–60 วัน', F('Projects', [ac, [DY, 'ge', 31], [DY, 'le', 60]])]);
+  rows.push(['อยู่ขั้นเดิมเกิน 60 วัน', F('Projects', [ac, [DY, 'gt', 60]])]);
+  rows.push(['เลยนัด (นัดก่อนวันที่ข้อมูล)', F('Projects', [ac, ['นัดติดตามครั้งถัดไป', 'tlt', T, '$B$4']])]);
+  bars.push('B' + a0 + ':B' + (rn() - 1));
+  // ฉ
+  sec('ฉ. แนวโน้ม 12 เดือน'); hd(['เดือน', 'Lead ใหม่ (ราย)', 'ใบเสนอราคา (ใบ)', 'ยอด SO (บาท)', 'เป้า (บาท)', 'ยอด SO เทียบเป้า (ร้อยละ)']);
+  var m0 = rn();
+  for (var k = 11; k >= 0; k--) { var m = addMonths(M, -k), r = rn(), t2 = targetFor(m), so = F('Sales', [['วันที่ SO', 'pre', m, '$A' + r], SOK], SOV, 2);
+    rows.push([{ v: m }, F('Projects', [['Date', 'pre', m, '$A' + r], ['รหัสโครงการหลัก', 'blank']]), F('Quotations', [['วันที่', 'pre', m, '$A' + r]]), so, t2 && t2.amount ? { v: t2.amount, s: 2 } : '', pct('IF(N(E' + r + ')>0,D' + r + '/E' + r + '*100,"")', t2 && t2.amount ? so.v / t2.amount * 100 : '')]); }
+  bars.push('D' + m0 + ':D' + (rn() - 1));
+  if (ym) note('ไฟล์ปิดงวดรายเดือนมีข้อมูลการติดตาม SO และใบเสนอราคาเฉพาะเดือนนั้น เดือนอื่นจึงเป็นศูนย์ ใช้ไฟล์ส่งออกทั้งหมดเพื่อดูแนวโน้ม');
+  // ช
+  sec('ช. การเก็บเงิน'); hd(['รายการ', 'ยอด']);
+  rows.push(['มูลค่า SO รวม (บาท)', F('Sales', [SOK], SOV, 2)]);
+  rows.push(['รับชำระแล้ว (บาท)', F('Sales', [SOK], 'รับชำระแล้ว', 2)]);
+  rows.push(['คงเหลือ (บาท)', F('Sales', [SOK], 'คงเหลือ', 2)]);
+  rows.push(['SO ที่เลยกำหนดชำระ (ใบ)', F('Sales', [SOK, ['กำหนดชำระ', 'tlt', T, '$B$4'], ['คงเหลือ', 'gt', 0]])]);
+  var who = anon ? 'Emp ID ' + (pf.empId || '-') : (pf.name || '') + ' · ' + (pf.empId || '');
+  return { name: 'วิเคราะห์', header: [{ v: 'ผลการวิเคราะห์ Pipeline · ' + who + (pf.branch ? ' · ' + pf.branch : '') + (ym ? ' · ' + monthName(ym) : ''), s: 3 }, '', '', '', '', ''], rows: rows, widths: [38, 18, 18, 22, 20, 18], noFilter: true, noFreeze: true, active: true, fitPage: true, dataBars: bars };
+}
 function exportName(ym) { return 'PS_' + (P().empId || 'EMP').replace(/[^\w-]/g, '') + '_' + (ym || todayISO()) + '.xlsx'; }
 function exportExcel(ym, anon) {
   var dvx = anon ? function (p, f) { return p && p[f + 'Other'] ? 'อื่น ๆ' : dv(p, f); } : dv;
@@ -3281,8 +3405,8 @@ function exportExcel(ym, anon) {
   });
   var H2 = ['Follow ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'วันที่ติดต่อ', 'ชื่อโครงการ', 'ประเภทอาคาร', 'สถานะก่อน', 'สถานะหลัง', 'เหตุผลที่ไม่ได้งาน', 'Note รายละเอียดที่คุย', 'นัดครั้งถัดไป', 'ละติจูด', 'ลองจิจูด', 'ระยะห่างจากโครงการ (เมตร)', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด', 'วาระนัด', 'สิ่งที่ต้องเตรียม', 'สถานะหน้างาน', 'ประเภทการบันทึก', 'ผลการโทร', 'เวลานัด', 'แก้ไขหลังบันทึก'];
   var R2 = liveFollows().filter(function (f) { return inM(f.date); }).map(function (f) { var p = projById(f.projectId) || {}; return [f.id, f.projectId, p.code || '', f.empId, f.empName, f.branch, f.team, f.date, p.name || '', p.ptype || '', f.statusBefore, f.statusAfter, f.lostReason, f.note, f.nextDate, f.lat != null ? +f.lat.toFixed(6) : '', f.lng != null ? +f.lng.toFixed(6) : '', f.distance != null ? f.distance : '', localTs(f.createdAt), lagDays(f.date, f.createdAt, f.importFile), (f.updatedAt || '').slice(0, 19), agendaText(f.agenda, anon ? '' : f.agendaOther), f.prep || '', f.site ? siteLabel(f.site) : '', f.ctype === FIRST_CTYPE ? 'สร้างโครงการ' : f.ctype === 'โทร' ? 'โทร' : 'ติดตาม', f.callResult || '', f.nextTime || '', f.editedAt ? localTs(f.editedAt) : '']; });
-  var H3 = ['Sale ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'ชื่อโครงการ', 'ประเภทอาคาร', 'ประเภทการติดต่อ', 'เลขที่ใบสั่งขาย (SO No.)', 'วันที่ SO', 'มูลค่า SO (ก่อน VAT)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง', 'สถานะ SO', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด'].concat(O().product.map(function (k) { return 'SO ' + k; }), ['SO อื่น ๆ', 'อื่น ๆ (ระบุ)', 'ลูกค้าเดิม / เฟสซื้อเพิ่ม', 'รับชำระแล้ว', 'คงเหลือ', 'กำหนดชำระ', 'จำนวนครั้งที่เลื่อนจัดส่ง', 'เหตุผลเลื่อนจัดส่งล่าสุด']);
-  var R3 = liveSales().filter(function (s) { return inM(s.soDate); }).map(function (s) { var p = projById(s.projectId) || {}; return [s.id, s.projectId, p.code || '', s.empId, s.empName, s.branch, s.team, p.name || '', p.ptype || '', p.contactRole || '', s.soNo, s.soDate, s.soValue || 0, s.dp || 0, s.deliveryDate, s.soStatus, localTs(s.createdAt), lagDays(s.soDate, s.createdAt, s.importFile), (s.updatedAt || '').slice(0, 19)].concat(O().product.map(function (k) { return s.lines && s.lines[k] ? s.lines[k] : ''; }), [s.lines && s.lines[OTHER] ? s.lines[OTHER] : '', s.linesOther || '', isRepeat(p) ? 'ใช่' : '', paidOf(s), Math.max(0, (s.soValue || 0) - paidOf(s)), dueOf(s), moveCount(s.moves, 'delivery'), (s.moves || []).length ? s.moves[s.moves.length - 1].why : '']); });
+  var H3 = ['Sale ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'ชื่อโครงการ', 'ประเภทอาคาร', 'ประเภทการติดต่อ', 'เลขที่ใบสั่งขาย (SO No.)', 'วันที่ SO', 'มูลค่า SO (ก่อน VAT)', 'DP (ก่อน VAT)', 'วันที่ จัดส่ง', 'สถานะ SO', 'วันที่บันทึกในระบบ', 'บันทึกย้อนหลัง (วัน)', 'วันที่แก้ไขล่าสุด'].concat(O().product.map(function (k) { return 'SO ' + k; }), ['SO อื่น ๆ', 'อื่น ๆ (ระบุ)', 'ลูกค้าเดิม / เฟสซื้อเพิ่ม', 'รับชำระแล้ว', 'คงเหลือ', 'กำหนดชำระ', 'จำนวนครั้งที่เลื่อนจัดส่ง', 'เหตุผลเลื่อนจัดส่งล่าสุด', 'ช่องทางการติดต่อ']);
+  var R3 = liveSales().filter(function (s) { return inM(s.soDate); }).map(function (s) { var p = projById(s.projectId) || {}; return [s.id, s.projectId, p.code || '', s.empId, s.empName, s.branch, s.team, p.name || '', p.ptype || '', p.contactRole || '', s.soNo, s.soDate, s.soValue || 0, s.dp || 0, s.deliveryDate, s.soStatus, localTs(s.createdAt), lagDays(s.soDate, s.createdAt, s.importFile), (s.updatedAt || '').slice(0, 19)].concat(O().product.map(function (k) { return s.lines && s.lines[k] ? s.lines[k] : ''; }), [s.lines && s.lines[OTHER] ? s.lines[OTHER] : '', s.linesOther || '', isRepeat(p) ? 'ใช่' : '', paidOf(s), Math.max(0, (s.soValue || 0) - paidOf(s)), dueOf(s), moveCount(s.moves, 'delivery'), (s.moves || []).length ? s.moves[s.moves.length - 1].why : '', p.channel || '']); });
   try {
     var H4 = ['Month', 'Emp ID', 'Staff Name', 'สาขา', 'ทีม', 'Project ID', 'รหัสโครงการ', 'ชื่อโครงการ', 'ประเภทอาคาร', 'ช่องทางการติดต่อ', 'จังหวัด', 'ประเภทการติดต่อ', 'สถานะ ณ สิ้นเดือน', 'ยอดที่คาดว่าจะได้ Estimate Sale', 'วันที่คาดว่าจะปิด Closing Date', 'กำหนดการหน้างานสร้างเสร็จ (ข้อมูลเดิม)', 'วันที่ปิดงวด', 'รูปแบบโครงการ', 'สถานะหน้างาน'];
     var R4 = []; Store.months.filter(function (m) { return !m.deleted && m.closed && (!ym || m.month === ym); }).sort(function (a, b) { return a.month.localeCompare(b.month); }).forEach(function (m) { (m.items || []).forEach(function (i) { R4.push([m.month, m.empId, m.empName, m.branch, m.team, i.projectId, i.code, i.name, i.ptype, i.channel || '', i.province, i.contactRole, i.status, i.estimate || 0, i.closingDate, i.completion, (m.closedAt || '').slice(0, 19), i.pform || '', i.site ? siteLabel(i.site) : '']); }); });
@@ -3290,6 +3414,7 @@ function exportExcel(ym, anon) {
     var R5 = []; R1.forEach(function (r) { var p = projById(r[22]); if (!p) return; contactsOf(p).forEach(function (c) { R5.push([p.id, p.code, p.name, c.name, c.role || '', c.roleOther ? 'อื่น ๆ: ' + c.roleOther : (c.roleDetail && c.roleDetail !== c.role ? c.roleDetail : ''), fmtPhone(c.phone), c.line || '', c.primary ? 'ใช่' : '', c.consent ? 'ยินยอม' : 'ไม่ยินยอม', c.primary ? (p.consentAt || '').slice(0, 10) : (c.consentAt || '').slice(0, 10)]); }); });
     var sheetsX0 = [{ name: 'Projects', header: H1, rows: R1 }, { name: 'FollowUps', header: H2, rows: R2 }, { name: 'Sales', header: H3, rows: R3 }, { name: 'Payments', header: ['Sale ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'เลขที่ใบสั่งขาย (SO No.)', 'ประเภทการรับชำระ', 'วันที่รับชำระ', 'ยอดรับชำระ', 'สถานะใบเสร็จ', 'เลขที่ใบเสร็จ'], rows: (function () { var out = []; liveSales().forEach(function (s) { var p = projById(s.projectId) || {}; paymentsOf(s).forEach(function (x) { if (inM(x.date)) out.push([s.id, s.projectId, p.code || '', s.empId, s.soNo, x.type, x.date, Number(x.amount) || 0, x.rc || 'ไม่ระบุ', x.rcNo || '']); }); }); return out; })() }, { name: 'MonthlySnapshot', header: H4, rows: R4 }, { name: 'Contacts', header: H5, rows: R5 }, { name: 'Quotations', header: ['Quote ID', 'Project ID', 'รหัสโครงการ', 'Emp ID', 'ชื่อโครงการ', 'เลขที่ใบเสนอราคา (Quotation No.)', 'ครั้งที่', 'วันที่', 'มูลค่า (ก่อน VAT)', 'ยืนราคาถึง', 'รูปแบบราคา', 'แพ็กเกจ', 'หมายเหตุ'].concat(O().product.map(function (k) { return 'ใบเสนอราคา ' + k; }).concat(['ใบเสนอราคา อื่น ๆ', 'อื่น ๆ (ระบุ)'])), rows: liveQuotes().filter(function (q) { return inM(q.date); }).map(function (q) { var p = projById(q.projectId) || {}; return [q.id, q.projectId, p.code || '', q.empId, p.name || '', q.qtNo, q.rev || 1, q.date, q.value || 0, q.validUntil || '', q.priceMode === 'package' ? 'แพ็กเกจรายยูนิต' : 'ราคารวม', (q.packages || []).map(function (r) { return r.type + ' ' + r.price + '×' + r.units; }).join('; '), q.note || ''].concat(O().product.map(function (k) { return q.lines && q.lines[k] ? q.lines[k] : ''; }).concat([q.lines && q.lines[OTHER] ? q.lines[OTHER] : '', q.linesOther || ''])); }) }];
     var sheetsX = anon ? anonSheets(sheetsX0) : sheetsX0;
+    sheetsX.push(anaSheet(sheetsX, ym, anon));
     toast('กำลังสร้างไฟล์ Excel…');
     buildXlsxZ(sheetsX).then(function (blob) {
       download(blob, exportName(ym).replace(/\.xlsx$/, anon ? '_ANALYSIS.xlsx' : '.xlsx'));
@@ -3304,19 +3429,51 @@ function exportExcel(ym, anon) {
 /* ---------------- backup / restore ---------------- */
 function makeBackup() {
   var pw = S.ui.bpass || '';
-  if (pw.length < 8) { toast('รหัสผ่านไฟล์สำรองต้องมีอย่างน้อย 8 ตัวอักษร'); $('#bp').focus(); return; }
+  if (pw.length < 8) { toast('รหัสผ่านไฟล์สำรองต้องมีอย่างน้อย 8 ตัวอักษร'); var pf = $('#bk-p') || $('#bp'); if (pf) pf.focus(); return; }
+  if (S.bakBusy) return; S.bakBusy = true;
   toast('กำลังสำรองข้อมูล…');
-  var ids = [], allPh = !!S.ui.bAllPhotos; Store.projects.forEach(function (p) { if (allPh || ACTIVE.indexOf(p.status) >= 0 || p.status === ST.HOLD) (p.photos || []).forEach(function (x) { ids.push(x); }); });
+  var ids = [], allPh = !!S.ui.bAllPhotos; S.bakFull = allPh; Store.projects.forEach(function (p) { if (allPh || ACTIVE.indexOf(p.status) >= 0 || p.status === ST.HOLD) (p.photos || []).forEach(function (x) { ids.push(x); }); });
   Promise.all(ids.map(function (id) { return Store.photoBytes(id).catch(function () { return null; }); })).then(function (ph) {
     var payload = { records: Store.all(), photos: ph.filter(Boolean).map(function (x) { return { id: x.id, mime: x.mime, b64: b64(x.bytes) }; }), state: { profile: P(), options: O(), settings: Store.state.settings, counter: Store.state.counter } };
     var salt = crypto.getRandomValues(new Uint8Array(16));
     return Cx.derive(pw, salt, KDF_ITER).then(function (k) { return Cx.encJSON(k, payload); }).then(function (e) {
       var file = { format: 'ps-tracker-backup', version: 1, appVersion: APP_VERSION, schema: SCHEMA_VERSION, createdAt: nowISO(), empId: P().empId, kdf: { salt: b64(salt), iter: KDF_ITER }, iv: b64(e.iv), ct: b64(e.ct) };
-      download(new Blob([JSON.stringify(file)], { type: 'application/json' }), 'PS_backup_' + (P().empId || 'EMP').replace(/[^\w-]/g, '') + '_' + todayISO() + '.json');
-      Store.state.lastBackup = nowISO(); return Store.saveState();
+      var name = 'PS_backup_' + (P().empId || 'EMP').replace(/[^\w-]/g, '') + '_' + todayISO() + '.json', blob = new Blob([JSON.stringify(file)], { type: 'application/json' });
+      S.ui.bpass = '';
+      if (canShareFile()) { S.bak = { blob: blob, name: name }; openBakReady(); return; }
+      download(blob, name);
+      return markBackup().then(function () { closeBak(); toast('ดาวน์โหลดไฟล์สำรองแล้ว ย้ายไฟล์ไปเก็บใน OneDrive / iCloud Drive / Google Drive'); rerender(); });
     });
-  }).then(function () { toast('สำรองข้อมูลแล้ว เก็บไฟล์ไว้ใน OneDrive ของบริษัท'); S.ui.bpass = ''; rerender(); }).catch(function () { toast('สำรองข้อมูลไม่สำเร็จ'); });
+  }).catch(function () { toast('สำรองข้อมูลไม่สำเร็จ'); }).then(function () { S.bakBusy = false; });
 }
+/* ---------- สำรองขึ้น Cloud ผ่านหน้าแชร์ของมือถือ (iCloud Drive / OneDrive / Google Drive / ไฟล์) ---------- */
+function canShareFile() { try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['{}'], 'PS_backup.json', { type: 'application/json' })] })); } catch (e) { return false; } }
+function markBackup() { Store.state.lastBackup = nowISO(); if (S.bakFull) Store.state.lastBackupFull = Store.state.lastBackup; S.bakFull = false; S.st = null; Store.state.bakSnooze = ''; return Store.saveState(); }
+function closeBak() { S.bak = null; var m = $('#modal'); if (m && m.querySelector('[data-bak]')) m.innerHTML = ''; }
+function openBakReady() {
+  var b = S.bak; if (!b) return;
+  $('#modal').innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="bkh" data-bak="1"><div class="sheet"><div class="grab"></div><h2 id="bkh" style="font-size:18px">ไฟล์สำรองพร้อมแล้ว</h2>' +
+    '<span class="small">กดปุ่มด้านล่าง แล้วเลือก <b class="strong">บันทึกไปยังไฟล์ (Save to Files)</b> → iCloud Drive หรือเลือกแอป OneDrive / Google Drive เก็บไฟล์ไว้ใช้ย้ายเครื่องใหม่ หรือกู้คืนเมื่อเครื่องหายหรือเสีย</span>' +
+    '<span class="small muted">' + esc(b.name) + ' · ' + Math.max(1, Math.round(b.blob.size / 1024)) + ' KB · เข้ารหัสด้วยรหัสผ่านที่ตั้งไว้</span>' +
+    '<button class="btn primary block" data-act="bakshare">' + icon('upload', 18) + ' บันทึกขึ้น Cloud / ไฟล์</button>' +
+    '<div class="grid2"><button class="btn" data-act="bakclose">ยกเลิก</button><button class="btn" data-act="bakdl">ดาวน์โหลดแทน</button></div></div></div>';
+  var f = $('[data-act=bakshare]'); if (f) f.focus();
+}
+function bakDue() {
+  var st = Store.state, t = todayISO(); if (!st || !liveProjects().length) return false;
+  var last = st.lastBackup ? diffDays(tsDay(st.lastBackup), t) : null;
+  if (last !== null && last < 7) return false;
+  if (last === null) { var first = liveProjects().reduce(function (m, p) { var c = tsDay(p.createdAt || '') || t; return c < m ? c : m; }, t); if (diffDays(first, t) < 7) return false; }
+  return !(st.bakSnooze && st.bakSnooze > t);
+}
+function openBakAsk() {
+  var last = Store.state.lastBackup;
+  $('#modal').innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="bkq" data-bak="1"><div class="sheet"><div class="grab"></div><h2 id="bkq" style="font-size:18px">สำรองข้อมูลประจำสัปดาห์</h2>' +
+    '<span class="small">' + (last ? 'สำรองล่าสุด ' + be(last) : 'ยังไม่เคยสำรองข้อมูล') + ' · ไฟล์สำรองใช้ย้ายไปเครื่องใหม่ หรือกู้คืนเมื่อเครื่องหายหรือเสีย ข้อมูลอยู่ในเครื่องนี้เครื่องเดียว</span>' +
+    '<div class="field"><label for="bk-p">รหัสผ่านไฟล์สำรอง (อย่างน้อย 8 ตัวอักษร)</label><input id="bk-p" class="inp" type="password" autocomplete="new-password" data-bind-ui="bpass"><span class="hint">ใช้รหัสผ่านเดิมทุกครั้งจะจำง่าย หากลืมรหัสผ่านจะเปิดไฟล์ไม่ได้</span></div>' +
+    '<div class="grid2"><button class="btn" data-act="baklater">ไว้ภายหลัง</button><button class="btn primary" data-act="backup">สำรองตอนนี้</button></div></div></div>';
+}
+window.addEventListener('hashchange', function () { if (!S.bakBusy) closeBak(); });
 var REC_DATE = ['recordDate', 'date', 'nextDate', 'closingDate', 'soDate', 'deliveryDate', 'validUntil', 'stageAt', 'siteAt', 'dueDate'];
 var REC_NUM = ['site', 'estimate', 'soValue', 'dp', 'value', 'units', 'rev', 'lat', 'lng', 'acc', 'distance', 'milestone', 'amount', 'price', 'lead', 'schema', 'counter', 'n'];
 function sanitizeRec(o, depth) {
@@ -3337,50 +3494,290 @@ function sanitizeRec(o, depth) {
   });
   return out;
 }
-function restoreBackup(file) {
-  var pw = S.ui.bpass || '';
-  if (pw.length < 8) { toast('ใส่รหัสผ่านไฟล์สำรองก่อนเลือกไฟล์'); return; }
-  if (file.size > 300 * 1024 * 1024) { toast('ไฟล์ใหญ่เกินไป'); return; }
-  file.text().then(function (txt) {
-    var f = JSON.parse(txt);
-    if (f.format !== 'ps-tracker-backup') throw new Error('format');
-    var it = +(f.kdf && f.kdf.iter); if (!(it >= 100000 && it <= 2000000)) throw new Error('kdf');
-    return Cx.derive(pw, unb64(f.kdf.salt), it).then(function (k) { return Cx.decJSON(k, unb64(f.iv), unb64(f.ct)); });
-  }).then(function (data) {
-    var bid = data && ((data.state && data.state.profile && data.state.profile.empId) || (data.profile && data.profile.empId) || ((data.records || []).filter(function (r) { return r && r.empId; })[0] || {}).empId);
-    if (!bid || normEmp(bid) === normEmp(P().empId)) return data;
-    var other = empTaken(bid, S.user && S.user.id);
-    if (other) { toast('ไฟล์นี้เป็นของ Emp ID ' + bid + ' (' + (other.label || '') + ') ซึ่งมีบัญชีในเครื่องนี้แล้ว ให้กู้คืนในบัญชีของคนนั้น'); throw 'skip'; }
-    return confirmBox('ไฟล์สำรองเป็นของคนอื่น', 'ไฟล์นี้เป็นของ Emp ID ' + bid + ' แต่ผู้ใช้ปัจจุบันคือ ' + P().empId + ' ถ้ากู้คืน ข้อมูลจะรวมเข้ากับบัญชีนี้ ควรเพิ่มผู้ใช้ใหม่ในเครื่อง แล้วกู้คืนในบัญชีนั้นแทน ต้องการกู้คืนเข้าบัญชีนี้หรือไม่', 'กู้คืนเข้าบัญชีนี้').then(function (ok) { if (!ok) throw 'skip'; return data; });
-  }).then(function (data) {
-    var added = 0, jobs = [];
-    var skipped = 0;
-    (data.photos || []).filter(function (ph) { return ph && typeof ph.id === 'string' && typeof ph.b64 === 'string' && /^image\/(jpeg|png|webp)$/.test(ph.mime || ''); }).slice(0, 5000).forEach(function (ph) { jobs.push(DB.get('photos', ph.id).then(function (ex) { if (ex) return; var bytes = unb64(ph.b64); return Cx.enc(Cx.key, bytes).then(function (e) { return DB.put('photos', { id: ph.id, mime: ph.mime, iv: e.iv, ct: e.ct }); }); })); });
-    return Promise.all(jobs).then(function () {
-      var seq = Promise.resolve();
-      (data.records || []).forEach(function (r) {
-        if (!r || typeof r.id !== 'string' || !/^[\w-]{1,64}$/.test(r.id) || ['project', 'follow', 'sale', 'month', 'quote'].indexOf(r.kind) < 0) { skipped++; return; }
-        var cur = Store.list(r.kind).find(function (x) { return x.id === r.id; });
-        if (cur) { skipped++; return; }
-        var rc = sanitizeRec(r, 0); added++; seq = seq.then(function () { return Store.save(rc, true); });
-      });
-      return seq;
-    }).then(function () {
-      var st = Store.state, b = data.state || {};
-      if (O().version === 'default' && b.options) st.options = migrateState({ options: b.options }).options;
-      if (b.settings && b.settings.targets) Object.keys(b.settings.targets).forEach(function (m) { if (st.settings.targets[m] == null) st.settings.targets[m] = b.settings.targets[m]; });
-      st.counter = Math.max(st.counter || 0, b.counter || 0);
-      return Store.saveState();
-    }).then(migrateRecords).then(function () { toast('กู้คืนแล้ว ' + added + ' รายการ' + (skipped ? ' · ข้ามรายการที่มีอยู่แล้วหรือไม่ถูกต้อง ' + skipped + ' รายการ' : '')); S.ui.bpass = ''; rerender(); });
-  }).catch(function (e) { if (e === 'skip') return; toast('กู้คืนไม่สำเร็จ รหัสผ่านไม่ถูกต้องหรือไฟล์ไม่ถูกต้อง'); });
+/* ---------------- พื้นที่จัดเก็บ · จัดการพื้นที่ · กู้คืน (v1.16.0) ---------------- */
+function isIOS() { var u = navigator.userAgent || ''; return /iPad|iPhone|iPod/.test(u) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function fmtBytes(b) { if (b == null || !isFinite(b)) return '-'; if (b >= 1073741824) return (Math.round(b / 107374182.4) / 10) + ' GB'; if (b >= 1048576) return (Math.round(b / 104857.6) / 10) + ' MB'; return Math.max(1, Math.round(b / 1024)) + ' KB'; }
+function pctText(p) { return p < 1 ? 'ไม่ถึงร้อยละ 1' : 'ร้อยละ ' + (p < 10 ? Math.round(p * 10) / 10 : Math.round(p)); }
+function agoText(ts) { var d = diffDays(tsDay(ts), todayISO()); return d <= 0 ? 'วันนี้' : d + ' วันก่อน'; }
+function storageScan() {
+  if (S.stBusy) return S.stBusy;
+  var out = { ver: Store.ver, at: Date.now(), usage: null, quota: null, persisted: null, sizes: {}, photoBytes: 0, photoCount: 0 };
+  var sg = navigator.storage || {};
+  var est = sg.estimate ? sg.estimate().catch(function () { return {}; }) : Promise.resolve({});
+  var per = sg.persisted ? sg.persisted().catch(function () { return null; }) : Promise.resolve(null);
+  var scan = new Promise(function (res) {
+    try {
+      var t = DB.db.transaction('photos', 'readonly'), c = t.objectStore('photos').openCursor();
+      c.onsuccess = function () { var cur = c.result; if (!cur) return; var v = cur.value || {}, n = v.ct ? (v.ct.byteLength || v.ct.length || 0) : 0; out.sizes[v.id] = n; out.photoBytes += n; out.photoCount++; cur.continue(); };
+      t.oncomplete = function () { res(); }; t.onerror = t.onabort = function () { res(); };
+    } catch (e) { res(); }
+  });
+  S.stBusy = Promise.all([est, per, scan]).then(function (r) { out.usage = r[0] && r[0].usage != null ? r[0].usage : null; out.quota = r[0] && r[0].quota ? r[0].quota : null; out.persisted = r[1]; S.st = out; S.stBusy = null; return out; });
+  return S.stBusy;
 }
+function refreshStorage() {
+  if (S.st && S.st.ver === Store.ver && Date.now() - S.st.at < 60000) return;
+  storageScan().then(function () { var b = (location.hash || '').split('/')[1]; if (Cx.key && (b === 'data' || b === 'manage') && !$('#modal').firstChild) rerender(); });
+}
+function askPersist() { try { var sg = navigator.storage; if (!isStandalone() || !sg || !sg.persisted || !sg.persist) return; sg.persisted().then(function (v) { if (!v) return sg.persist(); }).catch(function () { }); } catch (e) { } }
+function qCheck(er) {
+  if (!er || er.name !== 'QuotaExceededError' || S.rBusy || !Cx.key) return;
+  if (S.qAt && Date.now() - S.qAt < 15000) return; S.qAt = Date.now();
+  setTimeout(function () {
+    $('#modal').innerHTML = '<div class="modalbg" role="alertdialog" aria-modal="true" aria-labelledby="qh"><div class="modal"><h2 id="qh" style="font-size:18px">พื้นที่ในเครื่องเต็ม</h2><p style="margin:0">บันทึกล่าสุดไม่สำเร็จเพราะพื้นที่จัดเก็บในเครื่องเต็ม ข้อมูลที่บันทึกไว้ก่อนหน้ายังอยู่ครบ ให้สำรองข้อมูล แล้วลบรูปของ Lead ที่จบแล้ว หรือลบรูปและแอปอื่นในมือถือ</p><div class="grid2"><button class="btn" data-act="qclose">ปิด</button><button class="btn primary" data-act="qgo">จัดการพื้นที่</button></div></div></div>';
+    var b = $('[data-act=qgo]'); if (b) b.focus();
+  }, 60);
+}
+function pwScore(p) { p = p || ''; if (p.length < 8) return 0; var s = 1; if (p.length >= 12) s++; if (/[A-Za-z฀-๿]/.test(p) && /\d/.test(p)) s++; if (/[^A-Za-z0-9฀-๿]/.test(p) || (/[a-z]/.test(p) && /[A-Z]/.test(p))) s++; return Math.min(4, s); }
+function pwMeter(p) {
+  if (!p) return '';
+  var s = pwScore(p), lab = ['สั้นเกินไป', 'อ่อน', 'พอใช้', 'ดี', 'แข็งแรง'][s], col = s <= 1 ? 'var(--danger-text)' : s === 2 ? '#8a6d00' : 'var(--ok-text)', fill = s <= 1 ? 'var(--danger-text)' : s === 2 ? 'var(--accent)' : 'var(--ok)';
+  var seg = ''; for (var i = 1; i <= 4; i++) seg += '<span style="flex:1;height:4px;border-radius:2px;background:' + (i <= s ? fill : '#e2e2e2') + '"></span>';
+  return '<div class="row" style="gap:4px;margin-top:6px" aria-hidden="true">' + seg + '</div><span class="small" style="color:' + col + ';font-weight:600">ความแข็งแรงของรหัสผ่าน: ' + lab + '</span>';
+}
+function bakSizeText(all) {
+  if (!S.st) return 'กำลังคำนวณ';
+  var b = 0; Store.projects.forEach(function (p) { if (all || ACTIVE.indexOf(p.status) >= 0 || p.status === ST.HOLD) (p.photos || []).forEach(function (x) { b += S.st.sizes[x] || 0; }); });
+  return fmtBytes(b * 1.37 + Store.all().length * 900);
+}
+function iosCard() {
+  if (!isIOS() || isStandalone()) return '';
+  return '<div class="card warn stack" style="gap:8px"><div class="row" style="align-items:flex-start">' + icon('alert', 22, '#8a6d00') + '<div><b class="strong" style="font-size:16px">ยังไม่ได้ติดตั้งแอปบนหน้าจอโฮม</b><br><span class="small strong" style="font-weight:400">เปิดผ่าน Safari โดยไม่ติดตั้ง หากไม่ได้เปิดแอปนานเกิน 7 วัน iPhone อาจลบข้อมูลในเครื่องเอง</span></div></div><a class="btn small" href="#/guide/staff">ดูวิธีติดตั้ง</a></div>';
+}
+function stCard() {
+  var st = S.st, pct = st && st.usage != null && st.quota ? st.usage / st.quota * 100 : null, full = pct != null && pct >= 80;
+  var head = '<div class="between"><h2 style="font-size:17px">พื้นที่จัดเก็บในเครื่องนี้</h2>' + (st ? '<span class="small muted">ตรวจเมื่อ ' + new Date(st.at).toTimeString().slice(0, 5) + '</span>' : '') + '</div>';
+  var use = !st ? '<span class="small" id="stwait">กำลังตรวจสอบพื้นที่…</span>'
+    : pct == null ? '<span class="small">เบราว์เซอร์นี้ไม่แสดงขนาดพื้นที่ที่ใช้ได้</span>'
+    : '<div class="stack" style="gap:6px"><div class="row" style="align-items:baseline;gap:6px;flex-wrap:wrap"><b class="strong" style="font-size:28px;line-height:1.1">' + fmtBytes(st.usage) + '</b><span class="small">จากที่ใช้ได้ประมาณ ' + fmtBytes(st.quota) + '</span></div>' +
+      '<div class="meter' + (full ? ' full' : '') + '" role="img" aria-label="ใช้พื้นที่ไปแล้ว ' + pctText(pct) + '"><div style="width:' + Math.max(1, Math.min(100, pct)).toFixed(1) + '%"></div></div><span class="small">ใช้ไป' + pctText(pct) + ' · รวมทุกผู้ใช้ในเครื่องนี้</span></div>';
+  var warn = full ? '<div class="card alert stack" style="gap:8px;background:#fff0f0"><b class="dangerText">พื้นที่ใกล้เต็ม</b><span class="small strong" style="font-weight:400">สำรองข้อมูลก่อน แล้วลบรูปของ Lead ที่จบแล้วเพื่อคืนพื้นที่ หากพื้นที่เต็ม แอปจะบันทึกข้อมูลใหม่ไม่ได้</span><a class="btn primary small" href="#/manage">จัดการพื้นที่</a></div>' : '';
+  function tile(l, v, s) { return '<div class="sttile"><span class="small">' + l + '</span><b>' + v + '</b>' + (s ? '<span class="small">' + s + '</span>' : '') + '</div>'; }
+  var nph = Store.projects.reduce(function (n, p) { return n + (p.deleted ? 0 : (p.photos || []).length); }, 0);
+  var grid = '<div class="grid2">' + tile('Lead', fmt(liveProjects().length) + ' ราย') + tile('การติดตาม', fmt(liveFollows().length) + ' ครั้ง') + tile('SO และใบเสนอราคา', fmt(liveSales().length + liveQuotes().length) + ' รายการ') + tile('รูป', fmt(st ? st.photoCount : nph) + ' รูป', st ? fmtBytes(st.photoBytes) : '') + '</div>';
+  var per = st && st.persisted === true, inst = isStandalone(), und = Store.undec || 0;
+  var rows = '<div class="stack" style="gap:8px;border-top:1px solid #f0f0f0;padding-top:10px">' +
+    '<div class="between small"><span class="strong">การจัดเก็บถาวร</span><b id="persist" class="' + (per ? 'okText' : st && st.persisted === false ? 'dangerText' : '') + '">' + (!st ? 'กำลังตรวจสอบ' : st.persisted == null ? 'ไม่รองรับ' : per ? 'เปิดใช้แล้ว' : 'ยังไม่เปิดใช้') + '</b></div>' +
+    '<div class="between small"><span class="strong">ติดตั้งบนหน้าจอโฮม</span><b class="' + (inst ? 'okText' : 'dangerText') + '">' + (inst ? 'ติดตั้งแล้ว' : 'ยังไม่ติดตั้ง') + '</b></div>' +
+    '<div class="between small"><span class="strong">ข้อมูลที่เปิดไม่ได้</span><b class="' + (und ? 'dangerText' : 'strong') + '">' + (und ? fmt(und) + ' รายการ' : 'ไม่มี') + '</b></div>' +
+    (und ? '<span class="small dangerText" style="font-weight:600">มีข้อมูล ' + fmt(und) + ' รายการที่ถอดรหัสไม่ได้ ระบบเก็บไว้ ไม่ได้ลบ ให้กู้คืนจากไฟล์สำรองล่าสุด หากยังไม่หาย แจ้งผู้ดูแลระบบ</span>' : '') +
+    (!per && st && st.persisted === false ? '<span class="hint">ติดตั้งแอปบนหน้าจอโฮม แล้วเปิดจากไอคอนทุกครั้ง เพื่อลดโอกาสที่เครื่องจะลบข้อมูลเอง</span>' : '') + '</div>';
+  return '<section class="card stack" style="gap:12px" aria-label="พื้นที่จัดเก็บในเครื่องนี้">' + head + use + warn + grid + rows + '</section>';
+}
+function bakCard() {
+  var st = Store.state, all = !!S.ui.bAllPhotos;
+  return '<section class="card stack" style="gap:10px;border:1.5px solid var(--accent)" aria-labelledby="bkc"><h2 id="bkc" style="font-size:17px">สำรองข้อมูล</h2><div class="between small"><span>สำรองล่าสุด</span><b class="strong">' + (st.lastBackup ? be(st.lastBackup) + ' · ' + agoText(st.lastBackup) : 'ยังไม่เคยสำรอง') + '</b></div>' +
+    '<div class="field"><label for="bp">รหัสผ่านไฟล์สำรอง (อย่างน้อย 8 ตัวอักษร)</label><input id="bp" class="inp" type="password" autocomplete="new-password" data-bind-ui="bpass" value="' + esc(S.ui.bpass || '') + '"><div id="bp-m" aria-live="polite">' + pwMeter(S.ui.bpass) + '</div></div>' +
+    '<div class="between"><span id="bap" class="small strong" style="font-weight:400">รวมรูปทุก Lead (ใช้เมื่อย้ายเครื่อง)<br><span class="small" style="color:var(--text)">ไฟล์ประมาณ ' + bakSizeText(all) + '</span></span><button type="button" class="switch" role="switch" aria-labelledby="bap" aria-checked="' + all + '" data-act="bphotos"></button></div>' +
+    '<button class="btn primary block" data-act="backup">สำรองตอนนี้</button>' +
+    '<span class="hint">เมื่อสร้างไฟล์แล้ว เลือกบันทึกไปที่ iCloud Drive, OneDrive หรือ Google Drive หากลืมรหัสผ่านจะเปิดไฟล์ไม่ได้</span></section>';
+}
+function rsCard() {
+  return '<section class="card stack" style="gap:10px" aria-labelledby="rsc"><h2 id="rsc" style="font-size:17px">กู้คืนจากไฟล์สำรอง</h2><span class="small strong" style="font-weight:400">เลือกไฟล์ .json จาก iCloud Drive, OneDrive, Google Drive หรือในเครื่อง ข้อมูลเดิมในเครื่องไม่ถูกลบ รายการที่มีอยู่แล้วจะข้าม</span>' +
+    '<label class="btn block" style="position:relative">' + icon('upload', 18) + ' เลือกไฟล์สำรอง<input type="file" accept=".json,application/json" data-restore="1" style="position:absolute;inset:0;opacity:0" aria-label="เลือกไฟล์สำรองเพื่อกู้คืน จาก iCloud Drive OneDrive Google Drive หรือไฟล์ในเครื่อง"></label>' +
+    '<details class="fold"><summary>ย้ายไปเครื่องใหม่</summary><ol class="small" style="margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px"><li>เครื่องเดิม: เปิด "รวมรูปทุก Lead" แล้วกด "สำรองตอนนี้" บันทึกไฟล์ขึ้น iCloud Drive / OneDrive / Google Drive</li><li>เครื่องใหม่: เปิดแอป ตั้งค่าด้วย Emp ID เดิม (ตั้ง PIN ใหม่ได้)</li><li>เมนู → สำรองข้อมูล → เลือกไฟล์สำรอง แล้วใส่รหัสผ่านไฟล์</li><li>ตรวจว่า Lead ครบ แล้วจึงลบแอปในเครื่องเดิม</li></ol></details></section>';
+}
+
+/* ---------- จัดการพื้นที่และลบข้อมูล ---------- */
+var PG = [['lost', 'ไม่ได้งาน'], ['won', 'ได้งานและส่งมอบครบแล้ว'], ['hold', 'เลื่อน/ระงับ']];
+function pgGroup(p) { return p.status === ST.LOST ? 'lost' : p.status === ST.WON && (!hasBuiltin(p) || delivStep(p) > 6) ? 'won' : p.status === ST.HOLD ? 'hold' : ''; }
+function lastActOf(p, lastF) { var d = [p.recordDate || '', p.stageAt || '', lastF[p.id] || ''], dl = p.delivery || {}; for (var i = 1; i <= 6; i++) if (typeof dl['d' + i] === 'string') d.push(dl['d' + i]); if (typeof dl.install === 'string') d.push(dl.install); return d.sort().pop(); }
+function purgePlan() {
+  var m = S.ui.pgAge == null ? 6 : S.ui.pgAge, sel = S.ui.pg || (S.ui.pg = { lost: true, won: true, hold: false }), cut = m ? addMonthsDate(todayISO(), -m) : '';
+  var lastF = {}; liveFollows().forEach(function (f) { if ((f.date || '') > (lastF[f.projectId] || '')) lastF[f.projectId] = f.date; });
+  var base = {}, full = {}, cand = [];
+  liveProjects().forEach(function (p) {
+    var k = pgGroup(p), ok = k && (p.photos || []).length && (!m || lastActOf(p, lastF) < cut);
+    if (ok) { cand.push({ p: p, k: k }); if (!sel[k]) (p.photos || []).forEach(function (x) { full[x] = 1; }); }
+    else (p.photos || []).forEach(function (x) { base[x] = 1; full[x] = 1; });
+  });
+  var g = {}, plan = { groups: g, sel: {}, items: [], photos: 0, leads: 0, bytes: 0, months: m };
+  PG.forEach(function (x) { g[x[0]] = { leads: 0, photos: 0, bytes: 0 }; plan.sel[x[0]] = 0; });
+  function sz(x) { return (S.st && S.st.sizes[x]) || 0; }
+  cand.forEach(function (c) {
+    var shown = c.p.photos.filter(function (x) { return !base[x]; }); if (shown.length) { var G = g[c.k]; G.leads++; G.photos += shown.length; G.bytes += shown.reduce(function (s, x) { return s + sz(x); }, 0); }
+    if (!sel[c.k]) return;
+    var ids = c.p.photos.filter(function (x) { return !full[x]; }); if (!ids.length) return;
+    plan.items.push({ p: c.p, ids: ids }); plan.photos += ids.length; plan.leads++; plan.sel[c.k] += ids.length; plan.bytes += ids.reduce(function (s, x) { return s + sz(x); }, 0);
+  });
+  return plan;
+}
+function fullBakToday() { var b = Store.state.lastBackupFull; return !!b && tsDay(b) === todayISO(); }
+function monthRows() {
+  var cur = curMonth(), ms = dataMonths().filter(function (ym) { return ym < cur; }).reverse().slice(0, 6);
+  if (!ms.length) return '<span class="small">ยังไม่มีเดือนที่ผ่านมา</span>';
+  return ms.map(function (ym) {
+    var rec = monthRec(ym), sub, cls = '', btn = '';
+    if (rec && rec.archived) { sub = 'เก็บเข้าไฟล์และล้างแล้ว ' + (rec.archivedCount || 0) + ' ราย'; cls = 'okText'; }
+    else if (!rec || !rec.closed) { sub = 'ยังไม่ปิดงวด'; btn = '<a class="btn small" href="#/month/' + ym + '">ไปปิดงวด</a>'; }
+    else if (ym > addMonths(cur, -2)) sub = 'ล้างได้เมื่อเก่ากว่า 2 เดือน';
+    else if (!exportedAfterClose(rec)) { sub = 'ต้องส่งออก Excel หลังปิดงวดก่อน'; btn = '<a class="btn small" href="#/month/' + ym + '">ไปส่งออก</a>'; }
+    else { var n = archivable(ym).projects.length; if (n) { sub = n + ' ราย · พร้อมล้าง'; cls = 'okText'; btn = '<a class="btn small danger" href="#/month/' + ym + '">ล้างเดือนนี้</a>'; } else sub = 'ไม่มี Lead ที่จบแล้วให้ล้าง'; }
+    return '<div class="between" style="border-top:1px solid #f0f0f0;padding-top:10px"><span><b class="strong">' + monthName(ym) + '</b><br><span class="small ' + cls + '">' + sub + '</span></span>' + btn + '</div>';
+  }).join('');
+}
+function vManage() {
+  var st = Store.state, pl = purgePlan(), sel = S.ui.pg, full = fullBakToday();
+  var gate = full ? '<div class="card okc between"><span><b class="okText">สำรองแบบรวมรูปแล้ววันนี้</b><br><span class="small">' + new Date(st.lastBackupFull).toTimeString().slice(0, 5) + ' น. · ลบรูปได้</span></span></div>'
+    : '<div class="card warn between"><span><b class="strong">สำรองข้อมูลก่อนลบ</b><br><span class="small strong" style="font-weight:400">' + (st.lastBackup ? 'สำรองล่าสุด ' + agoText(st.lastBackup) : 'ยังไม่เคยสำรองข้อมูล') + ' ข้อมูลที่ลบแล้วกู้คืนได้จากไฟล์สำรองเท่านั้น</span></span><button class="btn small primary" style="flex-shrink:0" data-act="pgbak">สำรองตอนนี้</button></div>';
+  var opts = PG.map(function (x) { var G = pl.groups[x[0]], on = !!sel[x[0]]; return '<label class="pgopt' + (on ? ' on' : '') + '"><input type="checkbox" data-pg="' + x[0] + '"' + (on ? ' checked' : '') + '><span class="lt"><b class="strong">' + x[1] + '</b><small>' + fmt(G.leads) + ' ราย · ' + fmt(G.photos) + ' รูป</small></span><b class="strong small">' + (S.st ? fmtBytes(G.bytes) : '') + '</b></label>'; }).join('');
+  var ages = [[0, 'ทั้งหมด'], [3, '3 เดือน'], [6, '6 เดือน'], [12, '12 เดือน']].map(function (a) { return '<button type="button" data-act="pgage" data-v="' + a[0] + '" aria-pressed="' + (pl.months === a[0]) + '">' + a[1] + '</button>'; }).join('');
+  var body = '<div class="stack">' + gate +
+    '<section class="card stack" style="gap:12px" aria-labelledby="pgh2"><div><h2 id="pgh2" style="font-size:17px">ลบรูปเพื่อคืนพื้นที่</h2><span class="small">ลบเฉพาะรูป ข้อมูล Lead การติดตาม และ SO ยังอยู่ครบ</span></div>' +
+    '<fieldset class="pgset"><legend class="small strong" style="font-weight:600;margin-bottom:6px">รูปของ Lead ที่</legend>' + opts + '<span class="hint">รูปของ Lead ที่ยังติดตามอยู่ ลบได้ทีละรูปจากหน้าแก้ไข Lead</span></fieldset>' +
+    '<div class="field"><span id="age-l" class="small strong" style="font-weight:600">จบงานมานานกว่า</span><div class="seg" style="grid-template-columns:repeat(4,1fr)" role="group" aria-labelledby="age-l">' + ages + '</div><span class="hint">นับจากวันที่มีการติดตาม เปลี่ยนสถานะ หรือส่งมอบครั้งล่าสุด</span></div>' +
+    '<div class="ex between"><span>จะลบ <b class="strong">' + fmt(pl.photos) + ' รูป</b> จาก ' + fmt(pl.leads) + ' ราย</span><b class="strong">' + (S.st ? 'คืนประมาณ ' + fmtBytes(pl.bytes) : '') + '</b></div>' +
+    '<button class="btn danger block" data-act="pgdel"' + (pl.photos ? '' : ' disabled') + '>ลบรูปที่เลือก</button></section>' +
+    '<section class="card stack" style="gap:10px" aria-labelledby="mo-h"><div><h2 id="mo-h" style="font-size:17px">ล้างข้อมูลเก่ารายเดือน</h2><span class="small">ย้าย Lead ที่จบแล้วของเดือนที่ปิดงวดออกเป็นไฟล์เข้ารหัส แล้วลบออกจากเครื่อง ยอดสรุปของเดือนยังแสดงในแอป</span></div>' + monthRows() + '<a class="small strong" href="#/months" style="font-weight:600">ดูประวัติรายเดือนทั้งหมด</a></section>' +
+    '<section class="card stack" style="gap:4px" aria-labelledby="one-h"><h2 id="one-h" style="font-size:17px">ลบ Lead ทีละราย</h2><span class="small">เปิดหน้า Lead แล้วกดเมนู "เพิ่มเติม" เลือก "ลบ Lead" การติดตาม SO และรูปของ Lead นั้นจะถูกลบด้วย</span></section>' +
+    '<section class="card alert stack" style="gap:10px;margin-top:8px" aria-labelledby="all-h"><div><h2 id="all-h" style="font-size:17px" class="dangerText">ล้างข้อมูลทั้งหมดของผู้ใช้นี้</h2><span class="small strong" style="font-weight:400">ใช้เมื่อย้ายเครื่องเสร็จแล้วหรือคืนเครื่อง Lead การติดตาม SO และรูปทั้งหมดของผู้ใช้นี้จะถูกลบถาวร ข้อมูลของผู้ใช้อื่นในเครื่องไม่ถูกลบ</span></div><button class="btn danger block" data-act="wipe">ล้างข้อมูลทั้งหมด</button></section>' +
+    '</div>';
+  return shell({ title: 'จัดการพื้นที่และลบข้อมูล', back: '#/data' }, body);
+}
+function openPurge() {
+  var pl = purgePlan(), full = fullBakToday(); if (!pl.photos) return;
+  var rows = PG.filter(function (x) { return pl.sel[x[0]]; }).map(function (x) { return '<div class="between small"><span>Lead ' + x[1] + '</span><b class="strong">' + fmt(pl.sel[x[0]]) + ' รูป</b></div>'; }).join('');
+  $('#modal').innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="pgh" data-pgs="1"><div class="sheet"><div class="grab"></div><h2 id="pgh" style="font-size:18px">ยืนยันการลบรูป</h2>' +
+    '<div class="card stack" style="background:#f6f6f6;border:0;gap:6px">' + rows + '<div class="between small"><span>จบงานมานานกว่า</span><b class="strong">' + (pl.months ? pl.months + ' เดือน' : 'ทุกช่วงเวลา') + '</b></div><div class="between" style="border-top:1px solid #e2e2e2;padding-top:6px;flex-wrap:wrap"><b class="strong">รวม ' + fmt(pl.photos) + ' รูป จาก ' + fmt(pl.leads) + ' ราย</b><b class="strong">' + (S.st ? 'คืนประมาณ ' + fmtBytes(pl.bytes) : '') + '</b></div></div>' +
+    (full ? '<div class="card okc"><b class="okText">สำรองแบบรวมรูปแล้ว</b> <span class="small">วันนี้ ' + new Date(Store.state.lastBackupFull).toTimeString().slice(0, 5) + ' น.</span></div>'
+      : '<div class="card alert stack" style="gap:8px;background:#fff0f0"><b class="dangerText">ต้องสำรองแบบรวมรูปทุก Lead ก่อน</b><span class="small strong" style="font-weight:400">ไฟล์สำรองแบบปกติไม่มีรูปของ Lead ที่จบแล้ว หากลบตอนนี้จะกู้รูปเหล่านี้คืนไม่ได้</span><button class="btn primary block" data-act="pgbak">สำรองแบบรวมรูปตอนนี้</button></div>') +
+    '<label class="row small strong" style="align-items:flex-start;gap:12px;cursor:pointer;font-weight:400"><input type="checkbox" id="pg-ok" style="width:22px;height:22px;accent-color:var(--accent);margin:0;flex-shrink:0"><span>เข้าใจแล้วว่ารูปที่ลบ กู้คืนได้จากไฟล์สำรองแบบรวมรูปเท่านั้น</span></label><span id="pg-e" class="errmsg" role="alert"></span>' +
+    '<div class="grid2"><button class="btn" data-act="pgclose">ยกเลิก</button><button class="btn danger" data-act="pgrun"' + (full ? '' : ' disabled') + '>ลบ ' + fmt(pl.photos) + ' รูป</button></div></div></div>';
+  var f = $(full ? '#pg-ok' : '[data-act=pgbak]'); if (f) f.focus();
+}
+function runPurge() {
+  var ok = $('#pg-ok'); if (!ok || !ok.checked) { var e = $('#pg-e'); if (e) e.textContent = 'กรุณาติ๊กยืนยันก่อนลบ'; return; }
+  if (!fullBakToday() || S.pgBusy) return;
+  var pl = purgePlan(); if (!pl.photos) return;
+  S.pgBusy = true; var b = $('[data-act=pgrun]'); if (b) { b.disabled = true; b.textContent = 'กำลังลบ…'; }
+  var seq = Promise.resolve(), n = 0;
+  pl.items.forEach(function (it) {
+    seq = seq.then(function () {
+      var del = {}; it.ids.forEach(function (x) { del[x] = 1; });
+      it.p.photos = (it.p.photos || []).filter(function (x) { return !del[x]; }); it.p.photosPurged = (it.p.photosPurged || 0) + it.ids.length; it.p.photosPurgedAt = nowISO(); it.p.synced = false;
+      return Store.save(it.p, true).then(function () { return Promise.all(it.ids.map(function (x) { return Store.delPhoto(x); })); }).then(function () { n += it.ids.length; });
+    });
+  });
+  var end = function (msg) { S.pgBusy = false; S.st = null; $('#modal').innerHTML = ''; toast(msg); rerender(); };
+  seq.then(function () { end('ลบรูปแล้ว ' + fmt(n) + ' รูป'); }, function () { end('ลบได้ ' + fmt(n) + ' รูป ส่วนที่เหลือลบไม่สำเร็จ'); });
+}
+
+/* ---------- กู้คืน: เลือกไฟล์ → ใส่รหัสผ่าน → ตรวจไฟล์ → กู้คืน ---------- */
+var RS_KINDS = ['project', 'follow', 'sale', 'month', 'quote'];
+function rsValidRec(r) { return !!r && typeof r.id === 'string' && /^[\w-]{1,64}$/.test(r.id) && RS_KINDS.indexOf(r.kind) >= 0; }
+function rsValidPh(ph) { return !!ph && typeof ph.id === 'string' && /^[\w-]{1,64}$/.test(ph.id) && typeof ph.b64 === 'string' && /^image\/(jpeg|png|webp)$/.test(ph.mime || ''); }
+function readBackup(file, pw) {
+  if (file.size > 300 * 1024 * 1024) return Promise.reject('size');
+  return file.text().then(function (txt) {
+    var f; try { f = JSON.parse(txt); } catch (e) { throw 'format'; }
+    if (!f || f.format !== 'ps-tracker-backup' || !f.kdf) throw 'format';
+    var it = +f.kdf.iter; if (!(it >= 100000 && it <= 2000000)) throw 'format';
+    return Cx.derive(pw, unb64(f.kdf.salt), it).then(function (k) { return Cx.decJSON(k, unb64(f.iv), unb64(f.ct)); }).then(function (data) {
+      return { meta: { createdAt: typeof f.createdAt === 'string' ? f.createdAt : '', appVersion: clean(f.appVersion, 20), empId: clean(f.empId, 20), kind: f.kind === 'archive' ? 'archive' : 'backup', month: /^\d{4}-\d{2}$/.test(f.month || '') ? f.month : '', name: file.name, size: file.size }, data: data && typeof data === 'object' ? data : {} };
+    }, function () { throw 'pw'; });
+  });
+}
+function restorePlan(pkg) {
+  var d = pkg.data, have = {}, c = {}, recs = [], relink = [], bad = 0, ref = {};
+  Store.all().forEach(function (r) { have[r.id] = r; });
+  RS_KINDS.forEach(function (k) { c[k] = { inFile: 0, add: 0, skip: 0 }; });
+  (Array.isArray(d.records) ? d.records : []).forEach(function (r) {
+    if (!rsValidRec(r)) { bad++; return; }
+    var x = c[r.kind], cur = have[r.id]; x.inFile++;
+    if (cur) { x.skip++; if (r.kind === 'project' && cur.photosPurged && Array.isArray(r.photos) && r.photos.length) relink.push({ cur: cur, ids: r.photos.filter(function (id) { return typeof id === 'string'; }).slice(0, 6) }); }
+    else { x.add++; recs.push(r); have[r.id] = r; if (r.kind === 'project' && Array.isArray(r.photos)) r.photos.forEach(function (id) { ref[id] = 1; }); }
+  });
+  relink.forEach(function (x) { x.ids.forEach(function (id) { ref[id] = 1; }); });
+  var phs = (Array.isArray(d.photos) ? d.photos : []).filter(rsValidPh).slice(0, 50000);
+  return DB.tx('photos', 'readonly', function (s) { return s.getAllKeys(); }).then(function (keys) {
+    var hk = {}, inF = {}; (keys || []).forEach(function (k) { hk[k] = 1; }); phs.forEach(function (p) { inF[p.id] = 1; });
+    var newPh = phs.filter(function (p) { return !hk[p.id] && ref[p.id]; });
+    relink = relink.map(function (x) { return { cur: x.cur, ids: x.ids.filter(function (id) { return inF[id] || hk[id]; }) }; }).filter(function (x) { return x.ids.length; });
+    var bid = (d.state && d.state.profile && d.state.profile.empId) || (d.profile && d.profile.empId) || pkg.meta.empId || ((Array.isArray(d.records) ? d.records : []).filter(function (r) { return r && r.empId; })[0] || {}).empId || '';
+    var need = newPh.reduce(function (s, p) { return s + p.b64.length * 0.75; }, 0) + recs.length * 900;
+    return { c: c, recs: recs, photos: newPh, phIn: phs.length, relink: relink, bad: bad, need: need, bid: clean(String(bid), 20), state: d.state && typeof d.state === 'object' ? d.state : {} };
+  });
+}
+function openRestoreAsk(file, err) {
+  S.rfile = file;
+  $('#modal').innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="rsh" data-rs="1"><div class="sheet"><div class="grab"></div><h2 id="rsh" style="font-size:18px">กู้คืนจากไฟล์สำรอง</h2><span class="small">' + esc(file.name) + ' · ' + fmtBytes(file.size) + '</span>' +
+    '<div class="field"><label for="rs-p">รหัสผ่านไฟล์สำรอง</label><input id="rs-p" class="inp" type="password" autocomplete="current-password"' + (err ? ' aria-invalid="true" aria-describedby="rs-e"' : '') + '>' + (err ? '<span id="rs-e" class="errmsg" role="alert">' + esc(err) + '</span>' : '') + '</div>' +
+    '<div class="grid2"><button class="btn" data-act="rsclose">ยกเลิก</button><button class="btn primary" data-act="rscheck">ตรวจไฟล์</button></div></div></div>';
+  var f = $('#rs-p'); if (f) f.focus();
+}
+function checkRestore() {
+  var file = S.rfile, pw = ($('#rs-p') || {}).value || ''; if (!file || S.rBusy) return;
+  if (pw.length < 8) { openRestoreAsk(file, 'รหัสผ่านไฟล์สำรองมีอย่างน้อย 8 ตัวอักษร'); return; }
+  var b = $('[data-act=rscheck]'); if (b) { b.disabled = true; b.textContent = 'กำลังตรวจไฟล์…'; }
+  S.rBusy = true;
+  readBackup(file, pw).then(function (pkg) { S.rpkg = pkg; return Promise.all([restorePlan(pkg), storageScan().catch(function () { return null; })]); }).then(function (r) { S.rBusy = false; S.rplan = r[0]; openRestorePreview(); }, function (e) {
+    S.rBusy = false; openRestoreAsk(file, e === 'size' ? 'ไฟล์ใหญ่เกินไป (เกิน 300 MB)' : e === 'format' ? 'ไฟล์นี้ไม่ใช่ไฟล์สำรองของ PS Tracker หรือไฟล์เสียหาย' : 'รหัสผ่านไม่ถูกต้อง');
+  });
+}
+function openRestorePreview() {
+  var pk = S.rpkg, pl = S.rplan; if (!pk || !pl) return;
+  var me = P().empId || '', same = !pl.bid || normEmp(pl.bid) === normEmp(me), other = !same && empTaken(pl.bid, S.user && S.user.id);
+  var st = S.st, free = st && st.quota != null && st.usage != null ? st.quota - st.usage : null, noSpace = free != null && pl.need > free;
+  var c = pl.c, so = { inFile: c.sale.inFile + c.quote.inFile, add: c.sale.add + c.quote.add, skip: c.sale.skip + c.quote.skip };
+  var adds = pl.recs.length + pl.photos.length + pl.relink.length;
+  function tr(l, x) { return '<tr><th scope="row">' + l + '</th><td>' + fmt(x.inFile) + '</td><td><b class="strong">' + fmt(x.add) + '</b></td><td>' + fmt(x.skip) + '</td></tr>'; }
+  var emp = same ? '<div class="between small"><span>Emp ID ในไฟล์</span><b class="okText">' + icon('check', 16) + ' ' + esc(pl.bid || me) + ' ตรงกับบัญชีนี้</b></div>'
+    : other ? '<div class="card alert small" style="background:#fff0f0"><b class="dangerText">ไฟล์นี้เป็นของ Emp ID ' + esc(pl.bid) + ' (' + esc(other.label || '') + ')</b> ซึ่งมีบัญชีในเครื่องนี้แล้ว ให้กู้คืนในบัญชีของคนนั้น</div>'
+    : '<div class="card warn small"><b class="strong">ไฟล์นี้เป็นของ Emp ID ' + esc(pl.bid) + '</b> แต่ผู้ใช้ปัจจุบันคือ ' + esc(me) + ' ถ้ากู้คืน ข้อมูลจะรวมเข้ากับบัญชีนี้ ควรเพิ่มผู้ใช้ใหม่ในเครื่อง แล้วกู้คืนในบัญชีนั้นแทน</div>';
+  var label = !adds ? '' : !same ? 'กู้คืนเข้าบัญชีนี้' : c.project.add ? 'กู้คืน ' + fmt(c.project.add) + ' ราย' : 'กู้คืน ' + fmt(adds) + ' รายการ';
+  var act = !adds ? '<div class="card okc small"><b class="okText">ข้อมูลในไฟล์มีอยู่ในเครื่องครบแล้ว</b> ไม่มีรายการให้เพิ่ม</div><button class="btn block" data-act="rsclose">ปิด</button>'
+    : '<div class="grid2"><button class="btn" data-act="rsclose">ยกเลิก</button><button class="btn primary" data-act="rsapply"' + (other || noSpace ? ' disabled' : '') + '>' + label + '</button></div>';
+  $('#modal').innerHTML = '<div class="modalbg bottom" role="dialog" aria-modal="true" aria-labelledby="rsh" data-rs="1"><div class="sheet"><div class="grab"></div><h2 id="rsh" style="font-size:18px">ตรวจไฟล์ก่อนกู้คืน</h2>' +
+    '<div class="stack small" style="gap:4px"><div class="between"><span>ไฟล์</span><b class="strong" style="text-align:right;word-break:break-all">' + esc(pk.meta.name) + '</b></div><div class="between"><span>สร้างเมื่อ</span><b class="strong">' + (pk.meta.createdAt ? be(pk.meta.createdAt) + ' ' + new Date(pk.meta.createdAt).toTimeString().slice(0, 5) : '-') + (pk.meta.appVersion ? ' · เวอร์ชัน ' + esc(pk.meta.appVersion) : '') + '</b></div>' + (pk.meta.kind === 'archive' && pk.meta.month ? '<div class="between"><span>ประเภทไฟล์</span><b class="strong">ไฟล์เก็บข้อมูลเดือน ' + monthName(pk.meta.month) + '</b></div>' : '') + emp + '</div>' +
+    '<div class="tblwrap"><table class="rstbl"><caption class="sr">สรุปข้อมูลในไฟล์สำรอง</caption><thead><tr><th scope="col">ข้อมูล</th><th scope="col">ในไฟล์</th><th scope="col">เพิ่มใหม่</th><th scope="col">มีแล้ว ข้าม</th></tr></thead><tbody>' +
+    tr('Lead', c.project) + tr('การติดตาม', c.follow) + tr('SO และใบเสนอราคา', so) + tr('รูป', { inFile: pl.phIn, add: pl.photos.length, skip: Math.max(0, pl.phIn - pl.photos.length) }) + '</tbody></table></div>' +
+    (pl.relink.length ? '<span class="small">เชื่อมรูปกลับให้ Lead ที่เคยลบรูปเพื่อคืนพื้นที่ ' + fmt(pl.relink.length) + ' ราย</span>' : '') +
+    (pl.bad ? '<span class="small">ข้ามรายการที่รูปแบบไม่ถูกต้อง ' + fmt(pl.bad) + ' รายการ</span>' : '') +
+    '<span class="hint">ข้อมูลที่มีอยู่ในเครื่องจะไม่ถูกลบหรือแก้ไข ต้องใช้พื้นที่ประมาณ ' + fmtBytes(pl.need) + (free != null ? ' (ว่างอยู่ ' + fmtBytes(free) + ')' : '') + '</span>' +
+    (noSpace ? '<span class="errmsg" role="alert">พื้นที่ในเครื่องไม่พอ ลบรูปหรือแอปอื่นในมือถือก่อน แล้วลองใหม่</span>' : '') +
+    '<div id="rs-act">' + act + '</div></div></div>';
+  var f = $('[data-act=rsapply]') || $('[data-act=rsclose]'); if (f) f.focus();
+}
+function applyRestore() {
+  var pl = S.rplan; if (!pl || S.rBusy) return; S.rBusy = true;
+  var total = pl.recs.length + pl.photos.length + pl.relink.length || 1, done = 0, added = 0, box = $('#rs-act');
+  if (box) box.innerHTML = '<div class="stack" style="gap:6px"><div class="between small"><b class="strong">กำลังกู้คืน</b><b class="strong" id="rs-pct">ร้อยละ 0</b></div><div class="meter" id="rs-bar" role="progressbar" aria-label="ความคืบหน้าการกู้คืน" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div style="width:0%"></div></div><span class="small strong" style="font-weight:400">อย่าปิดแอประหว่างกู้คืน หากถูกปิด ให้กู้คืนไฟล์เดิมซ้ำได้ รายการที่เข้าแล้วจะข้าม</span></div>';
+  function tick() { done++; if (done % 20 && done !== total) return; var p = Math.min(100, Math.round(done / total * 100)), b = $('#rs-bar'), t = $('#rs-pct'); if (b) { b.setAttribute('aria-valuenow', p); b.firstChild.style.width = p + '%'; } if (t) t.textContent = 'ร้อยละ ' + p; }
+  var seq = Promise.resolve();
+  for (var i = 0; i < pl.photos.length; i += 10) (function (chunk) { seq = seq.then(function () { return Promise.all(chunk.map(function (ph) { return Cx.enc(Cx.key, unb64(ph.b64)).then(function (e) { return DB.put('photos', { id: ph.id, mime: ph.mime, iv: e.iv, ct: e.ct }); }).then(tick); })); }); })(pl.photos.slice(i, i + 10));
+  pl.recs.forEach(function (r) { seq = seq.then(function () { return Store.save(sanitizeRec(r, 0), true); }).then(function () { added++; tick(); }); });
+  pl.relink.forEach(function (x) { seq = seq.then(function () { var cp = x.cur, s = {}; cp.photos = cp.photos || []; cp.photos.forEach(function (id) { s[id] = 1; }); x.ids.forEach(function (id) { if (!s[id] && cp.photos.length < 6) { cp.photos.push(id); s[id] = 1; } }); cp.photosPurged = 0; cp.photosPurgedAt = ''; cp.synced = false; return Store.save(cp, true); }).then(tick); });
+  seq.then(function () {
+    var st = Store.state, b = pl.state || {};
+    if (O().version === 'default' && b.options) st.options = migrateState({ options: b.options }).options;
+    if (b.settings && b.settings.targets) Object.keys(b.settings.targets).forEach(function (m) { if (st.settings.targets[m] == null) st.settings.targets[m] = b.settings.targets[m]; });
+    st.counter = Math.max(st.counter || 0, +b.counter || 0);
+    return Store.saveState();
+  }).then(migrateRecords).then(function () {
+    S.rBusy = false; S.rplan = null; S.rpkg = null; S.rfile = null; S.st = null; $('#modal').innerHTML = '';
+    toast('กู้คืนแล้ว ' + fmt(added) + ' รายการ' + (pl.photos.length ? ' · รูป ' + fmt(pl.photos.length) + ' รูป' : '')); rerender();
+  }).catch(function (e) {
+    S.rBusy = false; S.st = null; var q = e && e.name === 'QuotaExceededError';
+    var bx = $('#rs-act'); if (bx) bx.innerHTML = '<div class="card alert stack" style="gap:6px;background:#fff0f0"><b class="dangerText">กู้คืนไม่ครบ (' + fmt(added) + ' รายการเข้าแล้ว)</b><span class="small strong" style="font-weight:400">' + (q ? 'พื้นที่ในเครื่องเต็ม ลบรูปหรือแอปอื่นในมือถือก่อน ' : '') + 'ข้อมูลที่เข้าแล้วยังอยู่ กู้คืนไฟล์เดิมซ้ำได้ รายการที่เข้าแล้วจะข้าม</span><button class="btn block" data-act="rsclose">ปิด</button></div>';
+  });
+}
+function weakPin(p) {
+  if (/^(\d)\1{5}$/.test(p) || /^(\d\d)\1\1$/.test(p) || /^(\d\d\d)\1$/.test(p) || /^(\d)\1\1(\d)\2\2$/.test(p) || /^(\d)\1(\d)\2(\d)\3$/.test(p)) return true;
+  if ('0123456789012'.indexOf(p) >= 0 || '9876543210987'.indexOf(p) >= 0) return true;
+  return ['147258', '258369', '159753', '789456', '456123', '102030', '520520', '010203'].indexOf(p) >= 0;
+}
+(function () {
+  var m = document.getElementById('modal'); if (!m || !window.MutationObserver) return;
+  new MutationObserver(function (list) { var added = list.some(function (r) { return r.addedNodes && r.addedNodes.length; }); if (added) m.dataset.route = location.hash; if (!m.firstChild) delete m.dataset.route; }).observe(m, { childList: true });
+  window.addEventListener('hashchange', function () { if (!m.firstChild || S.bakBusy || S.rBusy || S.pgBusy) return; if (m.dataset.route !== location.hash) { m.innerHTML = ''; S.busyUntil = 0; } });
+})();
 function wipeAll() { Cx.key = null; Store.reset(); var u = S.user; (u ? DIR.del(u.id) : Promise.resolve()).catch(function () { }).then(function () { return DB.destroy(); }).then(function () { location.hash = ''; location.reload(); }); }
 
 /* ---------------- auth ---------------- */
 function onboard() {
   var d = S.draft, e = {}, p1 = $('#o-p1').value, p2 = $('#o-p2').value;
   if (!clean(d.empId)) e.empId = 'กรุณาใส่ Emp ID'; else if (empTaken(d.empId)) e.empId = 'Emp ID นี้มีผู้ใช้ในเครื่องนี้แล้ว ให้กลับไปเลือกชื่อของตัวเองแล้วใส่ PIN'; if (!clean(d.name)) e.name = 'กรุณาใส่ชื่อ'; if (!clean(d.branch)) e.branch = 'กรุณาใส่สาขา';
-  if (!/^\d{6}$/.test(p1)) e.pin = 'PIN ต้องเป็นตัวเลข 6 หลัก'; else if (p1 !== p2) e.pin = 'PIN ทั้งสองช่องไม่ตรงกัน'; else if (/^(\d)\1{5}$/.test(p1) || p1 === '123456' || p1 === '654321') e.pin = 'PIN นี้เดาง่ายเกินไป';
+  if (!/^\d{6}$/.test(p1)) e.pin = 'PIN ต้องเป็นตัวเลข 6 หลัก'; else if (p1 !== p2) e.pin = 'PIN ทั้งสองช่องไม่ตรงกัน'; else if (weakPin(p1)) e.pin = 'PIN นี้เดาง่ายเกินไป เช่น เลขเรียงหรือเลขซ้ำ ให้ตั้งใหม่';
   S.ui.errors = e; if (Object.keys(e).length) { S.ui.focusErr = true; app.innerHTML = vOnboard(); return; }
   var btn = $('[data-act="onboard"]'); btn.disabled = true; btn.textContent = 'กำลังตั้งค่า…';
   var salt = crypto.getRandomValues(new Uint8Array(16)), nu = { id: uid(), empId: clean(d.empId, 20), label: firstName(d.name), createdAt: nowISO() };
@@ -3413,7 +3810,7 @@ function tryUnlock() {
     return Cx.derive(pin, a.salt, a.iter).then(function (k) { return Cx.decJSON(k, a.iv, a.ct).then(function () { return k; }); });
   }).then(function (k) {
     Cx.key = k; S.failed = 0; S.lockUntil = 0; return DB.put('meta', { n: 0, until: 0 }, 'lock').catch(function () { }).then(function () { return Store.load(); });
-  }).then(syncUserEntry).then(function () { touch(); S.route = ''; if (!location.hash || location.hash === '#') location.hash = '#/today'; render(); if (S.call && Date.now() - S.call.at < 7200000) setTimeout(openCall, 400); else S.call = null; }).catch(function (e) {
+  }).then(syncUserEntry).then(function () { touch(); askPersist(); S.route = ''; if (!location.hash || location.hash === '#') location.hash = '#/today'; render(); if (S.call && Date.now() - S.call.at < 7200000) setTimeout(openCall, 400); else S.call = null; }).catch(function (e) {
     if (e === 'locked') { render(); return; }
     Cx.key = null; Store.reset(); lk.n = (lk.n || 0) + 1;
     if (lk.n >= 5) { var dl = LOCK_STEPS[Math.min(LOCK_STEPS.length - 1, lk.n - 5)]; lk.until = Date.now() + dl; S.lockUntil = lk.until; setTimeout(render, dl + 500); }
@@ -3424,6 +3821,7 @@ function lockApp() { Cx.key = null; Store.reset(); S.draft = null; S.ui = {}; S.
 function changePin(a, b) {
   if (!/^\d{6}$/.test(a)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
   if (a !== b) { toast('PIN ทั้งสองช่องไม่ตรงกัน'); return; }
+  if (weakPin(a)) { toast('PIN นี้เดาง่ายเกินไป เช่น เลขเรียงหรือเลขซ้ำ ให้ตั้งใหม่'); return; }
   toast('กำลังเปลี่ยน PIN…');
   var salt = crypto.getRandomValues(new Uint8Array(16)), oldKey = Cx.key, newKey;
   Cx.derive(a, salt, KDF_ITER).then(function (k) {
